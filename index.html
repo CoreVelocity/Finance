@@ -643,13 +643,13 @@
       <button id="altSignIn" class="gate-alt">Having trouble? Try popup sign-in</button>
       <div id="authErr" class="gate-err"></div>
       <div class="gate-foot">Management access only</div>
-      <div class="gate-ver">v1.27.0 · 2026-06-14</div>
+      <div class="gate-ver">v1.28.0 · 2026-06-14</div>
     </div>
   </div>
 
   <div id="appRoot" style="display:none">
   <header class="topbar">
-    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.27.0</span></div>
+    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.28.0</span></div>
     <nav class="tabnav">
       <button data-tab="tab-costing" class="active"><span class="n">01</span>Costing</button>
       <button data-tab="tab-commission"><span class="n">02</span>Commission</button>
@@ -2763,11 +2763,11 @@ function renderRecv(){
   $("rm-recvBody").innerHTML=body || `<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:18px">${empty}</td></tr>`;
   $("rm-recvFoot").innerHTML=shown?`<tr><td class="l">Outstanding ${fmt(out)} · collected ${fmt(paid)}</td><td></td><td></td><td>${fmt(out+paid)}</td><td></td><td></td><td></td></tr>`:"";
   $("rm-recvBody").querySelectorAll("tr[data-key] [data-k]").forEach(el=>{
-    el.addEventListener(el.type==="checkbox"?"change":"input",e=>{
+    el.addEventListener("change",e=>{
       const key=e.target.closest("tr").dataset.key,k=e.target.dataset.k;
       RECV_OV[key]=RECV_OV[key]||{};
       RECV_OV[key][k]= k==="paid"? e.target.checked : e.target.value;
-      renderRecv(); renderDashboard();
+      renderRecv(); renderDashboard(); rmChanged();
     });
   });
   $("rm-recvBody").querySelectorAll(".ms-edit").forEach(b=>b.addEventListener("click",e=>{
@@ -3048,9 +3048,10 @@ window.addEventListener("corev:store",renderAll);
 
 function rmChanged(){ if(window.CoreVSync) window.CoreVSync.changed(); }
 if(window.CoreVSync) window.CoreVSync.register('reminders',
-  ()=>({PAY,CTRL}),
+  ()=>({PAY,CTRL,RECV_OV}),
   env=>{ try{
     if(Array.isArray(env.PAY))PAY=env.PAY;
+    if(env.RECV_OV && typeof env.RECV_OV==='object') RECV_OV=env.RECV_OV;   // receivable Paid/Due edits
     if(env.CTRL && typeof env.CTRL==='object'){
       const c=env.CTRL;
       if(typeof c.soon==='number') CTRL.soon=c.soon;
