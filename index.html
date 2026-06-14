@@ -485,6 +485,21 @@
   .ms-fld .affx{font-size:11px;color:var(--muted)}
   .ms-del{flex:0 0 auto}
   .ms-hint{font-size:11.5px;color:var(--muted);margin-top:4px;line-height:1.5}
+  .deal-grp td{background:var(--surface);border-top:2px solid var(--line)}
+  .deal-grp .dg-cust{font-weight:700;color:var(--ink)}
+  .deal-grp .dg-meta{font-size:11.5px;color:var(--muted);margin-left:6px}
+  .sched-chip{font-size:11px;font-weight:600;color:var(--muted);background:var(--line-2);border-radius:6px;padding:2px 8px}
+  .sched-chip.custom{background:#E7ECFF;color:#1C4ED8}
+  .ms-sub{color:var(--line);text-align:center;width:18px}
+  .ms-edit{padding:5px 10px;font-size:11.5px}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  .rm-modal{position:fixed;inset:0;background:rgba(14,22,38,.55);display:flex;align-items:center;justify-content:center;z-index:9999;padding:18px}
+  .rm-modal-card{background:var(--card);border-radius:14px;width:min(560px,100%);max-height:90vh;overflow:auto;box-shadow:0 24px 60px -16px rgba(0,0,0,.4);padding:20px}
+  .rm-modal-head{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px}
+  .rm-modal-head h3{font-family:"Space Grotesk";font-size:17px;margin:0;color:var(--ink)}
+  .rm-modal-sub{font-size:12px;color:var(--muted);margin-top:3px}
+  .rm-modal-x{cursor:pointer;border:0;background:none;font-size:22px;line-height:1;color:var(--muted)}
+  .rm-modal-foot{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:14px;border-top:1px solid var(--line);padding-top:14px}
   .ctrls .grow{flex:1}
   .synced{font-size:12px;color:var(--muted)}
   .synced b{color:var(--text)}
@@ -596,13 +611,13 @@
       <button id="altSignIn" class="gate-alt">Having trouble? Try popup sign-in</button>
       <div id="authErr" class="gate-err"></div>
       <div class="gate-foot">Management access only</div>
-      <div class="gate-ver">v1.17.0 · 2026-06-14</div>
+      <div class="gate-ver">v1.18.0 · 2026-06-14</div>
     </div>
   </div>
 
   <div id="appRoot" style="display:none">
   <header class="topbar">
-    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.17.0</span></div>
+    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.18.0</span></div>
     <nav class="tabnav">
       <button data-tab="tab-costing" class="active"><span class="n">01</span>Costing</button>
       <button data-tab="tab-commission"><span class="n">02</span>Commission</button>
@@ -997,10 +1012,10 @@
           <div style="text-align:right"><div class="synced" id="rm-synced"></div><button class="btn" id="rm-resync" style="margin-top:6px">↻ Re-sync from commission</button></div>
         </div>
         <div class="ms-editor">
-          <div class="ms-head"><h3>Payment milestones</h3><span class="ms-total" id="rm_mstotal"></span><span style="flex:1"></span><button class="btn ghost" id="rm_msadd">+ Add milestone</button></div>
+          <div class="ms-head"><h3>Default payment milestones</h3><span class="ms-total" id="rm_mstotal"></span><span style="flex:1"></span><button class="btn ghost" id="rm_msadd">+ Add milestone</button></div>
           <div class="ms-cols"><span>Milestone</span><span>Share</span><span>Reminder offset</span><span></span></div>
           <div id="rm_ms"></div>
-          <div class="ms-hint">Each customer deal is split across these milestones (anchored on its closed month). Shares should total 100%. The reminder offset is days after the closed month that each milestone's reminder is due.</div>
+          <div class="ms-hint">This default applies to every deal that doesn't have its own schedule (starts at 100% on PO/Contract). To set a <b>special schedule for one deal</b>, use <b>⚙ Edit</b> next to that deal in Receivables below. Shares should total 100%; the reminder offset is days after the deal's closed month.</div>
         </div>
       </div>
     </section>
@@ -1055,6 +1070,25 @@
     </section>
 
     <div class="note"><span class="ic">i</span><span>Receivables are generated live from the Commission tab: each deal is split across the <b>configurable milestones</b> above, anchored on its closed month. Milestones flip to <b>Paid</b> as the deal's collected % passes each cumulative milestone share. Edit a due date or override Paid here and it sticks; payables are fully manual.</span></div>
+  </div>
+
+  <div id="rm-msModal" class="rm-modal" style="display:none">
+    <div class="rm-modal-card">
+      <div class="rm-modal-head">
+        <div><h3 id="rm-msModalTitle">Payment milestones</h3><div class="rm-modal-sub" id="rm-msModalSub"></div></div>
+        <button class="rm-modal-x" id="rm-msClose">×</button>
+      </div>
+      <div class="ms-cols"><span>Milestone</span><span>Share</span><span>Reminder offset</span><span></span></div>
+      <div id="rm-msModalBody"></div>
+      <div class="rm-modal-foot">
+        <button class="btn ghost" id="rm-msAddRow">+ Add milestone</button>
+        <span class="ms-total" id="rm-msModalTotal"></span>
+        <span style="flex:1"></span>
+        <button class="btn" id="rm-msReset">Reset to default</button>
+        <button class="btn" id="rm-msCancel">Cancel</button>
+        <button class="btn primary" id="rm-msSave">Save schedule</button>
+      </div>
+    </div>
   </div>
 
 </div>
@@ -2085,7 +2119,7 @@ function renderRefs(){
 
 function publishStore(){
   const deals=[];
-  REPS.forEach(r=>r.deals.forEach(d=>deals.push({rep:r.name,customer:d.cust,gross:d.gross,collected:effColl(d),month:d.month||"",future:!!d.future})));
+  REPS.forEach(r=>r.deals.forEach(d=>deals.push({rep:r.name,customer:d.cust,gross:d.gross,collected:effColl(d),month:d.month||"",future:!!d.future,hsId:d.hsId||null})));
   window.CoreVStore={deals,ts:Date.now()}; window.dispatchEvent(new CustomEvent('corev:store'));
   if(window.CoreVSync) window.CoreVSync.changed();
 }
@@ -2470,13 +2504,11 @@ function parseMonth(s){
   return new Date(today.getFullYear(),today.getMonth(),1);
 }
 
-function defaultMs(){ return [
-  {name:"Acceptance", pct:0.20, off:0},
-  {name:"PO / Contract", pct:0.50, off:30},
-  {name:"Delivery", pct:0.30, off:60},
-]; }
-let CTRL={soon:7, ms:defaultMs()};
+function defaultDef(){ return [ {name:"PO / Contract", pct:1.0, off:0} ]; }
+let CTRL={soon:7, def:defaultDef(), perDeal:{}};
 let RECV_OV={};            // overrides keyed by milestone
+function dealKey(d){ return d.hsId ? ("hs:"+d.hsId) : ("m:"+(d.rep||"")+"|"+(d.customer||"")+"|"+(d.month||"")); }
+function dealMs(d){ const c=CTRL.perDeal&&CTRL.perDeal[dealKey(d)]; return (Array.isArray(c)&&c.length)?c:(CTRL.def||defaultDef()); }
 let PAY=[
   {payee:"OxeFit", desc:"Hardware PO settlement", amount:150000, due:iso(addDays(today,17)), recur:"One-time", paid:false},
   {payee:"OxeFit", desc:"Platform / subscription", amount:22000, due:iso(addDays(today,5)), recur:"Monthly", paid:false},
@@ -2484,23 +2516,23 @@ let PAY=[
   {payee:"Marketing agency", desc:"Retainer", amount:18000, due:iso(addDays(today,28)), recur:"Monthly", paid:false},
 ];
 
-function receivables(){
+function receivableGroups(){
   const store=(window.CoreVStore&&window.CoreVStore.deals)||[];
-  const rows=[]; const ms=CTRL.ms||[];
-  store.forEach((d,di)=>{
-    if(!d.gross) return;
-    const anchor=parseMonth(d.month); let cum=0;
-    ms.forEach((m,mi)=>{
+  return store.filter(d=>d.gross).map(d=>{
+    const k=dealKey(d), ms=dealMs(d), anchor=parseMonth(d.month); let cum=0;
+    const rows=ms.map((m,mi)=>{
       const pct=(+m.pct)||0; cum+=pct;
-      const key=d.customer+"|"+d.month+"|"+di+"|"+mi;
-      const ov=RECV_OV[key]||{};
+      const key=k+"|"+mi; const ov=RECV_OV[key]||{};
       const due = ov.due ? new Date(ov.due+"T00:00:00") : addDays(anchor,(+m.off)||0);
       const autoPaid=(d.collected||0) >= cum-1e-9;
       const paid = ov.paid!=null ? ov.paid : autoPaid;
-      rows.push({key,rep:d.rep,customer:d.customer,name:m.name,pct,amount:d.gross*pct,due,paid});
+      return {key,name:m.name,pct,amount:d.gross*pct,due,paid};
     });
+    return {deal:d, key:k, custom:!!(CTRL.perDeal&&CTRL.perDeal[k]), msCount:ms.length, rows};
   });
-  return rows;
+}
+function receivables(){
+  const out=[]; receivableGroups().forEach(g=>g.rows.forEach(r=>out.push({...r, rep:g.deal.rep, customer:g.deal.customer}))); return out;
 }
 function statusOf(due,paid){
   if(paid) return "paid";
@@ -2573,23 +2605,33 @@ function renderFlags(recv, pay){
 }
 
 function renderRecv(){
-  const rows=receivables().sort((a,b)=>a.due-b.due);
+  const groups=receivableGroups();
   let body="",out=0,paid=0;
-  rows.forEach(r=>{
-    const st=statusOf(r.due,r.paid); if(r.paid) paid+=r.amount; else out+=r.amount;
-    body+=`<tr data-key="${r.key}">
-      <td class="l nm">${r.customer}</td>
-      <td class="l" style="color:var(--muted)">${r.rep||""}</td>
-      <td class="l"><span class="ms">${r.name} · ${Math.round(r.pct*100)}%</span></td>
-      <td>${fmt(r.amount)}</td>
-      <td class="l"><input class="rm-in date" type="date" data-k="due" value="${iso(r.due)}"></td>
-      <td><span class="st ${st}">${STLBL[st]}</span></td>
-      <td><input type="checkbox" data-k="paid" ${r.paid?"checked":""}></td>
+  groups.forEach(g=>{
+    const d=g.deal;
+    const sched = g.custom ? `Custom · ${g.msCount} milestone${g.msCount===1?"":"s"}` : (g.msCount===1?`Default · 100% ${g.rows[0]?g.rows[0].name:""}`:`Default · ${g.msCount}`);
+    body+=`<tr class="deal-grp" data-dk="${encodeURIComponent(g.key)}">
+      <td class="l" colspan="4"><span class="dg-cust">${d.customer||"—"}</span> <span class="dg-meta">${d.rep||""}${d.month?" · "+d.month:""} · ${fmt(d.gross)} AED</span></td>
+      <td class="l" colspan="2"><span class="sched-chip ${g.custom?'custom':''}">${sched}</span></td>
+      <td><button class="btn ms-edit" data-dk="${encodeURIComponent(g.key)}">⚙ Edit</button></td>
     </tr>`;
+    g.rows.forEach(r=>{
+      const st=statusOf(r.due,r.paid); if(r.paid) paid+=r.amount; else out+=r.amount;
+      body+=`<tr data-key="${r.key}">
+        <td class="l"></td>
+        <td class="l ms-sub">↳</td>
+        <td class="l"><span class="ms">${r.name} · ${Math.round(r.pct*100)}%</span></td>
+        <td>${fmt(r.amount)}</td>
+        <td class="l"><input class="rm-in date" type="date" data-k="due" value="${iso(r.due)}"></td>
+        <td><span class="st ${st}">${STLBL[st]}</span></td>
+        <td><input type="checkbox" data-k="paid" ${r.paid?"checked":""}></td>
+      </tr>`;
+    });
   });
+  const rowsN=groups.reduce((a,g)=>a+g.rows.length,0);
   $("rm-recvBody").innerHTML=body || `<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:18px">No customer deals in the Commission tab yet. Add a deal there and it appears here.</td></tr>`;
-  $("rm-recvFoot").innerHTML=rows.length?`<tr><td class="l">Outstanding ${fmt(out)} · collected ${fmt(paid)}</td><td></td><td></td><td>${fmt(out+paid)}</td><td></td><td></td><td></td></tr>`:"";
-  $("rm-recvBody").querySelectorAll("[data-k]").forEach(el=>{
+  $("rm-recvFoot").innerHTML=rowsN?`<tr><td class="l">Outstanding ${fmt(out)} · collected ${fmt(paid)}</td><td></td><td></td><td>${fmt(out+paid)}</td><td></td><td></td><td></td></tr>`:"";
+  $("rm-recvBody").querySelectorAll("tr[data-key] [data-k]").forEach(el=>{
     el.addEventListener(el.type==="checkbox"?"change":"input",e=>{
       const key=e.target.closest("tr").dataset.key,k=e.target.dataset.k;
       RECV_OV[key]=RECV_OV[key]||{};
@@ -2597,6 +2639,9 @@ function renderRecv(){
       renderRecv(); renderDashboard();
     });
   });
+  $("rm-recvBody").querySelectorAll(".ms-edit").forEach(b=>b.addEventListener("click",e=>{
+    openMsModal(decodeURIComponent(e.currentTarget.dataset.dk));
+  }));
 }
 
 function renderPay(){
@@ -2628,33 +2673,69 @@ function renderPay(){
   $("rm-payBody").querySelectorAll(".del").forEach(b=>b.addEventListener("click",e=>{PAY.splice(+e.target.dataset.i,1);renderPay();renderDashboard();rmChanged();}));
 }
 
-function msTotalBadge(){
-  const total=(CTRL.ms||[]).reduce((a,m)=>a+((+m.pct)||0),0);
-  const el=$("rm_mstotal"); if(!el) return;
-  const ok=Math.abs(total-1)<1e-9; el.textContent="Total "+Math.round(total*100)+"%"; el.className="ms-total "+(ok?"ok":"warn");
+function msTotalBadge(arr,el){
+  const total=(arr||[]).reduce((a,m)=>a+((+m.pct)||0),0);
+  if(!el) return; const ok=Math.abs(total-1)<1e-9; el.textContent="Total "+Math.round(total*100)+"%"; el.className=(el.id==="rm_mstotal"?"ms-total ":"ms-total ")+(ok?"ok":"warn");
 }
 function renderMsEditor(){
   if(!$("rm_ms")) return;
-  const ms=CTRL.ms||[];
+  if(!Array.isArray(CTRL.def)) CTRL.def=defaultDef();
+  const ms=CTRL.def;
   $("rm_ms").innerHTML=ms.map((m,i)=>`<div class="ms-row" data-i="${i}">
       <input class="rm-in ms-name" data-k="name" value="${(m.name||'').replace(/"/g,'&quot;')}" placeholder="Milestone name">
       <div class="ms-fld"><input class="rm-in ms-p" type="number" step="1" data-k="pct" value="${Math.round(((+m.pct)||0)*100)}"><span class="affx">%</span></div>
       <div class="ms-fld"><input class="rm-in ms-d" type="number" step="1" data-k="off" value="${(+m.off)||0}"><span class="affx">days</span></div>
       <button class="del ms-del" title="Remove milestone">×</button>
     </div>`).join("");
-  msTotalBadge();
+  msTotalBadge(ms,$("rm_mstotal"));
   $("rm_ms").querySelectorAll("[data-k]").forEach(el=>{
     el.addEventListener("input",e=>{
       const i=+e.target.closest(".ms-row").dataset.i, k=e.target.dataset.k;
-      if(k==="pct") CTRL.ms[i].pct=(parseFloat(e.target.value)||0)/100;
-      else if(k==="off") CTRL.ms[i].off=parseInt(e.target.value)||0;
-      else CTRL.ms[i].name=e.target.value;
-      msTotalBadge(); renderDashboard(); renderRecv(); rmChanged();   // editor not re-rendered → keeps input focus
+      if(k==="pct") CTRL.def[i].pct=(parseFloat(e.target.value)||0)/100;
+      else if(k==="off") CTRL.def[i].off=parseInt(e.target.value)||0;
+      else CTRL.def[i].name=e.target.value;
+      msTotalBadge(CTRL.def,$("rm_mstotal")); renderDashboard(); renderRecv(); rmChanged();
     });
   });
   $("rm_ms").querySelectorAll(".ms-del").forEach(b=>b.addEventListener("click",e=>{
-    const i=+e.target.closest(".ms-row").dataset.i; (CTRL.ms||[]).splice(i,1);
+    const i=+e.target.closest(".ms-row").dataset.i; CTRL.def.splice(i,1);
+    if(!CTRL.def.length) CTRL.def=defaultDef();
     renderMsEditor(); renderDashboard(); renderRecv(); rmChanged();
+  }));
+}
+
+/* ---- per-deal milestone modal ---- */
+let msEditKey=null, msEditWork=[], msEditTitle="";
+function openMsModal(key){
+  const groups=receivableGroups(); const g=groups.find(x=>x.key===key); if(!g) return;
+  msEditKey=key; msEditTitle=g.deal.customer||"Deal";
+  const src = (CTRL.perDeal&&CTRL.perDeal[key]) ? CTRL.perDeal[key] : (CTRL.def||defaultDef());
+  msEditWork = src.map(m=>({name:m.name,pct:(+m.pct)||0,off:(+m.off)||0}));   // clone
+  $("rm-msModalTitle").textContent="Payment milestones — "+msEditTitle;
+  $("rm-msModalSub").textContent = (CTRL.perDeal&&CTRL.perDeal[key]) ? "Custom schedule for this deal." : "Using the default schedule — edits below make it deal-specific.";
+  renderMsModalBody();
+  $("rm-msModal").style.display="flex";
+}
+function closeMsModal(){ $("rm-msModal").style.display="none"; msEditKey=null; msEditWork=[]; }
+function renderMsModalBody(){
+  $("rm-msModalBody").innerHTML=msEditWork.map((m,i)=>`<div class="ms-row" data-i="${i}">
+      <input class="rm-in ms-name" data-k="name" value="${(m.name||'').replace(/"/g,'&quot;')}" placeholder="Milestone name">
+      <div class="ms-fld"><input class="rm-in ms-p" type="number" step="1" data-k="pct" value="${Math.round(((+m.pct)||0)*100)}"><span class="affx">%</span></div>
+      <div class="ms-fld"><input class="rm-in ms-d" type="number" step="1" data-k="off" value="${(+m.off)||0}"><span class="affx">days</span></div>
+      <button class="del ms-del" title="Remove milestone">×</button>
+    </div>`).join("");
+  msTotalBadge(msEditWork,$("rm-msModalTotal"));
+  $("rm-msModalBody").querySelectorAll("[data-k]").forEach(el=>{
+    el.addEventListener("input",e=>{
+      const i=+e.target.closest(".ms-row").dataset.i, k=e.target.dataset.k;
+      if(k==="pct") msEditWork[i].pct=(parseFloat(e.target.value)||0)/100;
+      else if(k==="off") msEditWork[i].off=parseInt(e.target.value)||0;
+      else msEditWork[i].name=e.target.value;
+      msTotalBadge(msEditWork,$("rm-msModalTotal"));
+    });
+  });
+  $("rm-msModalBody").querySelectorAll(".ms-del").forEach(b=>b.addEventListener("click",e=>{
+    msEditWork.splice(+e.target.closest(".ms-row").dataset.i,1); renderMsModalBody();
   }));
 }
 
@@ -2666,7 +2747,19 @@ function renderAll(){ syncedNote(); renderMsEditor(); renderDashboard(); renderR
 
 $("rm-addPay").addEventListener("click",()=>{PAY.push({payee:"New payee",desc:"",amount:0,due:iso(addDays(today,14)),recur:"One-time",paid:false});renderPay();renderDashboard();rmChanged();});
 $("rm-resync").addEventListener("click",renderAll);
-$("rm_msadd").addEventListener("click",()=>{ if(!Array.isArray(CTRL.ms))CTRL.ms=defaultMs(); CTRL.ms.push({name:"New milestone",pct:0,off:0}); renderMsEditor(); renderDashboard(); renderRecv(); rmChanged(); });
+$("rm_msadd").addEventListener("click",()=>{ if(!Array.isArray(CTRL.def))CTRL.def=defaultDef(); CTRL.def.push({name:"New milestone",pct:0,off:0}); renderMsEditor(); renderDashboard(); renderRecv(); rmChanged(); });
+$("rm-msAddRow").addEventListener("click",()=>{ msEditWork.push({name:"New milestone",pct:0,off:0}); renderMsModalBody(); });
+$("rm-msClose").addEventListener("click",closeMsModal);
+$("rm-msCancel").addEventListener("click",closeMsModal);
+$("rm-msModal").addEventListener("click",e=>{ if(e.target.id==="rm-msModal") closeMsModal(); });
+$("rm-msReset").addEventListener("click",()=>{ if(msEditKey&&CTRL.perDeal){ delete CTRL.perDeal[msEditKey]; } closeMsModal(); renderRecv(); renderDashboard(); rmChanged(); });
+$("rm-msSave").addEventListener("click",()=>{
+  if(!msEditKey) return closeMsModal();
+  const work=msEditWork.filter(m=>m.name!=="" || m.pct>0).map(m=>({name:m.name||"Milestone",pct:(+m.pct)||0,off:(+m.off)||0}));
+  if(!work.length){ alert("Add at least one milestone, or use Reset to default."); return; }
+  CTRL.perDeal=CTRL.perDeal||{}; CTRL.perDeal[msEditKey]=work;
+  closeMsModal(); renderRecv(); renderDashboard(); rmChanged();
+});
 $("rm_soon").value=CTRL.soon;
 $("rm_soon").addEventListener("input",e=>{CTRL.soon=parseInt(e.target.value)||0;renderAll();rmChanged();});
 window.addEventListener("corev:store",renderAll);
@@ -2679,10 +2772,12 @@ if(window.CoreVSync) window.CoreVSync.register('reminders',
     if(env.CTRL && typeof env.CTRL==='object'){
       const c=env.CTRL;
       if(typeof c.soon==='number') CTRL.soon=c.soon;
-      if(Array.isArray(c.ms)) CTRL.ms=c.ms;
-      else if(Array.isArray(c.off)){ const d=defaultMs(); CTRL.ms=d.map((m,i)=>({...m, off:(c.off[i]!=null?c.off[i]:m.off)})); } // migrate legacy
+      if(Array.isArray(c.def)) CTRL.def=c.def;
+      else if(Array.isArray(c.ms)) CTRL.def=c.ms;   // migrate prior global template
+      if(c.perDeal && typeof c.perDeal==='object') CTRL.perDeal=c.perDeal;
     }
-    if(!Array.isArray(CTRL.ms)) CTRL.ms=defaultMs();
+    if(!Array.isArray(CTRL.def)) CTRL.def=defaultDef();
+    if(!CTRL.perDeal) CTRL.perDeal={};
     $("rm_soon").value=CTRL.soon;
     renderAll();
   }catch(_){} });
