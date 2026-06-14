@@ -292,8 +292,8 @@
   .planbtn.on{background:var(--pend-soft);border-color:var(--pend);color:var(--pend)}
   .del{cursor:pointer;color:#B7C0CE;border:0;background:none;font-size:16px;padding:2px 6px}
   .del:hover{color:var(--warn)}
-  table.deals tfoot td{background:#F3F6FB;font-weight:700;font-family:"JetBrains Mono";padding:10px;text-align:right;border-top:1px solid var(--line)}
-  table.deals tfoot td.l{text-align:left;font-family:"Space Grotesk"}
+  table.deals tfoot td{background:var(--ink-2);color:#fff;font-weight:700;font-family:"JetBrains Mono";padding:11px 10px;text-align:right;border-top:1px solid var(--line)}
+  table.deals tfoot td.l{text-align:left;font-family:"Space Grotesk";color:#fff}
   .planrow td{background:#FBFBFD;padding:0!important}
   .planbox{padding:14px 18px;border-bottom:1px solid var(--line-2)}
   .planbox h4{margin:0 0 8px;font-family:"Space Grotesk";font-size:12.5px;font-weight:600}
@@ -319,7 +319,16 @@
   .mstmt th.l{text-align:left}
   .mstmt td{padding:7px 12px;text-align:right;border-top:1px solid var(--line);font-family:"JetBrains Mono"}
   .mstmt td.l{text-align:left;font-family:Inter;font-weight:600}
-  .mstmt tfoot td{font-weight:700;border-top:2px solid var(--line);background:var(--input-soft)}
+  .mstmt tfoot td{font-weight:700;border-top:2px solid var(--line);background:var(--ink-2);color:#fff;padding:9px 12px}
+  .mstmt tfoot td.l{color:#fff;font-family:"Space Grotesk"}
+  .tot-pos{color:#5BD49A}.tot-pend{color:#F6C760}
+  .tot-paid{color:var(--pos)}.tot-out{color:var(--pend)}
+  .paysum{display:flex;gap:22px;padding:10px 14px;font-size:12.5px;color:var(--muted);border-top:1px solid var(--line);background:var(--card)}
+  .paysum b{font-family:"JetBrains Mono"}
+  .paypill{cursor:pointer;display:inline-block;border-radius:999px;padding:3px 11px;font-size:11px;font-weight:700;border:1px solid}
+  .paypill.paid{background:var(--pos-soft);color:var(--pos);border-color:#BFE6CF}
+  .paypill.unpaid{background:var(--pend-soft);color:var(--pend);border-color:#F0DCA8}
+  .paypill:hover{filter:brightness(.96)}
   .mstmt tr.mrow{cursor:pointer}
   .mstmt tr.mrow:hover td{background:var(--input-soft)}
   .mstmt tr.mrow-active td{background:var(--pos-soft)}
@@ -512,13 +521,13 @@
       <button id="altSignIn" class="gate-alt">Having trouble? Try popup sign-in</button>
       <div id="authErr" class="gate-err"></div>
       <div class="gate-foot">Management access only</div>
-      <div class="gate-ver">v1.3.0 · 2026-06-14</div>
+      <div class="gate-ver">v1.4.0 · 2026-06-14</div>
     </div>
   </div>
 
   <div id="appRoot" style="display:none">
   <header class="topbar">
-    <div class="brand"><span class="mark">Core<span class="v">V</span></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.3.0</span></div>
+    <div class="brand"><span class="mark">Core<span class="v">V</span></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.4.0</span></div>
     <nav class="tabnav">
       <button data-tab="tab-costing" class="active"><span class="n">01</span>Costing</button>
       <button data-tab="tab-commission"><span class="n">02</span>Commission</button>
@@ -1117,6 +1126,11 @@ const BASE_REFS = [{cust:"Mohammad Sharafi",gross:49221.18,coll:1,month:"Jan/26"
 
 let RULES=structuredClone(BASE_RULES), MATRIX=structuredClone(BASE_MATRIX), REPS=structuredClone(BASE_REPS), REFS=structuredClone(BASE_REFS), sel=0;
 let monthFilter="";
+let PAYOUTS={};
+function loadPayouts(){ try{ PAYOUTS=JSON.parse(localStorage.getItem("corev_payouts")||"{}"); }catch(_){ PAYOUTS={}; } }
+function savePayouts(){ try{ localStorage.setItem("corev_payouts",JSON.stringify(PAYOUTS)); }catch(_){ } }
+function payoutPaid(r,month){ const k=r.name; if(PAYOUTS[k]&&month in PAYOUTS[k]) return !!PAYOUTS[k][month]; return monthSortKey(month) < "2026-06"; }
+function togglePayout(r,month){ const k=r.name; PAYOUTS[k]=PAYOUTS[k]||{}; PAYOUTS[k][month]=!payoutPaid(r,month); savePayouts(); }
 let plansOpen=new Set();
 
 const fmt=n=>Math.round(n).toLocaleString("en-US");
@@ -1234,6 +1248,7 @@ function renderTabs(){
 function renderRep(){
   const r=REPS[sel]; if(!r){$("repBar").innerHTML="";$("dealsBody").innerHTML="";$("dealsFoot").innerHTML="";$("payoutProj").innerHTML="";$("accelBox").innerHTML="";return;}
   const R=repRoll(r), onTrack=R.attain>=1;
+  let outPay=0; R.months.forEach(mo=>{ if(!payoutPaid(r,mo.month)) outPay+=mo.R.eligible; });
   $("repBar").innerHTML=`
     <div class="f"><label>Rep</label><input id="rep_name" value="${r.name}" style="text-align:left;font-family:Inter;color:var(--text);width:150px"></div>
     <div class="f"><label>Monthly target</label><input id="rep_target" type="number" value="${r.target}"></div>
@@ -1241,6 +1256,7 @@ function renderRep(){
     <div class="grow"></div>
     <div class="f"><label>Credited · avg/mo</label><div class="v tnum">${fmt(R.tgt)} · <span style="color:${onTrack?'var(--pos)':'var(--warn)'}">${pct(R.attain,0)}</span></div></div>
     <div class="f"><label>Eligible (total)</label><div class="v tnum" style="color:var(--pos)">${f2(R.eligible)}</div></div>
+    <div class="f"><label>Outstanding payout</label><div class="v tnum" style="color:${outPay>0?'var(--pend)':'var(--pos)'}">${f2(outPay)}</div></div>
     <div class="repacts">
       <button class="btn sm primary" id="rep_pdf">⤓ Statement PDF</button>
       <button class="btn sm" id="rep_email">✉ Email</button>
@@ -1291,7 +1307,7 @@ function renderRep(){
     if(plansOpen.has(i)&&d.future){ body+=planEditor(d,i); }
   });
   $("dealsBody").innerHTML=body||`<tr><td colspan="13" style="text-align:center;color:var(--muted);padding:18px">${monthFilter?("No deals in "+(monthFilter==="—"?"Unscheduled":monthFilter)+" — clear the filter or add one below."):"No deals — add the rep's first deal below."}</td></tr>`;
-  $("dealsFoot").innerHTML=shown?`<tr><td class="l">${monthFilter?(monthFilter==="—"?"Unscheduled":monthFilter)+" totals":"Totals"}</td><td></td><td></td><td>${fmt(tot.ex)}</td><td></td><td></td><td>${f2(tot.comm)}</td><td></td><td style="color:var(--pos)">${f2(tot.elig)}</td><td style="color:var(--pend)">${f2(tot.pend)}</td><td></td><td></td><td></td></tr>`:"";
+  $("dealsFoot").innerHTML=shown?`<tr><td class="l">${monthFilter?(monthFilter==="—"?"Unscheduled":monthFilter)+" totals":"Totals"}</td><td></td><td></td><td>${fmt(tot.ex)}</td><td></td><td></td><td>${f2(tot.comm)}</td><td></td><td class="tot-pos">${f2(tot.elig)}</td><td class="tot-pend">${f2(tot.pend)}</td><td></td><td></td><td></td></tr>`:"";
   bindDeals(r);
 
   // projection
@@ -1300,14 +1316,19 @@ function renderRep(){
     proj.map(p=>`<tr><td class="l">${ymLabel(p.ym)}</td><td class="r">AED ${f2(p.amt)}</td></tr>`).join("")+
     `<tr><td class="l" style="font-weight:700">Total projected</td><td class="r" style="font-weight:700">AED ${f2(proj.reduce((a,p)=>a+p.amt,0))}</td></tr></tbody></table></div>` : "";
 
-  // monthly commission statement — each month gated + accelerated independently
+  // monthly commission statement — each month gated + accelerated independently; admin confirms payout per month
   const months=R.months;
-  $("monthlyBox").innerHTML = months.length ? `<div class="mstmt"><div class="ph">Monthly commission — each month gated at ${pct(RULES.thr,0)} minimum and accelerated on that month's closures</div>
-    <table><thead><tr><th class="l">Month</th><th>Credited</th><th>Attain</th><th class="l">Status</th><th>Earned</th><th>Eligible</th><th>Pending</th></tr></thead><tbody>`+
-    months.map(mo=>{const M=mo.R; const lbl=mo.month==="—"?"Unscheduled":mo.month; const act=monthFilter===mo.month?" mrow-active":"";
+  let paidSum=0,outSum=0;
+  months.forEach(mo=>{ if(payoutPaid(r,mo.month)) paidSum+=mo.R.eligible; else outSum+=mo.R.eligible; });
+  $("monthlyBox").innerHTML = months.length ? `<div class="mstmt"><div class="ph">Monthly commission — each month gated at ${pct(RULES.thr,0)} minimum and accelerated on that month's closures · click a month to filter</div>
+    <table><thead><tr><th class="l">Month</th><th>Credited</th><th>Attain</th><th class="l">Status</th><th>Earned</th><th>Eligible</th><th>Pending</th><th class="l">Payout</th></tr></thead><tbody>`+
+    months.map(mo=>{const M=mo.R; const lbl=mo.month==="—"?"Unscheduled":mo.month; const act=monthFilter===mo.month?" mrow-active":""; const paid=payoutPaid(r,mo.month);
       const status=M.gated?`<span class="att-pill a-min">below min</span>`:(M.accelEarned>0?`<span class="att-pill a-on">accelerator</span>`:`<span class="att-pill a-below">base</span>`);
-      return `<tr class="mrow${act}" data-m="${mo.month}"><td class="l">${lbl}</td><td>${fmt(M.tgt)}</td><td>${pct(M.attain,0)}</td><td class="l">${status}</td><td>${f2(M.earned)}</td><td style="color:var(--pos)">${f2(M.eligible)}</td><td style="color:var(--pend)">${f2(M.pending)}</td></tr>`;}).join("")+
-    `</tbody><tfoot><tr><td class="l">Total</td><td>${fmt(R.tgt)}</td><td></td><td></td><td>${f2(R.earned)}</td><td style="color:var(--pos)">${f2(R.eligible)}</td><td style="color:var(--pend)">${f2(R.pending)}</td></tr></tfoot></table></div>` : "";
+      const paybtn=`<span class="paypill ${paid?'paid':'unpaid'}" data-pm="${mo.month}" title="Click to mark ${paid?'unpaid':'paid'}">${paid?'✓ Paid':'Pending'}</span>`;
+      return `<tr class="mrow${act}" data-m="${mo.month}"><td class="l">${lbl}</td><td>${fmt(M.tgt)}</td><td>${pct(M.attain,0)}</td><td class="l">${status}</td><td>${f2(M.earned)}</td><td style="color:var(--pos)">${f2(M.eligible)}</td><td style="color:var(--pend)">${f2(M.pending)}</td><td class="l">${paybtn}</td></tr>`;}).join("")+
+    `</tbody><tfoot><tr><td class="l">Total</td><td>${fmt(R.tgt)}</td><td></td><td></td><td>${f2(R.earned)}</td><td class="tot-pos">${f2(R.eligible)}</td><td class="tot-pend">${f2(R.pending)}</td><td class="l"></td></tr></tfoot></table>
+    <div class="paysum"><span>Paid out: <b class="tot-paid">AED ${f2(paidSum)}</b></span><span>Outstanding to pay: <b class="tot-out">AED ${f2(outSum)}</b></span></div></div>` : "";
+  $("monthlyBox").querySelectorAll(".paypill").forEach(p=>p.addEventListener("click",e=>{ e.stopPropagation(); togglePayout(r,p.dataset.pm); renderRep(); }));
   $("monthlyBox").querySelectorAll("tr.mrow").forEach(tr=>tr.addEventListener("click",()=>{ monthFilter = (monthFilter===tr.dataset.m? "" : tr.dataset.m); renderRep(); }));
   $("accelBox").innerHTML="";
 }
@@ -1568,23 +1589,25 @@ function ready(){ return window.jspdf && window.jspdf.jsPDF; }
 function repPDF(r){
   if(!ready()){alert("PDF engine still loading — try again in a second.");return;}
   const {jsPDF}=window.jspdf; const doc=new jsPDF({unit:"pt",format:"a4"});
-  const R=repRoll(r);
+  const R=repRoll(r); const W=doc.internal.pageSize.getWidth();
+  let paidSum=0,outSum=0; R.months.forEach(mo=>{ if(payoutPaid(r,mo.month)) paidSum+=mo.R.eligible; else outSum+=mo.R.eligible; });
   pdfHeader(doc,"Sales Commission Statement",r.name);
   let y=104;
   doc.setFont("helvetica","bold");doc.setFontSize(11);doc.setTextColor(14,22,38);doc.text("Summary",40,y);
   const info=[["Monthly target","AED "+fmt(r.target)],["Active months",String(R.active)],
     ["Total credited sales","AED "+fmt(R.tgt)],["Total earned","AED "+f2(R.earned)],
-    ["Eligible (collected)","AED "+f2(R.eligible)],["Pending on collection","AED "+f2(R.pending)]];
+    ["Eligible (collected)","AED "+f2(R.eligible)],["Pending on collection","AED "+f2(R.pending)],
+    ["Paid out to date","AED "+f2(paidSum)],["Outstanding payout","AED "+f2(outSum)]];
   doc.autoTable({startY:y+4,theme:"plain",styles:{fontSize:10,cellPadding:3},
     body:info,columnStyles:{0:{textColor:[110,118,136]},1:{halign:"right",fontStyle:"bold",textColor:[14,22,38]}}});
   y=doc.lastAutoTable.finalY+18;
   doc.setFont("helvetica","bold");doc.setFontSize(11);doc.setTextColor(14,22,38);doc.text("Monthly breakdown",40,y);
   const mrows=R.months.map(mo=>{const M=mo.R; const st=M.gated?"Below min":(M.accelEarned>0?"Accelerator":"Base");
-    return [mo.month==="—"?"Unscheduled":mo.month, fmt(M.tgt), pct(M.attain,0), st, f2(M.earned), f2(M.eligible), f2(M.pending)];});
-  doc.autoTable({startY:y+6,head:[["Month","Credited","Attain","Status","Earned","Eligible","Pending"]],
-    body:mrows.length?mrows:[["—","","","","","",""]],styles:{fontSize:9,cellPadding:4},
+    return [mo.month==="—"?"Unscheduled":mo.month, fmt(M.tgt), pct(M.attain,0), st, f2(M.earned), f2(M.eligible), f2(M.pending), payoutPaid(r,mo.month)?"Paid":"Pending"];});
+  doc.autoTable({startY:y+6,head:[["Month","Credited","Attain","Status","Earned","Eligible","Pending","Payout"]],
+    body:mrows.length?mrows:[["—","","","","","","",""]],styles:{fontSize:9,cellPadding:4},
     headStyles:{fillColor:[27,38,56],textColor:[255,255,255],fontSize:8.5},
-    foot:[["Total",fmt(R.tgt),"","",f2(R.earned),f2(R.eligible),f2(R.pending)]],footStyles:{fillColor:[14,22,38],textColor:[255,255,255]},
+    foot:[["Total",fmt(R.tgt),"","",f2(R.earned),f2(R.eligible),f2(R.pending),""]],footStyles:{fillColor:[14,22,38],textColor:[255,255,255]},
     columnStyles:{1:{halign:"right"},4:{halign:"right"},5:{halign:"right",fontStyle:"bold",textColor:[17,122,78]},6:{halign:"right"}}});
   y=doc.lastAutoTable.finalY+18;
   doc.setFont("helvetica","bold");doc.setFontSize(11);doc.setTextColor(14,22,38);doc.text("Deals by month",40,y);
@@ -1603,6 +1626,25 @@ function repPDF(r){
       body:proj.map(p=>[ymLabel(p.ym),f2(p.amt)]),styles:{fontSize:9,cellPadding:4},
       headStyles:{fillColor:[27,38,56],textColor:[255,255,255],fontSize:8.5},columnStyles:{1:{halign:"right"}}});
   }
+  y=doc.lastAutoTable.finalY+18;
+  if(y>600){doc.addPage();y=60;}
+  doc.setFont("helvetica","bold");doc.setFontSize(11);doc.setTextColor(14,22,38);doc.text("Commission rules",40,y); y+=14;
+  doc.setFont("helvetica","normal");doc.setFontSize(9);doc.setTextColor(70,80,100);
+  const rules=[
+    "Commission is calculated each month on that month's closed-won deals.",
+    "Base rate: "+pct(RULES.base,1)+" of the net sales value (after "+pct(RULES.vat,0)+" VAT is removed).",
+    "Minimum threshold: a rep must reach "+pct(RULES.thr,0)+" of the monthly target in a month, otherwise no commission is payable for that month.",
+    "Over-achievement accelerator, applied only to credited sales above 100% of the monthly target: "+pct(RULES.a1,1)+" on 100-130%, "+pct(RULES.a2,1)+" on 130-150%, "+pct(RULES.b,1)+" above 150%.",
+    "Paid on collection: eligible commission = commission x collected %. The balance stays pending until the customer pays.",
+    "Referral commission: flat "+pct(RULES.ref,0)+" of net value, also paid on collection."
+  ];
+  rules.forEach(t=>{ const lines=doc.splitTextToSize("•  "+t,W-80); if(y+lines.length*12>805){doc.addPage();y=60;} doc.text(lines,40,y); y+=lines.length*12+3; });
+  y+=8; if(y>720){doc.addPage();y=60;}
+  doc.setFont("helvetica","bold");doc.setFontSize(9.5);doc.setTextColor(14,22,38);doc.text("Participation roles",40,y);
+  const prows=Object.entries(MATRIX).map(([k,m])=>[k,pct(m.target,0)+" of value",pct(m.earn,0),pct(RULES.base*m.earn,2)]);
+  doc.autoTable({startY:y+6,head:[["Role","Target credit","Earning factor","Applicable rate"]],body:prows,
+    styles:{fontSize:8.5,cellPadding:3},headStyles:{fillColor:[27,38,56],textColor:[255,255,255],fontSize:8},
+    columnStyles:{1:{halign:"right"},2:{halign:"right"},3:{halign:"right",fontStyle:"bold"}}});
   pdfFooter(doc);
   doc.save("CoreV_Commission_"+r.name.replace(/\s+/g,"_")+".pdf");
 }
@@ -1665,6 +1707,7 @@ function bindRules(){
   const map=[["r_vat","vat",100],["r_base","base",100],["r_thr","thr",100],["r_b","b",100],["r_a1","a1",100],["r_a2","a2",100],["r_ref","ref",100]];
   map.forEach(([id,key])=>{const el=$(id);el.value=+(RULES[key]*100).toFixed(2);el.addEventListener("input",()=>{RULES[key]=(parseFloat(el.value)||0)/100;renderAll();});});
 }
+loadPayouts();
 bindRules(); renderAll();
 hsInit();
 
