@@ -435,10 +435,10 @@
 .tabnav button .n{font-family:"JetBrains Mono";font-size:10px;opacity:.7;margin-right:5px}
 #tab-costing .agrid{grid-template-columns:repeat(6,1fr)}#tab-commission .agrid{grid-template-columns:repeat(7,1fr)}
 @media (max-width:980px){#tab-costing .agrid{grid-template-columns:repeat(3,1fr)}#tab-commission .agrid{grid-template-columns:repeat(4,1fr)}}
-@media (max-width:560px){#tab-costing .agrid,#tab-commission .agrid{grid-template-columns:repeat(2,1fr)}.tabnav button .n{display:none}}
+@media (max-width:560px){#tab-costing .agrid,#tab-commission .agrid{grid-template-columns:repeat(2,1fr)}.tabnav button .n{display:none}.ver-tag{display:none}}
 
 #authGate{position:fixed;inset:0;z-index:1000;background:radial-gradient(circle at 30% 15%,#17243d,#0a111e 70%);display:flex;align-items:center;justify-content:center;padding:24px}
-.gate-card{background:#fff;border-radius:16px;box-shadow:0 24px 70px rgba(0,0,0,.45);padding:40px 38px;max-width:440px;width:100%;text-align:center}
+.gate-card{background:#fff;border-radius:16px;box-shadow:0 24px 70px rgba(0,0,0,.45);padding:40px 38px;max-width:430px;width:100%;text-align:center}
 .gate-brand .mark{font-family:"Space Grotesk";font-weight:700;font-size:30px;letter-spacing:-.02em;color:#0E1626}
 .gate-brand .mark .v{color:#3B5BDB}
 .gate-brand .gate-sub{display:block;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#6B7688;font-weight:600;margin-top:4px;margin-bottom:20px}
@@ -451,10 +451,9 @@
 .ms-logo i:nth-child(1){background:#F25022}.ms-logo i:nth-child(2){background:#7FBA00}.ms-logo i:nth-child(3){background:#00A4EF}.ms-logo i:nth-child(4){background:#FFB900}
 .gate-alt{margin-top:10px;background:none;border:0;color:#6B7688;font-size:12px;font-weight:600;cursor:pointer;text-decoration:underline}
 .gate-err{display:none;margin-top:16px;background:#F8E7E1;border:1px solid #E8C5BB;color:#A33417;border-radius:8px;padding:10px 13px;font-size:12.5px;line-height:1.5;text-align:left}
-.gate-foot{margin-top:22px;font-size:11px;color:#9AA6B8;letter-spacing:.04em}
-.gate-diag{margin-top:14px;border-top:1px solid #EEF1F6;padding-top:12px;font-size:10.5px;color:#9AA6B8;line-height:1.5;text-align:left}
-.gate-diag code{display:block;margin-top:4px;background:#F4F6F9;border:1px solid #E2E6EE;border-radius:6px;padding:7px 9px;font-family:"JetBrains Mono";font-size:11px;color:#0E1626;word-break:break-all}
-.diag-copy{margin-top:6px;background:none;border:1px solid #E2E6EE;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:600;color:#6B7688;cursor:pointer}
+.gate-foot{margin-top:22px;font-size:11px;color:#9AA6B8;letter-spacing:.06em;text-transform:uppercase;font-weight:600}
+.gate-ver{margin-top:8px;font-size:10px;color:#B6C0D0;font-family:"JetBrains Mono";letter-spacing:.05em}
+.ver-tag{font-family:"JetBrains Mono";font-size:10px;color:#7E8FAE;border:1px solid #2C3A52;border-radius:6px;padding:2px 7px;margin-left:10px;letter-spacing:.04em}
 .userchip{display:flex;align-items:center;gap:9px;margin-left:14px;font-size:13px;color:#C7D3E8;font-weight:600}
 .userchip .uc-dot{width:8px;height:8px;border-radius:50%;background:#3DDC84;box-shadow:0 0 6px #3DDC84}
 .uc-out{cursor:pointer;background:none;border:1px solid #2C3A52;color:#9FB0CC;border-radius:999px;padding:5px 12px;font-size:12px;font-weight:600}
@@ -470,16 +469,14 @@
       <button id="msSignIn" class="ms-btn"><span class="ms-logo"><i></i><i></i><i></i><i></i></span> Sign in with Microsoft</button>
       <button id="altSignIn" class="gate-alt">Having trouble? Try popup sign-in</button>
       <div id="authErr" class="gate-err"></div>
-      <div class="gate-foot">Authorized: Ahmed · Kamal · Sami</div>
-      <div class="gate-diag">If sign-in fails, register this redirect URI in Azure → App registration → Authentication, under the <b>Single-page application</b> platform:
-        <code id="redirUri"></code><button id="copyUri" class="diag-copy">Copy URI</button>
-      </div>
+      <div class="gate-foot">Management access only</div>
+      <div class="gate-ver">v1.0.0 · 2026-06-14</div>
     </div>
   </div>
 
   <div id="appRoot" style="display:none">
   <header class="topbar">
-    <div class="brand"><span class="mark">Core<span class="v">V</span></span><span class="sub">Finance Suite</span></div>
+    <div class="brand"><span class="mark">Core<span class="v">V</span></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.0.0</span></div>
     <nav class="tabnav">
       <button data-tab="tab-costing" class="active"><span class="n">01</span>Costing</button>
       <button data-tab="tab-commission"><span class="n">02</span>Commission</button>
@@ -755,8 +752,8 @@
   function clearLocks(){ try{Object.keys(localStorage).filter(k=>k.indexOf('msal')>=0&&/interaction.status/i.test(k)).forEach(k=>localStorage.removeItem(k));}catch(_){} try{Object.keys(sessionStorage).filter(k=>k.indexOf('msal')>=0).forEach(k=>sessionStorage.removeItem(k));}catch(_){} }
   function fmtErr(e){
     const m=(e&&(e.errorCode||e.message))||String(e||'unknown');
-    if(/9002326|cross-origin token redemption|single[- ]?page/i.test(m)) return '<b>Azure platform mismatch.</b> Register the redirect URI under <b>Single-page application</b> (not Web) in Azure → Authentication. URI below.';
-    if(/AADSTS50011|redirect_uri|reply url|does not match|redirect URI/i.test(m)) return '<b>Redirect URI not registered.</b> Add exactly the URI below in Azure → Authentication → Single-page application.';
+    if(/9002326|cross-origin token redemption|single[- ]?page/i.test(m)) return '<b>Azure platform mismatch.</b> Register the app\'s redirect URI under <b>Single-page application</b> (not Web) in Azure → Authentication.';
+    if(/AADSTS50011|redirect_uri|reply url|does not match|redirect URI/i.test(m)) return '<b>Redirect URI not registered.</b> Add the app\'s exact URL in Azure → Authentication → Single-page application.';
     if(/AADSTS65001|consent|AADSTS90094/i.test(m)) return '<b>Admin consent needed</b> for this app in Azure.';
     if(/interaction_in_progress/i.test(m)){ clearLocks(); return 'A previous sign-in was still in progress — cleared it, click sign in again.'; }
     if(/user_cancelled|user_cancel/i.test(m)) return '';
@@ -764,7 +761,7 @@
   }
   function finish(acct){
     const email=(acct&&acct.username)||''; const nm=nameFor(email);
-    if(!nm){ showErr('Your Microsoft account ('+email+') is not authorized. Access is limited to Ahmed, Kamal and Sami.'); forget(); return; }
+    if(!nm){ showErr('Your Microsoft account ('+email+') is not authorized. Access is limited to management.'); forget(); return; }
     account=acct; clearErr(); unlock(nm);
   }
   function init(){
@@ -785,8 +782,6 @@
       if(/popup_window_error|running in a popup|popup.*block/i.test(msg)){ go(true); return; } const m=fmtErr(e); if(m) showErr(m); }); }
   }
   function signOut(){ try{ inst.logoutRedirect({account,postLogoutRedirectUri:CFG.redirectUri}); }catch(_){ forget(); lock(); } }
-  const ru=$('redirUri'); if(ru) ru.textContent=CFG.redirectUri;
-  const cu=$('copyUri'); if(cu) cu.addEventListener('click',()=>{navigator.clipboard.writeText(CFG.redirectUri).then(()=>{const o=cu.textContent;cu.textContent='✓ copied';setTimeout(()=>cu.textContent=o,1400);});});
   btn.addEventListener('click',()=>go(true));
   altBtn.addEventListener('click',()=>go(false));
   $('signOut').addEventListener('click',signOut);
