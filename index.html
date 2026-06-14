@@ -518,6 +518,9 @@
   .paidprog{font-size:11px;color:var(--muted);text-align:center;min-width:62px;font-family:"Inter";font-weight:600}
   .pp-bar{height:5px;background:var(--line-2);border-radius:3px;margin-top:4px;overflow:hidden}
   .pp-bar i{display:block;height:100%;background:var(--pos)}
+  .oxe-paid{display:inline-flex;align-items:center;gap:7px;cursor:pointer;font-family:"Inter";font-size:12px;font-weight:600;color:var(--muted)}
+  .oxe-paid input{width:16px;height:16px;cursor:pointer;accent-color:var(--pos)}
+  .oxe-paidtxt.done{color:var(--pos)}
   .rm-filters{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;margin:0 0 14px}
   .rm-filters .ff label{display:block;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:5px}
   .rm-filters select{border:1px solid var(--line);background:var(--card);border-radius:7px;padding:8px 10px;font-family:"Inter";font-size:13px;font-weight:600;color:var(--ink);outline:none;min-width:150px}
@@ -639,13 +642,13 @@
       <button id="altSignIn" class="gate-alt">Having trouble? Try popup sign-in</button>
       <div id="authErr" class="gate-err"></div>
       <div class="gate-foot">Management access only</div>
-      <div class="gate-ver">v1.23.0 · 2026-06-14</div>
+      <div class="gate-ver">v1.24.0 · 2026-06-14</div>
     </div>
   </div>
 
   <div id="appRoot" style="display:none">
   <header class="topbar">
-    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.23.0</span></div>
+    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.24.0</span></div>
     <nav class="tabnav">
       <button data-tab="tab-costing" class="active"><span class="n">01</span>Costing</button>
       <button data-tab="tab-commission"><span class="n">02</span>Commission</button>
@@ -2593,7 +2596,7 @@ function parseMonth(s){
 }
 
 function defaultDef(){ return [ {name:"PO / Contract", pct:1.0, off:0} ]; }
-let CTRL={soon:7, def:defaultDef(), perDeal:{}, oxeRatio:0.50, oxeOv:{}, oxeItems:{}};
+let CTRL={soon:7, def:defaultDef(), perDeal:{}, oxeRatio:0.50, oxeOv:{}, oxeItems:{}, oxePaid:{}};
 let RECV_OV={};            // overrides keyed by milestone
 let OXE_OV={};             // OxeFit milestone paid overrides (local)
 let FILTER={cust:"",month:"",status:""};
@@ -2644,16 +2647,16 @@ function oxefitGroups(){
   const store=(window.CoreVStore&&window.CoreVStore.deals)||[];
   return store.filter(d=>d.gross).map(d=>{
     const k=dealKey(d), ms=dealMs(d), anchor=parseMonth(d.month), cost=oxeCostOf(d); let cum=0;
+    const dealOv = CTRL.oxePaid ? CTRL.oxePaid[k] : undefined;   // true=paid, false=unpaid, undefined=auto (back-to-back)
     const rows=ms.map((m,mi)=>{
       const pct=(+m.pct)||0; cum+=pct;
       const ckey=k+"|"+mi, cov=RECV_OV[ckey]||{};
       const due = cov.due ? new Date(cov.due+"T00:00:00") : addDays(anchor,(+m.off)||0);   // mirror client milestone date
-      const okey="oxe:"+ckey, oov=OXE_OV[okey]||{};
       const autoPaid=(d.collected||0) >= cum-1e-9;                                          // back-to-back: pay OxeFit as client collects
-      const paid = oov.paid!=null ? oov.paid : autoPaid;
-      return {key:okey,name:m.name,pct,amount:cost*pct,due,paid};
+      const paid = (dealOv===true) ? true : (dealOv===false ? false : autoPaid);
+      return {key:"oxe:"+ckey,name:m.name,pct,amount:cost*pct,due,paid};
     });
-    return {deal:d, key:k, cost, rows};
+    return {deal:d, key:k, cost, paidOverride:dealOv, rows};
   });
 }
 function oxefitPayables(){
@@ -2811,9 +2814,11 @@ function renderOxe(){
     const costVal = (src==="devices")
       ? `<div class="oxe-derived">${fmt(v.totalCost)}</div><div class="oxe-devnote">${items.map(it=>oxeName(it.sku)+" ×"+((+it.qty)||0)).join(" · ")}</div>`
       : `<input class="rm-in oxe-cost" type="number" data-dk="${encodeURIComponent(g.key)}" value="${Math.round(v.totalCost)}" title="OxeFit cost for this deal">`;
-    const paidCell = (v.total>0 && v.paidCount>=v.total)
-      ? `<span class="st paid">Paid</span>`
-      : `<div class="paidprog"><span>${v.paidCount} / ${v.total}</span><div class="pp-bar"><i style="width:${v.total?Math.round(v.paidCount/v.total*100):0}%"></i></div></div>`;
+    const fullyPaid = (v.total>0 && v.paidCount>=v.total);
+    const paidCell = `<label class="oxe-paid" title="Mark OxeFit as paid for this deal">
+        <input type="checkbox" class="oxe-paidchk" data-dk="${encodeURIComponent(g.key)}" ${fullyPaid?"checked":""}>
+        <span class="oxe-paidtxt ${fullyPaid?'done':''}">${fullyPaid?"Paid":v.paidCount+" / "+v.total}</span>
+      </label>`;
     body+=`<tr class="oxe-row" data-dk="${encodeURIComponent(g.key)}">
       <td class="l"><div class="dg-cust">${d.customer||"—"}</div><div class="dg-meta">${d.month||""}</div></td>
       <td class="l" style="color:var(--muted)">${d.rep||"—"}</td>
@@ -2833,6 +2838,9 @@ function renderOxe(){
   }));
   $("rm-oxeBody").querySelectorAll(".oxe-dev").forEach(b=>b.addEventListener("click",e=>{
     openOxeModal(decodeURIComponent(e.currentTarget.dataset.dk));
+  }));
+  $("rm-oxeBody").querySelectorAll(".oxe-paidchk").forEach(c=>c.addEventListener("change",e=>{
+    const k=decodeURIComponent(e.target.dataset.dk); CTRL.oxePaid=CTRL.oxePaid||{}; CTRL.oxePaid[k]=e.target.checked; renderOxe(); renderDashboard(); rmChanged();
   }));
 }
 
@@ -3039,12 +3047,14 @@ if(window.CoreVSync) window.CoreVSync.register('reminders',
       if(typeof c.oxeRatio==='number') CTRL.oxeRatio=c.oxeRatio;
       if(c.oxeOv && typeof c.oxeOv==='object') CTRL.oxeOv=c.oxeOv;
       if(c.oxeItems && typeof c.oxeItems==='object') CTRL.oxeItems=c.oxeItems;
+      if(c.oxePaid && typeof c.oxePaid==='object') CTRL.oxePaid=c.oxePaid;
     }
     if(!Array.isArray(CTRL.def)) CTRL.def=defaultDef();
     if(!CTRL.perDeal) CTRL.perDeal={};
     if(typeof CTRL.oxeRatio!=='number') CTRL.oxeRatio=0.50;
     if(!CTRL.oxeOv) CTRL.oxeOv={};
     if(!CTRL.oxeItems) CTRL.oxeItems={};
+    if(!CTRL.oxePaid) CTRL.oxePaid={};
     $("rm_soon").value=CTRL.soon;
     renderAll();
   }catch(_){} });
