@@ -527,13 +527,13 @@
       <button id="altSignIn" class="gate-alt">Having trouble? Try popup sign-in</button>
       <div id="authErr" class="gate-err"></div>
       <div class="gate-foot">Management access only</div>
-      <div class="gate-ver">v1.6.2 · 2026-06-14</div>
+      <div class="gate-ver">v1.6.3 · 2026-06-14</div>
     </div>
   </div>
 
   <div id="appRoot" style="display:none">
   <header class="topbar">
-    <div class="brand"><span class="mark">Core<span class="v">V</span></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.6.2</span></div>
+    <div class="brand"><span class="mark">Core<span class="v">V</span></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.6.3</span></div>
     <nav class="tabnav">
       <button data-tab="tab-costing" class="active"><span class="n">01</span>Costing</button>
       <button data-tab="tab-commission"><span class="n">02</span>Commission</button>
@@ -837,23 +837,27 @@ window.CoreVSync = {
     clearTimeout(this._t); this._t=setTimeout(()=>{ try{ window.CoreVCloud&&window.CoreVCloud.save(); }catch(_){} },1500); }
 };
 window.CoreVCloud = (function(){
-  const CFG={ user:'demo@oxefit.com', filePath:'/OXEFIT/corev-finance-suite.json' };
+  // Shared mailbox/OneDrive — must be in the SAME tenant as the sign-in (core-velocity.com).
+  // The Sales Tracker uses demo@core-velocity.com; a cross-tenant address (e.g. *.oxefit.com)
+  // is NOT resolvable via /users/{upn} and will report "user not found".
+  const CFG={ user:'demo@core-velocity.com', filePath:'/OXEFIT/corev-finance-suite.json' };
   const LS='corev_suite_state';
   const FNAME=(CFG.filePath.split('/').pop()||'corev-finance-suite.json').toLowerCase();
   const FOLDER=(CFG.filePath.replace(/^\/+/,'').split('/')[0])||'OXEFIT';
   const enc=encodeURIComponent;
-  let getToken=null, ref=null;
+  let getToken=null, ref=null, lastDetail='';
   function chip(){ return document.getElementById('cloudChip'); }
-  function setChip(state,txt){ const c=chip(); if(!c)return; c.className='cloudchip '+state; const t=c.querySelector('.cc-t'); if(t)t.textContent=txt; }
+  function setChip(state,txt,detail){ const c=chip(); if(!c)return; c.className='cloudchip '+state; const t=c.querySelector('.cc-t'); if(t)t.textContent=txt; if(detail!==undefined){ lastDetail=detail; c.title=detail||'Shared drive — click to refresh'; if(detail) try{console.warn('[CoreVCloud] '+detail);}catch(_){} } }
   const rootUrl=()=>'https://graph.microsoft.com/v1.0/users/'+enc(CFG.user)+'/drive/root:'+CFG.filePath+':/content';
   const itemUrl=r=>'https://graph.microsoft.com/v1.0/drives/'+enc(r.driveId)+'/items/'+enc(r.itemId)+'/content';
+  async function gerr(where,res){ let code='',msg=''; try{ const j=await res.clone().json(); code=(j.error&&j.error.code)||''; msg=(j.error&&j.error.message)||''; }catch(_){} const e=new Error(where+': '+res.status+(code?' '+code:'')+(msg?' — '+msg.slice(0,140):'')); e.status=res.status; e.code=code; return e; }
   function loadLocal(){ try{ return JSON.parse(localStorage.getItem(LS)||'null'); }catch(_){ return null; } }
   function saveLocalEnv(){ try{ const env=Object.assign({_app:'corev-finance',_v:1,_meta:{ts:Date.now(),local:true}}, window.CoreVSync.collect()); localStorage.setItem(LS,JSON.stringify(env)); }catch(_){} }
   async function ensureFolder(tok){
     try{ const res=await fetch('https://graph.microsoft.com/v1.0/users/'+enc(CFG.user)+'/drive/root/children',
       {method:'POST',headers:{Authorization:'Bearer '+tok,'Content-Type':'application/json'},
        body:JSON.stringify({name:FOLDER,folder:{},'@microsoft.graph.conflictBehavior':'fail'})});
-      return res.ok||res.status===409; }catch(_){ return false; }
+      if(res.ok||res.status===409) return true; lastDetail=(await gerr('ensureFolder',res)).message; return false; }catch(_){ return false; }
   }
   async function resolveRef(tok,force){
     if(ref&&!force)return ref;
@@ -872,39 +876,38 @@ window.CoreVCloud = (function(){
     const r=await resolveRef(tok);
     if(r){ let res=await fetch(itemUrl(r),{headers:{Authorization:'Bearer '+tok}});
       if(res.status===404){ const f=await resolveRef(tok,true); if(f)res=await fetch(itemUrl(f),{headers:{Authorization:'Bearer '+tok}}); }
-      if(res.status===404)return null; if(res.status===403){const e=new Error('403');e.code=403;throw e;} if(!res.ok)throw new Error('HTTP '+res.status); return res.json(); }
+      if(res.status===404)return null; if(!res.ok)throw await gerr('read(shared)',res); return res.json(); }
     const res=await fetch(rootUrl(),{headers:{Authorization:'Bearer '+tok}});
-    if(res.status===404)return null; if(res.status===403){const e=new Error('403');e.code=403;throw e;} if(!res.ok)throw new Error('HTTP '+res.status); return res.json();
+    if(res.status===404)return null; if(!res.ok)throw await gerr('read',res); return res.json();
   }
   async function save(){
-    saveLocalEnv();                                  // always keep a local copy first
+    saveLocalEnv();
     if(!getToken){ return; }
     setChip('syncing','Saving…');
     try{ const tok=await getToken();
       const env=Object.assign({_app:'corev-finance',_v:1,_meta:{ts:Date.now()}}, window.CoreVSync.collect());
       let r=ref||await resolveRef(tok); let url=r?itemUrl(r):rootUrl();
       let res=await fetch(url,{method:'PUT',headers:{Authorization:'Bearer '+tok,'Content-Type':'application/json'},body:JSON.stringify(env)});
-      if(res.status===404){ ref=null; await ensureFolder(tok);   // create /OXEFIT then seed the file
+      if(res.status===404){ ref=null; await ensureFolder(tok);
         res=await fetch(rootUrl(),{method:'PUT',headers:{Authorization:'Bearer '+tok,'Content-Type':'application/json'},body:JSON.stringify(env)}); }
-      if(res.status===403){ setChip('err','No drive access'); return; }
-      if(!res.ok)throw new Error('HTTP '+res.status);
-      setChip('ok','Synced');
-    }catch(e){ setChip('err','Offline · saved on device'); }
+      if(!res.ok){ const e=await gerr('save',res); setChip('err', e.status===403?'No drive access':'Sync failed', e.message); return; }
+      setChip('ok','Synced','Saved to shared drive');
+    }catch(e){ setChip('err','Offline', (e&&e.message)||'token/network error'); }
   }
   async function doLoad(initial){
-    if(initial){ const local=loadLocal(); if(local){ window.CoreVSync.apply(local); } }  // instant restore — refresh never loses data
+    if(initial){ const local=loadLocal(); if(local){ window.CoreVSync.apply(local); } }
     window.CoreVSync._ready=true;
-    if(!getToken){ setChip('err','On device only'); return; }
+    if(!getToken){ setChip('err','On device only','No Microsoft token'); return; }
     setChip('syncing', initial?'Connecting…':'Syncing…');
     try{ const tok=await getToken(); const remote=await readRemote(tok);
-      if(remote&&remote._app==='corev-finance'){ window.CoreVSync.apply(remote); saveLocalEnv(); setChip('ok','Synced'); }
-      else { setChip('ok','Shared drive ready'); if(initial) save(); }   // no file yet → seed it (creates /OXEFIT + json)
-    }catch(e){ setChip('err',(e&&e.code===403)?'No drive access':'Offline · saved on device'); }
+      if(remote&&remote._app==='corev-finance'){ window.CoreVSync.apply(remote); saveLocalEnv(); setChip('ok','Synced','Loaded from shared drive'); }
+      else { setChip('ok','Shared drive ready','No file yet — seeding'); if(initial) save(); }
+    }catch(e){ setChip('err', (e&&e.status===403)?'No drive access':'Offline', (e&&e.message)||'token/network error'); }
   }
   return {
     async start(tokenFn){ getToken=tokenFn; const c=chip(); if(c&&!c._wired){ c._wired=true; c.addEventListener('click',()=>doLoad(false)); } await doLoad(true); },
     load(){ return doLoad(false); },
-    save, saveLocal:saveLocalEnv
+    save, saveLocal:saveLocalEnv, _detail:()=>lastDetail
   };
 })();
 </script>
