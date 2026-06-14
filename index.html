@@ -486,7 +486,7 @@
 .tabnav button .n{font-family:"JetBrains Mono";font-size:10px;opacity:.7;margin-right:5px}
 #tab-costing .agrid{grid-template-columns:repeat(6,1fr)}#tab-commission .agrid{grid-template-columns:repeat(7,1fr)}
 @media (max-width:980px){#tab-costing .agrid{grid-template-columns:repeat(3,1fr)}#tab-commission .agrid{grid-template-columns:repeat(4,1fr)}}
-@media (max-width:560px){#tab-costing .agrid,#tab-commission .agrid{grid-template-columns:repeat(2,1fr)}.tabnav button .n{display:none}.ver-tag{display:none}}
+@media (max-width:560px){#tab-costing .agrid,#tab-commission .agrid{grid-template-columns:repeat(2,1fr)}.tabnav button .n{display:none}.ver-tag,.cloudchip .cc-t{display:none}}
 
 #authGate{position:fixed;inset:0;z-index:1000;background:radial-gradient(circle at 30% 15%,#17243d,#0a111e 70%);display:flex;align-items:center;justify-content:center;padding:24px}
 .gate-card{background:#fff;border-radius:16px;box-shadow:0 24px 70px rgba(0,0,0,.45);padding:40px 38px;max-width:430px;width:100%;text-align:center}
@@ -505,10 +505,16 @@
 .gate-foot{margin-top:22px;font-size:11px;color:#9AA6B8;letter-spacing:.06em;text-transform:uppercase;font-weight:600}
 .gate-ver{margin-top:8px;font-size:10px;color:#B6C0D0;font-family:"JetBrains Mono";letter-spacing:.05em}
 .ver-tag{font-family:"JetBrains Mono";font-size:10px;color:#7E8FAE;border:1px solid #2C3A52;border-radius:6px;padding:2px 7px;margin-left:10px;letter-spacing:.04em}
-.userchip{display:flex;align-items:center;gap:9px;margin-left:14px;font-size:13px;color:#C7D3E8;font-weight:600}
+.userchip{display:flex;align-items:center;gap:9px;margin-left:12px;font-size:13px;color:#C7D3E8;font-weight:600}
 .userchip .uc-dot{width:8px;height:8px;border-radius:50%;background:#3DDC84;box-shadow:0 0 6px #3DDC84}
 .uc-out{cursor:pointer;background:none;border:1px solid #2C3A52;color:#9FB0CC;border-radius:999px;padding:5px 12px;font-size:12px;font-weight:600}
 .uc-out:hover{color:#fff;border-color:#fff}
+.cloudchip{display:inline-flex;align-items:center;gap:7px;margin-left:12px;background:none;border:1px solid #2C3A52;color:#9FB0CC;border-radius:999px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:"Inter"}
+.cloudchip:hover{border-color:#fff;color:#fff}
+.cloudchip .cc-dot{width:8px;height:8px;border-radius:50%;background:#7E8FAE;flex:none}
+.cloudchip.syncing .cc-dot{background:#F6C760}
+.cloudchip.ok .cc-dot{background:#3DDC84;box-shadow:0 0 6px #3DDC84}
+.cloudchip.err .cc-dot{background:#E5564B}
 </style>
 </head>
 <body>
@@ -521,18 +527,19 @@
       <button id="altSignIn" class="gate-alt">Having trouble? Try popup sign-in</button>
       <div id="authErr" class="gate-err"></div>
       <div class="gate-foot">Management access only</div>
-      <div class="gate-ver">v1.4.0 · 2026-06-14</div>
+      <div class="gate-ver">v1.5.0 · 2026-06-14</div>
     </div>
   </div>
 
   <div id="appRoot" style="display:none">
   <header class="topbar">
-    <div class="brand"><span class="mark">Core<span class="v">V</span></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.4.0</span></div>
+    <div class="brand"><span class="mark">Core<span class="v">V</span></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.5.0</span></div>
     <nav class="tabnav">
       <button data-tab="tab-costing" class="active"><span class="n">01</span>Costing</button>
       <button data-tab="tab-commission"><span class="n">02</span>Commission</button>
       <button data-tab="tab-reminders"><span class="n">03</span>Reminders</button>
     </nav>
+    <button id="cloudChip" class="cloudchip" title="Shared drive — click to refresh"><span class="cc-dot"></span><span class="cc-t">Sync</span></button>
     <div id="userChip" class="userchip" style="display:none"><span class="uc-dot"></span><span id="userName"></span><button id="signOut" class="uc-out">Sign out</button></div>
   </header>
 
@@ -819,19 +826,91 @@
   </div>
 
 <script>
+window.CoreVSync = {
+  _mods:{}, _ready:false, _t:null,
+  register(key,get,set){ this._mods[key]={get,set}; },
+  collect(){ const o={}; for(const k in this._mods){ try{o[k]=this._mods[k].get();}catch(_){} } return o; },
+  apply(env){ if(!env||typeof env!=='object')return; for(const k in this._mods){ if(env[k]!==undefined){ try{this._mods[k].set(env[k]);}catch(_){} } } },
+  changed(){ if(!this._ready||!window.CoreVCloud)return; clearTimeout(this._t); this._t=setTimeout(()=>window.CoreVCloud.save(),1500); }
+};
+window.CoreVCloud = (function(){
+  const CFG={ user:'demo@oxefit.com', filePath:'/OXEFIT/corev-finance-suite.json' };
+  const SCOPES=['Files.ReadWrite.All','User.Read'];
+  const FNAME=(CFG.filePath.split('/').pop()||'corev-finance-suite.json').toLowerCase();
+  let getToken=null, ref=null;
+  function chip(){ return document.getElementById('cloudChip'); }
+  function setChip(state,txt){ const c=chip(); if(!c)return; c.className='cloudchip '+state; const t=c.querySelector('.cc-t'); if(t)t.textContent=txt; }
+  const rootUrl=()=>'https://graph.microsoft.com/v1.0/users/'+encodeURIComponent(CFG.user)+'/drive/root:'+CFG.filePath+':/content';
+  const itemUrl=r=>'https://graph.microsoft.com/v1.0/drives/'+encodeURIComponent(r.driveId)+'/items/'+encodeURIComponent(r.itemId)+'/content';
+  async function resolveRef(tok,force){
+    if(ref&&!force)return ref;
+    try{ const res=await fetch('https://graph.microsoft.com/v1.0/me/drive/sharedWithMe',{headers:{Authorization:'Bearer '+tok}});
+      if(!res.ok)return null; const body=await res.json(); const items=(body&&body.value)||[];
+      for(const it of items){ const ri=it.remoteItem||it; const name=(it.name||ri.name||'').toLowerCase();
+        const driveId=ri.parentReference&&ri.parentReference.driveId, itemId=ri.id; if(!driveId||!itemId)continue;
+        if(name===FNAME){ ref={driveId,itemId}; return ref; }
+        if(ri.folder){ try{ const ch=await fetch('https://graph.microsoft.com/v1.0/drives/'+encodeURIComponent(driveId)+'/items/'+encodeURIComponent(itemId)+'/children',{headers:{Authorization:'Bearer '+tok}});
+          if(ch.ok){ const kids=await ch.json(); const hit=(kids.value||[]).find(k=>(k.name||'').toLowerCase()===FNAME); if(hit){ ref={driveId,itemId:hit.id}; return ref; } } }catch(_){} }
+      }
+    }catch(_){}
+    return null;
+  }
+  async function readRemote(tok){
+    const r=await resolveRef(tok);
+    if(r){ let res=await fetch(itemUrl(r),{headers:{Authorization:'Bearer '+tok}});
+      if(res.status===404){ const f=await resolveRef(tok,true); if(f)res=await fetch(itemUrl(f),{headers:{Authorization:'Bearer '+tok}}); }
+      if(res.status===404)return null; if(res.status===403){const e=new Error('403');e.code=403;throw e;} if(!res.ok)throw new Error('HTTP '+res.status); return res.json(); }
+    const res=await fetch(rootUrl(),{headers:{Authorization:'Bearer '+tok}});
+    if(res.status===404)return null; if(res.status===403){const e=new Error('403');e.code=403;throw e;} if(!res.ok)throw new Error('HTTP '+res.status); return res.json();
+  }
+  async function doLoad(initial){
+    if(!getToken)return; setChip('syncing', initial?'Connecting…':'Syncing…');
+    try{ const tok=await getToken(); const remote=await readRemote(tok);
+      if(remote&&remote._app==='corev-finance'){ window.CoreVSync.apply(remote); }
+      window.CoreVSync._ready=true; setChip('ok', remote? 'Synced':'Shared drive ready');
+    }catch(e){ window.CoreVSync._ready=true; setChip('err', (e&&e.code===403)?'No drive access':'Offline'); }
+  }
+  return {
+    async start(tokenFn){
+      getToken=tokenFn;
+      const c=chip(); if(c&&!c._wired){ c._wired=true; c.addEventListener('click',()=>doLoad(false)); }
+      await doLoad(true);
+    },
+    load(){ return doLoad(false); },
+    async save(){ if(!getToken)return; setChip('syncing','Saving…');
+      try{ const tok=await getToken();
+        const env=Object.assign({_app:'corev-finance',_v:1,_meta:{ts:Date.now()}}, window.CoreVSync.collect());
+        let r=ref||await resolveRef(tok); let url=r?itemUrl(r):rootUrl();
+        let res=await fetch(url,{method:'PUT',headers:{Authorization:'Bearer '+tok,'Content-Type':'application/json'},body:JSON.stringify(env)});
+        if(res.status===404&&r){ ref=null; res=await fetch(rootUrl(),{method:'PUT',headers:{Authorization:'Bearer '+tok,'Content-Type':'application/json'},body:JSON.stringify(env)}); }
+        if(res.status===403){ setChip('err','No drive access'); return; }
+        if(!res.ok)throw new Error('HTTP '+res.status); setChip('ok','Synced');
+      }catch(e){ setChip('err','Save failed'); }
+    }
+  };
+})();
+</script>
+<script>
 (function(){
   const CFG={clientId:'cd1b7f5f-5ff9-4066-ab4f-06f270a94fcb',authority:'https://login.microsoftonline.com/core-velocity.com',redirectUri:location.origin+location.pathname};
   const ALLOWED={'ahmed@core-velocity.com':'Ahmed','sami@core-velocity.com':'Sami','kamal@core-velocity.com':'Kamal'};
+  const GRAPH_SCOPES=['Files.ReadWrite.All','User.Read'];
   const $=id=>document.getElementById(id);
   const gate=$('authGate'),app=$('appRoot'),errEl=$('authErr'),btn=$('msSignIn'),altBtn=$('altSignIn'),chip=$('userChip'),nameEl=$('userName');
   let inst=null,account=null;
   const nameFor=e=>ALLOWED[(e||'').toLowerCase().trim()]||null;
   const showErr=m=>{errEl.innerHTML=m;errEl.style.display='block';};
   const clearErr=()=>{errEl.style.display='none';};
-  function unlock(name){ gate.style.display='none'; app.style.display='block'; nameEl.textContent=name; chip.style.display='flex'; }
+  function startCloud(){ try{ if(window.CoreVCloud) window.CoreVCloud.start(getGraphToken); }catch(_){} }
+  function unlock(name){ gate.style.display='none'; app.style.display='block'; nameEl.textContent=name; chip.style.display='flex'; startCloud(); }
   function lock(){ gate.style.display='flex'; app.style.display='none'; chip.style.display='none'; }
   function forget(){ try{Object.keys(localStorage).filter(k=>k.indexOf('msal.')===0).forEach(k=>localStorage.removeItem(k));}catch(_){} account=null; }
   function clearLocks(){ try{Object.keys(localStorage).filter(k=>k.indexOf('msal')>=0&&/interaction.status/i.test(k)).forEach(k=>localStorage.removeItem(k));}catch(_){} try{Object.keys(sessionStorage).filter(k=>k.indexOf('msal')>=0).forEach(k=>sessionStorage.removeItem(k));}catch(_){} }
+  async function getGraphToken(){
+    const req={scopes:GRAPH_SCOPES,account};
+    try{ const r=await inst.acquireTokenSilent(req); return r.accessToken; }
+    catch(e){ try{ const r=await inst.acquireTokenPopup(req); return r.accessToken; }catch(pe){ try{await inst.acquireTokenRedirect(req);}catch(_){} throw pe; } }
+  }
   function fmtErr(e){
     const m=(e&&(e.errorCode||e.message))||String(e||'unknown');
     if(/9002326|cross-origin token redemption|single[- ]?page/i.test(m)) return '<b>Azure platform mismatch.</b> Register the app\'s redirect URI under <b>Single-page application</b> (not Web) in Azure → Authentication.';
@@ -1020,6 +1099,7 @@ function render(){
 
   renderKPIs();
   bindCells();
+  if(window.CoreVSync) window.CoreVSync.changed();
 }
 
 function renderKPIs(){
@@ -1102,6 +1182,9 @@ $("resetBtn").addEventListener("click", ()=>{
 
 bindGlobals();
 render();
+if(window.CoreVSync) window.CoreVSync.register('costing',
+  ()=>({G,DATA,SVC}),
+  env=>{ try{ if(env.G)G=env.G; if(Array.isArray(env.DATA))DATA=env.DATA; if(env.SVC&&Array.isArray(env.SVC.rows))SVC=env.SVC; bindGlobals(); render(); }catch(_){} });
 
 })();</script>
 <script>(function(){
@@ -1406,6 +1489,7 @@ function publishStore(){
   const deals=[];
   REPS.forEach(r=>r.deals.forEach(d=>deals.push({rep:r.name,customer:d.cust,gross:d.gross,collected:effColl(d),month:d.month||"",future:!!d.future})));
   window.CoreVStore={deals,ts:Date.now()}; window.dispatchEvent(new CustomEvent('corev:store'));
+  if(window.CoreVSync) window.CoreVSync.changed();
 }
 function renderAll(){ renderMatrix(); renderSummary(); renderTabs(); renderRep(); renderRefs(); publishStore(); }
 
@@ -1710,6 +1794,14 @@ function bindRules(){
 loadPayouts();
 bindRules(); renderAll();
 hsInit();
+if(window.CoreVSync) window.CoreVSync.register('commission',
+  ()=>({RULES,MATRIX,REPS,REFS,PAYOUTS}),
+  env=>{ try{
+    if(env.RULES)RULES=env.RULES; if(env.MATRIX)MATRIX=env.MATRIX;
+    if(Array.isArray(env.REPS))REPS=env.REPS; if(Array.isArray(env.REFS))REFS=env.REFS;
+    if(env.PAYOUTS){PAYOUTS=env.PAYOUTS; savePayouts();}
+    if(sel>=REPS.length)sel=0; bindRules(); renderAll();
+  }catch(_){} });
 
 })();</script>
 <script>(function(){
@@ -1878,10 +1970,10 @@ function renderPay(){
       if(k==="amount") PAY[i][k]=parseFloat(e.target.value)||0;
       else if(k==="paid") PAY[i][k]=e.target.checked;
       else PAY[i][k]=e.target.value;
-      renderPay(); renderDashboard();
+      renderPay(); renderDashboard(); rmChanged();
     });
   });
-  $("rm-payBody").querySelectorAll(".del").forEach(b=>b.addEventListener("click",e=>{PAY.splice(+e.target.dataset.i,1);renderPay();renderDashboard();}));
+  $("rm-payBody").querySelectorAll(".del").forEach(b=>b.addEventListener("click",e=>{PAY.splice(+e.target.dataset.i,1);renderPay();renderDashboard();rmChanged();}));
 }
 
 function syncedNote(){
@@ -1890,15 +1982,20 @@ function syncedNote(){
 }
 function renderAll(){ syncedNote(); renderDashboard(); renderRecv(); renderPay(); }
 
-$("rm-addPay").addEventListener("click",()=>{PAY.push({payee:"New payee",desc:"",amount:0,due:iso(addDays(today,14)),recur:"One-time",paid:false});renderPay();renderDashboard();});
+$("rm-addPay").addEventListener("click",()=>{PAY.push({payee:"New payee",desc:"",amount:0,due:iso(addDays(today,14)),recur:"One-time",paid:false});renderPay();renderDashboard();rmChanged();});
 $("rm-resync").addEventListener("click",renderAll);
 [["rm_soon","soon"]].forEach(()=>{});
 $("rm_soon").value=CTRL.soon; $("rm_off1").value=CTRL.off[0]; $("rm_off2").value=CTRL.off[1]; $("rm_off3").value=CTRL.off[2];
-$("rm_soon").addEventListener("input",e=>{CTRL.soon=parseInt(e.target.value)||0;renderAll();});
-$("rm_off1").addEventListener("input",e=>{CTRL.off[0]=parseInt(e.target.value)||0;renderAll();});
-$("rm_off2").addEventListener("input",e=>{CTRL.off[1]=parseInt(e.target.value)||0;renderAll();});
-$("rm_off3").addEventListener("input",e=>{CTRL.off[2]=parseInt(e.target.value)||0;renderAll();});
+$("rm_soon").addEventListener("input",e=>{CTRL.soon=parseInt(e.target.value)||0;renderAll();rmChanged();});
+$("rm_off1").addEventListener("input",e=>{CTRL.off[0]=parseInt(e.target.value)||0;renderAll();rmChanged();});
+$("rm_off2").addEventListener("input",e=>{CTRL.off[1]=parseInt(e.target.value)||0;renderAll();rmChanged();});
+$("rm_off3").addEventListener("input",e=>{CTRL.off[2]=parseInt(e.target.value)||0;renderAll();rmChanged();});
 window.addEventListener("corev:store",renderAll);
+
+function rmChanged(){ if(window.CoreVSync) window.CoreVSync.changed(); }
+if(window.CoreVSync) window.CoreVSync.register('reminders',
+  ()=>({PAY,CTRL}),
+  env=>{ try{ if(Array.isArray(env.PAY))PAY=env.PAY; if(env.CTRL&&Array.isArray(env.CTRL.off))CTRL=env.CTRL; renderAll(); }catch(_){} });
 
 renderAll();
 
