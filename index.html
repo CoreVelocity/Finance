@@ -509,6 +509,15 @@
   .oxe-unit,.oxe-line{width:80px;text-align:right;font-family:"JetBrains Mono";font-size:12.5px;font-weight:600;color:var(--muted)}
   .oxe-line{color:var(--ink)}
   .oxe-dsel{font-family:"Inter";font-size:13px}
+  .oxe-row td{vertical-align:middle}
+  .agree{font-size:11.5px;color:#41506A;background:#EEF1F6;border-radius:6px;padding:4px 9px;display:inline-block;line-height:1.5;font-family:"Inter";font-weight:500}
+  .oxe-costwrap{display:flex;align-items:center;gap:10px;justify-content:flex-end}
+  .oxe-costval{display:flex;flex-direction:column;gap:2px;align-items:flex-end}
+  .oxe-devnote{font-size:10.5px;color:var(--muted);max-width:170px;text-align:right;line-height:1.35;font-family:"Inter"}
+  .oxe-dev{padding:5px 10px;font-size:11.5px;white-space:nowrap}
+  .paidprog{font-size:11px;color:var(--muted);text-align:center;min-width:62px;font-family:"Inter";font-weight:600}
+  .pp-bar{height:5px;background:var(--line-2);border-radius:3px;margin-top:4px;overflow:hidden}
+  .pp-bar i{display:block;height:100%;background:var(--pos)}
   .rm-filters{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;margin:0 0 14px}
   .rm-filters .ff label{display:block;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:5px}
   .rm-filters select{border:1px solid var(--line);background:var(--card);border-radius:7px;padding:8px 10px;font-family:"Inter";font-size:13px;font-weight:600;color:var(--ink);outline:none;min-width:150px}
@@ -630,13 +639,13 @@
       <button id="altSignIn" class="gate-alt">Having trouble? Try popup sign-in</button>
       <div id="authErr" class="gate-err"></div>
       <div class="gate-foot">Management access only</div>
-      <div class="gate-ver">v1.22.0 · 2026-06-14</div>
+      <div class="gate-ver">v1.23.0 · 2026-06-14</div>
     </div>
   </div>
 
   <div id="appRoot" style="display:none">
   <header class="topbar">
-    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.22.0</span></div>
+    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.23.0</span></div>
     <nav class="tabnav">
       <button data-tab="tab-costing" class="active"><span class="n">01</span>Costing</button>
       <button data-tab="tab-commission"><span class="n">02</span>Commission</button>
@@ -1096,8 +1105,9 @@
       <div class="panel scroll" style="margin-top:12px">
         <table class="data">
           <thead><tr>
-            <th class="l">OxeFit — by client deal</th><th class="l"></th><th>OxeFit cost</th>
-            <th class="l">Due date</th><th>Status</th><th>Paid</th>
+            <th class="l">Deal</th><th class="l">Sales rep</th><th>Closed revenue</th>
+            <th class="l">Agreement structure</th><th>OxeFit cost</th><th class="l">Due date</th>
+            <th>Status</th><th>Paid</th>
           </tr></thead>
           <tbody id="rm-oxeBody"></tbody>
           <tfoot id="rm-oxeFoot"></tfoot>
@@ -2776,51 +2786,53 @@ function renderRecv(){
   }));
 }
 
+function agreementText(d){ const ms=dealMs(d); return ms.map(m=>Math.round(((+m.pct)||0)*100)+"% "+m.name).join(" · "); }
+function oxeDealView(g){
+  const rows=g.rows, unpaid=rows.filter(r=>!r.paid);
+  const outstanding=unpaid.reduce((a,r)=>a+r.amount,0);
+  const nextDue = unpaid.length ? unpaid.map(r=>r.due).sort((a,b)=>a-b)[0]
+               : (rows.length ? rows.map(r=>r.due).sort((a,b)=>b-a)[0] : null);
+  let status;
+  if(rows.length && !unpaid.length) status="paid";
+  else if(unpaid.some(r=>statusOf(r.due,false)==="over")) status="over";
+  else if(unpaid.some(r=>statusOf(r.due,false)==="soon")) status="soon";
+  else status="up";
+  return {totalCost:g.cost, outstanding, nextDue, status, paidCount:rows.filter(r=>r.paid).length, total:rows.length};
+}
 function renderOxe(){
   if(!$("rm-oxeBody")) return;
-  const groups=oxefitGroups(); let body="",out=0,total=0;
+  const groups=oxefitGroups(); let body="",totalOut=0,totalCost=0,shown=0;
   groups.forEach(g=>{
     if(!dealPasses(g.deal)) return;
-    const frows=g.rows.filter(rowStatusPass);
-    if(!frows.length) return;
-    const d=g.deal; total+=g.cost; const src=oxeCostSource(d);
-    const items=oxeItemsOf(d);
-    const costCell = (src==="devices")
-      ? `<span class="oxe-derived">${fmt(g.cost)}</span>`
-      : `<input class="rm-in oxe-cost" type="number" data-dk="${encodeURIComponent(g.key)}" value="${Math.round(g.cost)}" title="OxeFit cost for this deal">`;
-    const srcNote = src==="devices" ? items.map(it=>`${oxeName(it.sku)} ×${(+it.qty)||0}`).join(" · ")
-                  : src==="manual" ? `manual cost entry`
-                  : `tap 🖥 Devices to set the device type & cost`;
-    body+=`<tr class="deal-grp" data-dk="${encodeURIComponent(g.key)}">
-      <td class="l"><span class="dg-cust">${d.customer||"—"}</span> <span class="dg-meta">${d.rep||""}${d.month?" · "+d.month:""} · client ${fmt(d.gross)}</span></td>
-      <td class="l"><span class="sched-chip custom">back-to-back</span></td>
-      <td>${costCell}</td>
-      <td class="l" colspan="2"><span class="dg-meta">OxeFit cost — ${srcNote}</span></td>
-      <td><button class="btn oxe-dev" data-dk="${encodeURIComponent(g.key)}">🖥 Devices</button></td>
+    const d=g.deal, v=oxeDealView(g);
+    if(FILTER.status && v.status!==FILTER.status) return;
+    shown++; totalCost+=v.totalCost; totalOut+=v.outstanding;
+    const src=oxeCostSource(d), items=oxeItemsOf(d);
+    const costVal = (src==="devices")
+      ? `<div class="oxe-derived">${fmt(v.totalCost)}</div><div class="oxe-devnote">${items.map(it=>oxeName(it.sku)+" ×"+((+it.qty)||0)).join(" · ")}</div>`
+      : `<input class="rm-in oxe-cost" type="number" data-dk="${encodeURIComponent(g.key)}" value="${Math.round(v.totalCost)}" title="OxeFit cost for this deal">`;
+    const paidCell = (v.total>0 && v.paidCount>=v.total)
+      ? `<span class="st paid">Paid</span>`
+      : `<div class="paidprog"><span>${v.paidCount} / ${v.total}</span><div class="pp-bar"><i style="width:${v.total?Math.round(v.paidCount/v.total*100):0}%"></i></div></div>`;
+    body+=`<tr class="oxe-row" data-dk="${encodeURIComponent(g.key)}">
+      <td class="l"><div class="dg-cust">${d.customer||"—"}</div><div class="dg-meta">${d.month||""}</div></td>
+      <td class="l" style="color:var(--muted)">${d.rep||"—"}</td>
+      <td class="tnum">${fmt(d.gross)}</td>
+      <td class="l"><span class="agree">${agreementText(d)}</span></td>
+      <td><div class="oxe-costwrap"><div class="oxe-costval">${costVal}</div><button class="btn oxe-dev" data-dk="${encodeURIComponent(g.key)}">🖥 Devices</button></div></td>
+      <td class="l" style="color:var(--muted)">${v.nextDue?iso(v.nextDue):"—"}</td>
+      <td><span class="st ${v.status}">${STLBL[v.status]}</span></td>
+      <td>${paidCell}</td>
     </tr>`;
-    frows.forEach(r=>{
-      const st=statusOf(r.due,r.paid); if(!r.paid) out+=r.amount;
-      body+=`<tr data-key="${r.key}">
-        <td class="l"></td>
-        <td class="l ms-sub">↳ <span class="ms">${r.name} · ${Math.round(r.pct*100)}%</span></td>
-        <td>${fmt(r.amount)}</td>
-        <td class="l" style="color:var(--muted)">${iso(r.due)}</td>
-        <td><span class="st ${st}">${STLBL[st]}</span></td>
-        <td><input type="checkbox" data-k="paid" ${r.paid?"checked":""}></td>
-      </tr>`;
-    });
   });
-  $("rm-oxeBody").innerHTML=body || `<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:16px">No client deals yet — OxeFit payables appear automatically from the Commission tab.</td></tr>`;
-  $("rm-oxeFoot").innerHTML=groups.length?`<tr><td class="l">Outstanding to OxeFit</td><td></td><td>${fmt(out)}</td><td></td><td></td><td></td></tr>`:"";
-  const tot=$("rm-oxeTot"); if(tot) tot.innerHTML=`Total OxeFit cost: <b>${fmt(total)}</b> · outstanding <b>${fmt(out)}</b>`;
+  $("rm-oxeBody").innerHTML=body || `<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:16px">No client deals${anyFilter()?" match the filters":" yet — they appear automatically from the Commission tab"}.</td></tr>`;
+  $("rm-oxeFoot").innerHTML=shown?`<tr><td class="l">Total OxeFit · ${shown} deal${shown===1?"":"s"}</td><td></td><td></td><td></td><td class="tnum">${fmt(totalCost)}</td><td class="l">out ${fmt(totalOut)}</td><td></td><td></td></tr>`:"";
+  const tot=$("rm-oxeTot"); if(tot) tot.innerHTML=`Total OxeFit cost: <b>${fmt(totalCost)}</b> · outstanding <b>${fmt(totalOut)}</b>`;
   $("rm-oxeBody").querySelectorAll(".oxe-cost").forEach(inp=>inp.addEventListener("change",e=>{
     const k=decodeURIComponent(e.target.dataset.dk); CTRL.oxeOv=CTRL.oxeOv||{}; CTRL.oxeOv[k]=parseFloat(e.target.value)||0; renderOxe(); renderDashboard(); rmChanged();
   }));
   $("rm-oxeBody").querySelectorAll(".oxe-dev").forEach(b=>b.addEventListener("click",e=>{
     openOxeModal(decodeURIComponent(e.currentTarget.dataset.dk));
-  }));
-  $("rm-oxeBody").querySelectorAll("tr[data-key] [data-k]").forEach(el=>el.addEventListener("change",e=>{
-    const key=e.target.closest("tr").dataset.key; OXE_OV[key]=OXE_OV[key]||{}; OXE_OV[key].paid=e.target.checked; renderOxe(); renderDashboard();
   }));
 }
 
