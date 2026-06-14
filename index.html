@@ -503,6 +503,12 @@
   .oxe-cost{width:120px;text-align:right;border:1px solid var(--line);background:var(--input-soft);border-radius:7px;padding:7px 9px;font-family:"JetBrains Mono";font-size:13px;font-weight:600;color:var(--input);outline:none}
   .oxe-cost:focus{border-color:var(--input);box-shadow:0 0 0 3px rgba(28,78,216,.12)}
   .oxe-tot{font-size:12px;color:var(--muted)}
+  .oxe-derived{font-family:"JetBrains Mono";font-size:13px;font-weight:700;color:var(--ink)}
+  .oxe-dev{padding:5px 10px;font-size:11.5px}
+  .oxe-cols span:nth-child(1){flex:1 1 200px}.oxe-cols span:nth-child(2){width:56px}.oxe-cols span:nth-child(3){width:80px}.oxe-cols span:nth-child(4){width:80px}.oxe-cols span:nth-child(5){width:30px}
+  .oxe-unit,.oxe-line{width:80px;text-align:right;font-family:"JetBrains Mono";font-size:12.5px;font-weight:600;color:var(--muted)}
+  .oxe-line{color:var(--ink)}
+  .oxe-dsel{font-family:"Inter";font-size:13px}
   .ctrls .grow{flex:1}
   .synced{font-size:12px;color:var(--muted)}
   .synced b{color:var(--text)}
@@ -614,13 +620,13 @@
       <button id="altSignIn" class="gate-alt">Having trouble? Try popup sign-in</button>
       <div id="authErr" class="gate-err"></div>
       <div class="gate-foot">Management access only</div>
-      <div class="gate-ver">v1.19.0 · 2026-06-14</div>
+      <div class="gate-ver">v1.20.0 · 2026-06-14</div>
     </div>
   </div>
 
   <div id="appRoot" style="display:none">
   <header class="topbar">
-    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.19.0</span></div>
+    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.20.0</span></div>
     <nav class="tabnav">
       <button data-tab="tab-costing" class="active"><span class="n">01</span>Costing</button>
       <button data-tab="tab-commission"><span class="n">02</span>Commission</button>
@@ -1066,7 +1072,7 @@
           <div class="grow"></div>
           <div class="oxe-tot" id="rm-oxeTot" style="text-align:right"></div>
         </div>
-        <div class="ms-hint">OxeFit owes follow each client deal <b>back-to-back</b>: same milestone schedule &amp; dates, and each milestone is marked paid to OxeFit as the client collects it. The amount is OxeFit's cost — defaulting to the basis % of the deal, editable per deal to the real cost.</div>
+        <div class="ms-hint">OxeFit owes follow each client deal <b>back-to-back</b>: same milestone schedule &amp; dates, settled as the client collects. The amount is OxeFit's <b>actual cost from the Costing catalog</b> — tap <b>🖥 Devices</b> on a deal to set its device type(s) &amp; quantity. Deals without devices fall back to this basis % (or a manual amount).</div>
       </div>
 
       <div class="panel scroll" style="margin-top:12px">
@@ -1112,6 +1118,25 @@
         <button class="btn" id="rm-msReset">Reset to default</button>
         <button class="btn" id="rm-msCancel">Cancel</button>
         <button class="btn primary" id="rm-msSave">Save schedule</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="rm-oxeModal" class="rm-modal" style="display:none">
+    <div class="rm-modal-card">
+      <div class="rm-modal-head">
+        <div><h3 id="rm-oxeModalTitle">OxeFit devices</h3><div class="rm-modal-sub" id="rm-oxeModalSub"></div></div>
+        <button class="rm-modal-x" id="rm-oxeClose">×</button>
+      </div>
+      <div class="ms-cols oxe-cols"><span>Device type</span><span>Qty</span><span>Unit cost</span><span>Line cost</span><span></span></div>
+      <div id="rm-oxeModalBody"></div>
+      <div class="rm-modal-foot">
+        <button class="btn ghost" id="rm-oxeAddRow">+ Add device</button>
+        <span class="oxe-tot" id="rm-oxeModalTotal"></span>
+        <span style="flex:1"></span>
+        <button class="btn" id="rm-oxeClearDev">Use basis %</button>
+        <button class="btn" id="rm-oxeCancel">Cancel</button>
+        <button class="btn primary" id="rm-oxeSave">Save devices</button>
       </div>
     </div>
   </div>
@@ -1376,7 +1401,17 @@ function render(){
   renderKPIs();
   bindCells();
   if(typeof renderDealer==="function") renderDealer();
+  publishProducts();
   if(window.CoreVSync) window.CoreVSync.changed();
+}
+function publishProducts(){
+  try{
+    const list=[];
+    DATA.forEach(g=>g.rows.forEach(r=>list.push({sku:r.sku,name:r.name,group:g.group,oxeUnit:(r.cost||0)*G.exch})));
+    SVC.rows.forEach(r=>list.push({sku:r.sku,name:r.name,group:SVC.group,oxeUnit:(r.cost||0)}));
+    window.CoreVProducts=list;
+    window.dispatchEvent(new CustomEvent('corev:products'));
+  }catch(_){}
 }
 
 function renderKPIs(){
@@ -2530,9 +2565,11 @@ function parseMonth(s){
 }
 
 function defaultDef(){ return [ {name:"PO / Contract", pct:1.0, off:0} ]; }
-let CTRL={soon:7, def:defaultDef(), perDeal:{}, oxeRatio:0.50, oxeOv:{}};
+let CTRL={soon:7, def:defaultDef(), perDeal:{}, oxeRatio:0.50, oxeOv:{}, oxeItems:{}};
 let RECV_OV={};            // overrides keyed by milestone
 let OXE_OV={};             // OxeFit milestone paid overrides (local)
+function oxeProducts(){ return window.CoreVProducts||[]; }
+function oxeUnitCost(sku){ const p=oxeProducts().find(x=>x.sku===sku); return p?(+p.oxeUnit||0):0; }
 function dealKey(d){ return d.hsId ? ("hs:"+d.hsId) : ("m:"+(d.rep||"")+"|"+(d.customer||"")+"|"+(d.month||"")); }
 function dealMs(d){ const c=CTRL.perDeal&&CTRL.perDeal[dealKey(d)]; return (Array.isArray(c)&&c.length)?c:(CTRL.def||defaultDef()); }
 let PAY=[
@@ -2558,7 +2595,15 @@ function receivableGroups(){
 function receivables(){
   const out=[]; receivableGroups().forEach(g=>g.rows.forEach(r=>out.push({...r, rep:g.deal.rep, customer:g.deal.customer}))); return out;
 }
-function oxeCostOf(d){ const k=dealKey(d); const ov=CTRL.oxeOv&&CTRL.oxeOv[k]; return (ov!=null)?ov:(d.gross*(CTRL.oxeRatio||0)); }
+function oxeItemsOf(d){ const it=CTRL.oxeItems&&CTRL.oxeItems[dealKey(d)]; return Array.isArray(it)?it:null; }
+function oxeCostOf(d){
+  const items=oxeItemsOf(d);
+  if(items&&items.length) return items.reduce((a,it)=>a+oxeUnitCost(it.sku)*((+it.qty)||0),0);  // actual cost from costing catalog × qty
+  const k=dealKey(d); const ov=CTRL.oxeOv&&CTRL.oxeOv[k];
+  if(ov!=null) return ov;                                                                         // manual override
+  return d.gross*(CTRL.oxeRatio||0);                                                              // fallback: basis %
+}
+function oxeCostSource(d){ const it=oxeItemsOf(d); if(it&&it.length) return "devices"; const ov=CTRL.oxeOv&&CTRL.oxeOv[dealKey(d)]; if(ov!=null) return "manual"; return "basis"; }
 function oxefitGroups(){
   const store=(window.CoreVStore&&window.CoreVStore.deals)||[];
   return store.filter(d=>d.gross).map(d=>{
@@ -2695,12 +2740,20 @@ function renderOxe(){
   if(!$("rm-oxeBody")) return;
   const groups=oxefitGroups(); let body="",out=0,total=0;
   groups.forEach(g=>{
-    const d=g.deal; total+=g.cost;
+    const d=g.deal; total+=g.cost; const src=oxeCostSource(d);
+    const items=oxeItemsOf(d);
+    const costCell = (src==="devices")
+      ? `<span class="oxe-derived">${fmt(g.cost)}</span>`
+      : `<input class="rm-in oxe-cost" type="number" data-dk="${encodeURIComponent(g.key)}" value="${Math.round(g.cost)}" title="OxeFit cost for this deal">`;
+    const srcNote = src==="devices" ? `from ${items.reduce((a,i)=>a+((+i.qty)||0),0)} device unit(s) · costing catalog`
+                  : src==="manual" ? `manual override`
+                  : `default ${Math.round((CTRL.oxeRatio||0)*100)}% of deal`;
     body+=`<tr class="deal-grp" data-dk="${encodeURIComponent(g.key)}">
       <td class="l"><span class="dg-cust">${d.customer||"—"}</span> <span class="dg-meta">${d.rep||""}${d.month?" · "+d.month:""} · client ${fmt(d.gross)}</span></td>
       <td class="l"><span class="sched-chip custom">back-to-back</span></td>
-      <td><input class="rm-in oxe-cost" type="number" data-dk="${encodeURIComponent(g.key)}" value="${Math.round(g.cost)}" title="OxeFit cost for this deal"></td>
-      <td class="l" colspan="3"><span class="dg-meta">OxeFit cost — defaults to ${Math.round((CTRL.oxeRatio||0)*100)}% of the deal; edit to set the real cost</span></td>
+      <td>${costCell}</td>
+      <td class="l" colspan="2"><span class="dg-meta">OxeFit cost — ${srcNote}</span></td>
+      <td><button class="btn oxe-dev" data-dk="${encodeURIComponent(g.key)}">🖥 Devices</button></td>
     </tr>`;
     g.rows.forEach(r=>{
       const st=statusOf(r.due,r.paid); if(!r.paid) out+=r.amount;
@@ -2720,8 +2773,52 @@ function renderOxe(){
   $("rm-oxeBody").querySelectorAll(".oxe-cost").forEach(inp=>inp.addEventListener("change",e=>{
     const k=decodeURIComponent(e.target.dataset.dk); CTRL.oxeOv=CTRL.oxeOv||{}; CTRL.oxeOv[k]=parseFloat(e.target.value)||0; renderOxe(); renderDashboard(); rmChanged();
   }));
+  $("rm-oxeBody").querySelectorAll(".oxe-dev").forEach(b=>b.addEventListener("click",e=>{
+    openOxeModal(decodeURIComponent(e.currentTarget.dataset.dk));
+  }));
   $("rm-oxeBody").querySelectorAll("tr[data-key] [data-k]").forEach(el=>el.addEventListener("change",e=>{
     const key=e.target.closest("tr").dataset.key; OXE_OV[key]=OXE_OV[key]||{}; OXE_OV[key].paid=e.target.checked; renderOxe(); renderDashboard();
+  }));
+}
+
+/* ---- OxeFit device-type modal (actual cost from costing catalog) ---- */
+let oxeEditKey=null, oxeEditWork=[];
+function openOxeModal(key){
+  const g=oxefitGroups().find(x=>x.key===key); if(!g) return;
+  oxeEditKey=key;
+  const cur=CTRL.oxeItems&&CTRL.oxeItems[key];
+  oxeEditWork = Array.isArray(cur)&&cur.length ? cur.map(it=>({sku:it.sku,qty:(+it.qty)||0})) : [{sku:"",qty:1}];
+  $("rm-oxeModalTitle").textContent="OxeFit devices — "+(g.deal.customer||"Deal");
+  $("rm-oxeModalSub").textContent="Pick the device type(s) and quantity for this deal. OxeFit cost is taken from the Costing catalog.";
+  renderOxeModalBody();
+  $("rm-oxeModal").style.display="flex";
+}
+function closeOxeModal(){ $("rm-oxeModal").style.display="none"; oxeEditKey=null; oxeEditWork=[]; }
+function renderOxeModalBody(){
+  const prods=oxeProducts();
+  const optHtml=sel=>`<option value="">— device type —</option>`+prods.map(p=>`<option value="${p.sku}" ${p.sku===sel?"selected":""}>${p.name}</option>`).join("");
+  if(!prods.length){ $("rm-oxeModalBody").innerHTML=`<div class="ms-hint">No products available yet — open the Costing tab once so the catalog loads, then try again.</div>`; }
+  else {
+    $("rm-oxeModalBody").innerHTML=oxeEditWork.map((it,i)=>{
+      const unit=oxeUnitCost(it.sku), line=unit*((+it.qty)||0);
+      return `<div class="ms-row" data-i="${i}">
+        <select class="rm-in oxe-dsel" data-k="sku" style="flex:1 1 200px;min-width:150px">${optHtml(it.sku)}</select>
+        <div class="ms-fld"><input class="rm-in oxe-dqty" type="number" step="1" data-k="qty" value="${(+it.qty)||0}" style="width:56px;text-align:right"></div>
+        <div class="oxe-unit">${it.sku?fmt(unit):"—"}</div>
+        <div class="oxe-line">${it.sku?fmt(line):"—"}</div>
+        <button class="del oxe-drm" title="Remove">×</button>
+      </div>`;
+    }).join("");
+  }
+  const total=oxeEditWork.reduce((a,it)=>a+oxeUnitCost(it.sku)*((+it.qty)||0),0);
+  const t=$("rm-oxeModalTotal"); if(t) t.innerHTML=`OxeFit cost: <b>${fmt(total)}</b>`;
+  $("rm-oxeModalBody").querySelectorAll("[data-k]").forEach(el=>el.addEventListener("change",e=>{
+    const i=+e.target.closest(".ms-row").dataset.i, k=e.target.dataset.k;
+    if(k==="qty") oxeEditWork[i].qty=parseInt(e.target.value)||0; else oxeEditWork[i].sku=e.target.value;
+    renderOxeModalBody();
+  }));
+  $("rm-oxeModalBody").querySelectorAll(".oxe-drm").forEach(b=>b.addEventListener("click",e=>{
+    oxeEditWork.splice(+e.target.closest(".ms-row").dataset.i,1); if(!oxeEditWork.length) oxeEditWork=[{sku:"",qty:1}]; renderOxeModalBody();
   }));
 }
 
@@ -2845,6 +2942,19 @@ $("rm_soon").value=CTRL.soon;
 $("rm_soon").addEventListener("input",e=>{CTRL.soon=parseInt(e.target.value)||0;renderAll();rmChanged();});
 $("rm_oxeratio").value=Math.round((CTRL.oxeRatio||0)*100);
 $("rm_oxeratio").addEventListener("input",e=>{CTRL.oxeRatio=(parseFloat(e.target.value)||0)/100;renderOxe();renderDashboard();rmChanged();});
+$("rm-oxeAddRow").addEventListener("click",()=>{ oxeEditWork.push({sku:"",qty:1}); renderOxeModalBody(); });
+$("rm-oxeClose").addEventListener("click",closeOxeModal);
+$("rm-oxeCancel").addEventListener("click",closeOxeModal);
+$("rm-oxeModal").addEventListener("click",e=>{ if(e.target.id==="rm-oxeModal") closeOxeModal(); });
+$("rm-oxeClearDev").addEventListener("click",()=>{ if(oxeEditKey&&CTRL.oxeItems){ delete CTRL.oxeItems[oxeEditKey]; } closeOxeModal(); renderOxe(); renderDashboard(); rmChanged(); });
+$("rm-oxeSave").addEventListener("click",()=>{
+  if(!oxeEditKey) return closeOxeModal();
+  const work=oxeEditWork.filter(it=>it.sku && ((+it.qty)||0)>0).map(it=>({sku:it.sku,qty:(+it.qty)||0}));
+  CTRL.oxeItems=CTRL.oxeItems||{};
+  if(work.length) CTRL.oxeItems[oxeEditKey]=work; else delete CTRL.oxeItems[oxeEditKey];
+  closeOxeModal(); renderOxe(); renderDashboard(); rmChanged();
+});
+window.addEventListener("corev:products",()=>{ renderOxe(); renderDashboard(); if($("rm-oxeModal").style.display==="flex") renderOxeModalBody(); });
 window.addEventListener("corev:store",renderAll);
 
 function rmChanged(){ if(window.CoreVSync) window.CoreVSync.changed(); }
@@ -2860,11 +2970,13 @@ if(window.CoreVSync) window.CoreVSync.register('reminders',
       if(c.perDeal && typeof c.perDeal==='object') CTRL.perDeal=c.perDeal;
       if(typeof c.oxeRatio==='number') CTRL.oxeRatio=c.oxeRatio;
       if(c.oxeOv && typeof c.oxeOv==='object') CTRL.oxeOv=c.oxeOv;
+      if(c.oxeItems && typeof c.oxeItems==='object') CTRL.oxeItems=c.oxeItems;
     }
     if(!Array.isArray(CTRL.def)) CTRL.def=defaultDef();
     if(!CTRL.perDeal) CTRL.perDeal={};
     if(typeof CTRL.oxeRatio!=='number') CTRL.oxeRatio=0.50;
     if(!CTRL.oxeOv) CTRL.oxeOv={};
+    if(!CTRL.oxeItems) CTRL.oxeItems={};
     $("rm_soon").value=CTRL.soon;
     $("rm_oxeratio").value=Math.round((CTRL.oxeRatio||0)*100);
     renderAll();
