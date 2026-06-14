@@ -527,13 +527,13 @@
       <button id="altSignIn" class="gate-alt">Having trouble? Try popup sign-in</button>
       <div id="authErr" class="gate-err"></div>
       <div class="gate-foot">Management access only</div>
-      <div class="gate-ver">v1.6.0 · 2026-06-14</div>
+      <div class="gate-ver">v1.6.1 · 2026-06-14</div>
     </div>
   </div>
 
   <div id="appRoot" style="display:none">
   <header class="topbar">
-    <div class="brand"><span class="mark">Core<span class="v">V</span></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.6.0</span></div>
+    <div class="brand"><span class="mark">Core<span class="v">V</span></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.6.1</span></div>
     <nav class="tabnav">
       <button data-tab="tab-costing" class="active"><span class="n">01</span>Costing</button>
       <button data-tab="tab-commission"><span class="n">02</span>Commission</button>
@@ -827,21 +827,33 @@
 
 <script>
 window.CoreVSync = {
-  _mods:{}, _ready:false, _t:null,
+  _mods:{}, _ready:false, _applying:false, _t:null,
   register(key,get,set){ this._mods[key]={get,set}; },
   collect(){ const o={}; for(const k in this._mods){ try{o[k]=this._mods[k].get();}catch(_){} } return o; },
-  apply(env){ if(!env||typeof env!=='object')return; for(const k in this._mods){ if(env[k]!==undefined){ try{this._mods[k].set(env[k]);}catch(_){} } } },
-  changed(){ if(!this._ready||!window.CoreVCloud)return; clearTimeout(this._t); this._t=setTimeout(()=>window.CoreVCloud.save(),1500); }
+  apply(env){ if(!env||typeof env!=='object')return; this._applying=true; try{ for(const k in this._mods){ if(env[k]!==undefined){ try{this._mods[k].set(env[k]);}catch(_){} } } } finally { this._applying=false; } },
+  changed(){ if(this._applying||!this._ready)return;
+    try{ window.CoreVCloud&&window.CoreVCloud.saveLocal(); }catch(_){}
+    clearTimeout(this._t); this._t=setTimeout(()=>{ try{ window.CoreVCloud&&window.CoreVCloud.save(); }catch(_){} },1500); }
 };
 window.CoreVCloud = (function(){
   const CFG={ user:'demo@oxefit.com', filePath:'/OXEFIT/corev-finance-suite.json' };
-  const SCOPES=['Files.ReadWrite.All','User.Read'];
+  const LS='corev_suite_state';
   const FNAME=(CFG.filePath.split('/').pop()||'corev-finance-suite.json').toLowerCase();
+  const FOLDER=(CFG.filePath.replace(/^\/+/,'').split('/')[0])||'OXEFIT';
+  const enc=encodeURIComponent;
   let getToken=null, ref=null;
   function chip(){ return document.getElementById('cloudChip'); }
   function setChip(state,txt){ const c=chip(); if(!c)return; c.className='cloudchip '+state; const t=c.querySelector('.cc-t'); if(t)t.textContent=txt; }
-  const rootUrl=()=>'https://graph.microsoft.com/v1.0/users/'+encodeURIComponent(CFG.user)+'/drive/root:'+CFG.filePath+':/content';
-  const itemUrl=r=>'https://graph.microsoft.com/v1.0/drives/'+encodeURIComponent(r.driveId)+'/items/'+encodeURIComponent(r.itemId)+'/content';
+  const rootUrl=()=>'https://graph.microsoft.com/v1.0/users/'+enc(CFG.user)+'/drive/root:'+CFG.filePath+':/content';
+  const itemUrl=r=>'https://graph.microsoft.com/v1.0/drives/'+enc(r.driveId)+'/items/'+enc(r.itemId)+'/content';
+  function loadLocal(){ try{ return JSON.parse(localStorage.getItem(LS)||'null'); }catch(_){ return null; } }
+  function saveLocalEnv(){ try{ const env=Object.assign({_app:'corev-finance',_v:1,_meta:{ts:Date.now(),local:true}}, window.CoreVSync.collect()); localStorage.setItem(LS,JSON.stringify(env)); }catch(_){} }
+  async function ensureFolder(tok){
+    try{ const res=await fetch('https://graph.microsoft.com/v1.0/users/'+enc(CFG.user)+'/drive/root/children',
+      {method:'POST',headers:{Authorization:'Bearer '+tok,'Content-Type':'application/json'},
+       body:JSON.stringify({name:FOLDER,folder:{},'@microsoft.graph.conflictBehavior':'fail'})});
+      return res.ok||res.status===409; }catch(_){ return false; }
+  }
   async function resolveRef(tok,force){
     if(ref&&!force)return ref;
     try{ const res=await fetch('https://graph.microsoft.com/v1.0/me/drive/sharedWithMe',{headers:{Authorization:'Bearer '+tok}});
@@ -849,7 +861,7 @@ window.CoreVCloud = (function(){
       for(const it of items){ const ri=it.remoteItem||it; const name=(it.name||ri.name||'').toLowerCase();
         const driveId=ri.parentReference&&ri.parentReference.driveId, itemId=ri.id; if(!driveId||!itemId)continue;
         if(name===FNAME){ ref={driveId,itemId}; return ref; }
-        if(ri.folder){ try{ const ch=await fetch('https://graph.microsoft.com/v1.0/drives/'+encodeURIComponent(driveId)+'/items/'+encodeURIComponent(itemId)+'/children',{headers:{Authorization:'Bearer '+tok}});
+        if(ri.folder){ try{ const ch=await fetch('https://graph.microsoft.com/v1.0/drives/'+enc(driveId)+'/items/'+enc(itemId)+'/children',{headers:{Authorization:'Bearer '+tok}});
           if(ch.ok){ const kids=await ch.json(); const hit=(kids.value||[]).find(k=>(k.name||'').toLowerCase()===FNAME); if(hit){ ref={driveId,itemId:hit.id}; return ref; } } }catch(_){} }
       }
     }catch(_){}
@@ -863,30 +875,35 @@ window.CoreVCloud = (function(){
     const res=await fetch(rootUrl(),{headers:{Authorization:'Bearer '+tok}});
     if(res.status===404)return null; if(res.status===403){const e=new Error('403');e.code=403;throw e;} if(!res.ok)throw new Error('HTTP '+res.status); return res.json();
   }
+  async function save(){
+    saveLocalEnv();                                  // always keep a local copy first
+    if(!getToken){ return; }
+    setChip('syncing','Saving…');
+    try{ const tok=await getToken();
+      const env=Object.assign({_app:'corev-finance',_v:1,_meta:{ts:Date.now()}}, window.CoreVSync.collect());
+      let r=ref||await resolveRef(tok); let url=r?itemUrl(r):rootUrl();
+      let res=await fetch(url,{method:'PUT',headers:{Authorization:'Bearer '+tok,'Content-Type':'application/json'},body:JSON.stringify(env)});
+      if(res.status===404){ ref=null; await ensureFolder(tok);   // create /OXEFIT then seed the file
+        res=await fetch(rootUrl(),{method:'PUT',headers:{Authorization:'Bearer '+tok,'Content-Type':'application/json'},body:JSON.stringify(env)}); }
+      if(res.status===403){ setChip('err','No drive access'); return; }
+      if(!res.ok)throw new Error('HTTP '+res.status);
+      setChip('ok','Synced');
+    }catch(e){ setChip('err','Offline · saved on device'); }
+  }
   async function doLoad(initial){
-    if(!getToken)return; setChip('syncing', initial?'Connecting…':'Syncing…');
+    if(initial){ const local=loadLocal(); if(local){ window.CoreVSync.apply(local); } }  // instant restore — refresh never loses data
+    window.CoreVSync._ready=true;
+    if(!getToken){ setChip('err','On device only'); return; }
+    setChip('syncing', initial?'Connecting…':'Syncing…');
     try{ const tok=await getToken(); const remote=await readRemote(tok);
-      if(remote&&remote._app==='corev-finance'){ window.CoreVSync.apply(remote); }
-      window.CoreVSync._ready=true; setChip('ok', remote? 'Synced':'Shared drive ready');
-    }catch(e){ window.CoreVSync._ready=true; setChip('err', (e&&e.code===403)?'No drive access':'Offline'); }
+      if(remote&&remote._app==='corev-finance'){ window.CoreVSync.apply(remote); saveLocalEnv(); setChip('ok','Synced'); }
+      else { setChip('ok','Shared drive ready'); if(initial) save(); }   // no file yet → seed it (creates /OXEFIT + json)
+    }catch(e){ setChip('err',(e&&e.code===403)?'No drive access':'Offline · saved on device'); }
   }
   return {
-    async start(tokenFn){
-      getToken=tokenFn;
-      const c=chip(); if(c&&!c._wired){ c._wired=true; c.addEventListener('click',()=>doLoad(false)); }
-      await doLoad(true);
-    },
+    async start(tokenFn){ getToken=tokenFn; const c=chip(); if(c&&!c._wired){ c._wired=true; c.addEventListener('click',()=>doLoad(false)); } await doLoad(true); },
     load(){ return doLoad(false); },
-    async save(){ if(!getToken)return; setChip('syncing','Saving…');
-      try{ const tok=await getToken();
-        const env=Object.assign({_app:'corev-finance',_v:1,_meta:{ts:Date.now()}}, window.CoreVSync.collect());
-        let r=ref||await resolveRef(tok); let url=r?itemUrl(r):rootUrl();
-        let res=await fetch(url,{method:'PUT',headers:{Authorization:'Bearer '+tok,'Content-Type':'application/json'},body:JSON.stringify(env)});
-        if(res.status===404&&r){ ref=null; res=await fetch(rootUrl(),{method:'PUT',headers:{Authorization:'Bearer '+tok,'Content-Type':'application/json'},body:JSON.stringify(env)}); }
-        if(res.status===403){ setChip('err','No drive access'); return; }
-        if(!res.ok)throw new Error('HTTP '+res.status); setChip('ok','Synced');
-      }catch(e){ setChip('err','Save failed'); }
-    }
+    save, saveLocal:saveLocalEnv
   };
 })();
 </script>
