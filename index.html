@@ -509,6 +509,10 @@
   .oxe-unit,.oxe-line{width:80px;text-align:right;font-family:"JetBrains Mono";font-size:12.5px;font-weight:600;color:var(--muted)}
   .oxe-line{color:var(--ink)}
   .oxe-dsel{font-family:"Inter";font-size:13px}
+  .rm-filters{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap;margin:0 0 14px}
+  .rm-filters .ff label{display:block;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:5px}
+  .rm-filters select{border:1px solid var(--line);background:var(--card);border-radius:7px;padding:8px 10px;font-family:"Inter";font-size:13px;font-weight:600;color:var(--ink);outline:none;min-width:150px}
+  .rm-filters select:focus{border-color:var(--input);box-shadow:0 0 0 3px rgba(28,78,216,.12)}
   .ctrls .grow{flex:1}
   .synced{font-size:12px;color:var(--muted)}
   .synced b{color:var(--text)}
@@ -620,17 +624,17 @@
       <button id="altSignIn" class="gate-alt">Having trouble? Try popup sign-in</button>
       <div id="authErr" class="gate-err"></div>
       <div class="gate-foot">Management access only</div>
-      <div class="gate-ver">v1.20.0 · 2026-06-14</div>
+      <div class="gate-ver">v1.21.0 · 2026-06-14</div>
     </div>
   </div>
 
   <div id="appRoot" style="display:none">
   <header class="topbar">
-    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.20.0</span></div>
+    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.21.0</span></div>
     <nav class="tabnav">
       <button data-tab="tab-costing" class="active"><span class="n">01</span>Costing</button>
       <button data-tab="tab-commission"><span class="n">02</span>Commission</button>
-      <button data-tab="tab-reminders"><span class="n">03</span>Reminders</button>
+      <button data-tab="tab-reminders"><span class="n">03</span>Payouts &amp; OxeFit</button>
     </nav>
     <button id="cloudChip" class="cloudchip" title="Shared drive — click to refresh"><span class="cc-dot"></span><span class="cc-t">Sync</span></button>
     <div id="userChip" class="userchip" style="display:none"><span class="uc-dot"></span><span id="userName"></span><button id="signOut" class="uc-out">Sign out</button></div>
@@ -1050,6 +1054,14 @@
     <!-- RECEIVABLES -->
     <section class="blk">
       <div class="blkhead"><h2>Receivables — customer milestones</h2><span class="why">— configurable payment milestones (set above). Paid status follows each deal's collected % from commission.</span></div>
+      <div class="rm-filters">
+        <div class="ff"><label>Deal</label><select id="rm_fname"></select></div>
+        <div class="ff"><label>Month</label><select id="rm_fmonth"></select></div>
+        <div class="ff"><label>Status</label><select id="rm_fstatus">
+          <option value="">All statuses</option><option value="over">Overdue</option><option value="soon">Due soon</option><option value="up">Upcoming</option><option value="paid">Paid</option>
+        </select></div>
+        <button class="btn" id="rm_fclear">Clear filters</button>
+      </div>
       <div class="panel scroll">
         <table class="data">
           <thead><tr>
@@ -2568,6 +2580,14 @@ function defaultDef(){ return [ {name:"PO / Contract", pct:1.0, off:0} ]; }
 let CTRL={soon:7, def:defaultDef(), perDeal:{}, oxeRatio:0.50, oxeOv:{}, oxeItems:{}};
 let RECV_OV={};            // overrides keyed by milestone
 let OXE_OV={};             // OxeFit milestone paid overrides (local)
+let FILTER={cust:"",month:"",status:""};
+function dealPasses(d){
+  if(FILTER.cust && (d.customer||"")!==FILTER.cust) return false;
+  if(FILTER.month && (d.month||"")!==FILTER.month) return false;
+  return true;
+}
+function rowStatusPass(r){ return !FILTER.status || statusOf(r.due,r.paid)===FILTER.status; }
+function anyFilter(){ return !!(FILTER.cust||FILTER.month||FILTER.status); }
 function oxeProducts(){ return window.CoreVProducts||[]; }
 function oxeUnitCost(sku){ const p=oxeProducts().find(x=>x.sku===sku); return p?(+p.oxeUnit||0):0; }
 function dealKey(d){ return d.hsId ? ("hs:"+d.hsId) : ("m:"+(d.rep||"")+"|"+(d.customer||"")+"|"+(d.month||"")); }
@@ -2698,8 +2718,12 @@ function renderFlags(recv, pay){
 
 function renderRecv(){
   const groups=receivableGroups();
-  let body="",out=0,paid=0;
+  let body="",out=0,paid=0,shown=0;
   groups.forEach(g=>{
+    if(!dealPasses(g.deal)) return;
+    const frows=g.rows.filter(rowStatusPass);
+    if(!frows.length) return;
+    shown++;
     const d=g.deal;
     const sched = g.custom ? `Custom · ${g.msCount} milestone${g.msCount===1?"":"s"}` : (g.msCount===1?`Default · 100% ${g.rows[0]?g.rows[0].name:""}`:`Default · ${g.msCount}`);
     body+=`<tr class="deal-grp" data-dk="${encodeURIComponent(g.key)}">
@@ -2707,7 +2731,7 @@ function renderRecv(){
       <td class="l" colspan="2"><span class="sched-chip ${g.custom?'custom':''}">${sched}</span></td>
       <td><button class="btn ms-edit" data-dk="${encodeURIComponent(g.key)}">⚙ Edit</button></td>
     </tr>`;
-    g.rows.forEach(r=>{
+    frows.forEach(r=>{
       const st=statusOf(r.due,r.paid); if(r.paid) paid+=r.amount; else out+=r.amount;
       body+=`<tr data-key="${r.key}">
         <td class="l"></td>
@@ -2720,9 +2744,9 @@ function renderRecv(){
       </tr>`;
     });
   });
-  const rowsN=groups.reduce((a,g)=>a+g.rows.length,0);
-  $("rm-recvBody").innerHTML=body || `<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:18px">No customer deals in the Commission tab yet. Add a deal there and it appears here.</td></tr>`;
-  $("rm-recvFoot").innerHTML=rowsN?`<tr><td class="l">Outstanding ${fmt(out)} · collected ${fmt(paid)}</td><td></td><td></td><td>${fmt(out+paid)}</td><td></td><td></td><td></td></tr>`:"";
+  const empty = anyFilter() ? "No deals match the current filters." : "No customer deals in the Commission tab yet. Add a deal there and it appears here.";
+  $("rm-recvBody").innerHTML=body || `<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:18px">${empty}</td></tr>`;
+  $("rm-recvFoot").innerHTML=shown?`<tr><td class="l">Outstanding ${fmt(out)} · collected ${fmt(paid)}</td><td></td><td></td><td>${fmt(out+paid)}</td><td></td><td></td><td></td></tr>`:"";
   $("rm-recvBody").querySelectorAll("tr[data-key] [data-k]").forEach(el=>{
     el.addEventListener(el.type==="checkbox"?"change":"input",e=>{
       const key=e.target.closest("tr").dataset.key,k=e.target.dataset.k;
@@ -2740,6 +2764,9 @@ function renderOxe(){
   if(!$("rm-oxeBody")) return;
   const groups=oxefitGroups(); let body="",out=0,total=0;
   groups.forEach(g=>{
+    if(!dealPasses(g.deal)) return;
+    const frows=g.rows.filter(rowStatusPass);
+    if(!frows.length) return;
     const d=g.deal; total+=g.cost; const src=oxeCostSource(d);
     const items=oxeItemsOf(d);
     const costCell = (src==="devices")
@@ -2755,7 +2782,7 @@ function renderOxe(){
       <td class="l" colspan="2"><span class="dg-meta">OxeFit cost — ${srcNote}</span></td>
       <td><button class="btn oxe-dev" data-dk="${encodeURIComponent(g.key)}">🖥 Devices</button></td>
     </tr>`;
-    g.rows.forEach(r=>{
+    frows.forEach(r=>{
       const st=statusOf(r.due,r.paid); if(!r.paid) out+=r.amount;
       body+=`<tr data-key="${r.key}">
         <td class="l"></td>
@@ -2840,13 +2867,14 @@ function renderPay(){
   $("rm-payBody").innerHTML=body || `<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:16px">No payables.</td></tr>`;
   $("rm-payFoot").innerHTML=PAY.length?`<tr><td class="l">Outstanding</td><td></td><td>${fmt(out)}</td><td></td><td></td><td></td><td></td><td></td></tr>`:"";
   $("rm-payBody").querySelectorAll("[data-k]").forEach(el=>{
-    el.addEventListener(el.type==="checkbox"||el.tagName==="SELECT"?"change":"input",e=>{
+    const apply=e=>{
       const i=+e.target.closest("tr").dataset.i,k=e.target.dataset.k;
       if(k==="amount") PAY[i][k]=parseFloat(e.target.value)||0;
       else if(k==="paid") PAY[i][k]=e.target.checked;
       else PAY[i][k]=e.target.value;
-      renderPay(); renderDashboard(); rmChanged();
-    });
+    };
+    el.addEventListener("input",e=>{ apply(e); renderDashboard(); rmChanged(); });          // live update, no re-render → keeps typing focus
+    el.addEventListener("change",e=>{ apply(e); renderPay(); renderDashboard(); rmChanged(); }); // commit → refresh status/total
   });
   $("rm-payBody").querySelectorAll(".del").forEach(b=>b.addEventListener("click",e=>{PAY.splice(+e.target.dataset.i,1);renderPay();renderDashboard();rmChanged();}));
 }
@@ -2921,10 +2949,24 @@ function syncedNote(){
   const n=((window.CoreVStore&&window.CoreVStore.deals)||[]).filter(d=>d.gross).length;
   $("rm-synced").innerHTML=`Synced <b>${n}</b> customer deal${n===1?"":"s"} from Commission`;
 }
-function renderAll(){ syncedNote(); renderMsEditor(); renderDashboard(); renderRecv(); renderOxe(); renderPay(); }
+function renderFilters(){
+  if(!$("rm_fname")) return;
+  const deals=((window.CoreVStore&&window.CoreVStore.deals)||[]).filter(d=>d.gross);
+  const custs=[...new Set(deals.map(d=>d.customer).filter(Boolean))].sort();
+  const months=[...new Set(deals.map(d=>d.month).filter(Boolean))].sort((a,b)=>parseMonth(a)-parseMonth(b));
+  const fill=(id,opts,val,all)=>{ const el=$(id); if(!el)return; el.innerHTML=`<option value="">${all}</option>`+opts.map(o=>`<option value="${o}" ${o===val?"selected":""}>${o}</option>`).join(""); el.value=val||""; };
+  fill("rm_fname",custs,FILTER.cust,"All deals");
+  fill("rm_fmonth",months,FILTER.month,"All months");
+  const st=$("rm_fstatus"); if(st) st.value=FILTER.status||"";
+}
+function renderAll(){ syncedNote(); renderFilters(); renderMsEditor(); renderDashboard(); renderRecv(); renderOxe(); renderPay(); }
 
 $("rm-addPay").addEventListener("click",()=>{PAY.push({payee:"New payee",desc:"",amount:0,due:iso(addDays(today,14)),recur:"One-time",paid:false});renderPay();renderDashboard();rmChanged();});
 $("rm-resync").addEventListener("click",renderAll);
+$("rm_fname").addEventListener("change",e=>{FILTER.cust=e.target.value;renderRecv();renderOxe();});
+$("rm_fmonth").addEventListener("change",e=>{FILTER.month=e.target.value;renderRecv();renderOxe();});
+$("rm_fstatus").addEventListener("change",e=>{FILTER.status=e.target.value;renderRecv();renderOxe();});
+$("rm_fclear").addEventListener("click",()=>{FILTER={cust:"",month:"",status:""};renderFilters();renderRecv();renderOxe();});
 $("rm_msadd").addEventListener("click",()=>{ if(!Array.isArray(CTRL.def))CTRL.def=defaultDef(); CTRL.def.push({name:"New milestone",pct:0,off:0}); renderMsEditor(); renderDashboard(); renderRecv(); rmChanged(); });
 $("rm-msAddRow").addEventListener("click",()=>{ msEditWork.push({name:"New milestone",pct:0,off:0}); renderMsModalBody(); });
 $("rm-msClose").addEventListener("click",closeMsModal);
