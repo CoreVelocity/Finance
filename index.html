@@ -185,6 +185,19 @@
   @media (prefers-reduced-motion:reduce){
     *{animation:none!important;transition:none!important}
   }
+  .costnav{display:flex;gap:8px;margin-bottom:20px}
+  .costnav button{cursor:pointer;border:1px solid var(--line);background:var(--card);color:var(--muted);font-family:Inter,sans-serif;font-size:13px;font-weight:600;padding:8px 18px;border-radius:999px}
+  .costnav button:hover{color:var(--text)}
+  .costnav button.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .costsub{display:none}
+  .costsub.active{display:block}
+  .dealtools{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;margin-top:4px}
+  .addline{cursor:pointer;border:0;background:var(--input);color:#fff;font-family:Inter,sans-serif;font-weight:600;font-size:13px;padding:10px 18px;border-radius:9px}
+  .addline:hover{filter:brightness(1.08)}
+  select.cell-in{min-width:175px;font-family:Inter,sans-serif}
+  .dl-del{cursor:pointer;border:1px solid var(--line);background:none;color:var(--muted);border-radius:6px;width:26px;height:26px;font-size:15px;line-height:1}
+  .dl-del:hover{border-color:var(--warn);color:var(--warn)}
+  .barpct{font-family:"JetBrains Mono",monospace;font-size:9.5px;color:var(--muted);margin-top:4px;white-space:nowrap}
 
 
   :root{
@@ -545,13 +558,13 @@
       <button id="altSignIn" class="gate-alt">Having trouble? Try popup sign-in</button>
       <div id="authErr" class="gate-err"></div>
       <div class="gate-foot">Management access only</div>
-      <div class="gate-ver">v1.8.0 · 2026-06-14</div>
+      <div class="gate-ver">v1.9.1 · 2026-06-14</div>
     </div>
   </div>
 
   <div id="appRoot" style="display:none">
   <header class="topbar">
-    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.8.0</span></div>
+    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.9.1</span></div>
     <nav class="tabnav">
       <button data-tab="tab-costing" class="active"><span class="n">01</span>Costing</button>
       <button data-tab="tab-commission"><span class="n">02</span>Commission</button>
@@ -564,6 +577,13 @@
   <div id="tab-costing" class="tabpanel active">
 
   <div class="wrap">
+
+    <div class="costnav">
+      <button data-cs="cost-catalog" class="active">Catalog &amp; portfolio</button>
+      <button data-cs="cost-deal">Deal builder</button>
+    </div>
+
+    <div id="cost-catalog" class="costsub active">
 
     <!-- ASSUMPTIONS -->
     <section class="assumptions">
@@ -610,7 +630,6 @@
           <thead>
             <tr>
               <th class="l">Product / SKU</th>
-              <th>Qty</th>
               <th>MSRP<span class="u">USD · input</span></th>
               <th>OxeFit cost<span class="u">USD · input</span></th>
               <th>Discount<span class="u">AED · input</span></th>
@@ -640,6 +659,62 @@
       <span class="ic">i</span>
       <span>Operational cost is set to <b>12%</b> and wired to the assumption above (the old sheet calculated line items at 10% while the input said 12% — that's now consistent). The exchange rate is a single input that drives every USD-based figure. <b>Services</b> are entered directly in AED and run the same cost stack; tell me if warranties should drop sales commission.</span>
     </div>
+
+    </div><!-- /cost-catalog -->
+
+    <div id="cost-deal" class="costsub">
+      <section class="assumptions">
+        <div class="head">
+          <h2>Deal builder</h2>
+          <span class="why">— build a custom quote, flex quantities &amp; discounts, and watch the margins move.</span>
+        </div>
+        <div class="dealtools">
+          <div class="field">
+            <label>Deal-wide extra discount</label>
+            <div class="inputwrap"><input id="d_extra" type="number" step="0.5" value="0"><span class="affix">%</span></div>
+          </div>
+          <button class="addline" id="d_add">+ Add line item</button>
+          <button class="reset" id="d_clear">↺ Clear deal</button>
+        </div>
+      </section>
+
+      <section class="kpis" id="dkpis"></section>
+
+      <section class="tablecard">
+        <div class="scroll">
+          <table>
+            <thead>
+              <tr>
+                <th class="l">Line item</th>
+                <th>Qty</th>
+                <th>Unit price<span class="u">AED · input</span></th>
+                <th>Unit disc<span class="u">AED · input</span></th>
+                <th>Net revenue<span class="u">AED</span></th>
+                <th>OxeFit cost<span class="u">AED</span></th>
+                <th>Gross profit<span class="u">AED · %</span></th>
+                <th>CoreV cost<span class="u">AED</span></th>
+                <th>Net profit<span class="u">AED · %</span></th>
+                <th class="barcell">Split</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="dbody"></tbody>
+            <tfoot id="dfoot"></tfoot>
+          </table>
+        </div>
+        <div class="legend">
+          <span class="k"><span class="sw" style="background:var(--input)"></span> Blue = editable input</span>
+          <span class="k"><span class="sw seg-oxe"></span> OxeFit cost</span>
+          <span class="k"><span class="sw seg-corev"></span> CoreV cost</span>
+          <span class="k"><span class="sw seg-net"></span> CoreV net profit</span>
+        </div>
+      </section>
+
+      <div class="note">
+        <span class="ic">i</span>
+        <span>Pick any catalog product or service, set the quantity, then flex the <b>unit price</b> or <b>discount</b> — every line shows its own gross &amp; net margin and the KPI cards + deal total update live. The deal-wide discount applies on top of per-line discounts. Unit costs come straight from the catalog cost stack, so changing a global assumption (exchange, ops, commission) reprices the deal too.</span>
+      </div>
+    </div><!-- /cost-deal -->
 
   </div>
 
@@ -1067,13 +1142,10 @@ function num(v, step){
 }
 
 function renderGroup(group, rows, isSvc){
-  let html = `<tr class="grouprow"><td colspan="12">${group}</td></tr>`;
+  let html = `<tr class="grouprow"><td colspan="11">${group}</td></tr>`;
   let sub = {netRev:0, oxe:0, gross:0, corev:0, net:0, sell:0};
   rows.forEach((r,i)=>{
     const c = calcRow(r);
-    const q = r.qty;
-    sub.netRev += c.netRev*q; sub.oxe += c.oxe*q; sub.gross += c.gross*q;
-    sub.corev += c.corevCost*q; sub.net += c.net*q; sub.sell += c.sell*q;
     const oxeW = c.netRev>0 ? Math.max(0,(c.oxe/c.netRev)*100) : 0;
     const corevW = c.netRev>0 ? Math.max(0,(c.corevCost/c.netRev)*100) : 0;
     const netW = Math.max(0, 100 - oxeW - corevW);
@@ -1081,7 +1153,6 @@ function renderGroup(group, rows, isSvc){
     const tag = isSvc?'svc':'prod';
     html += `<tr data-tag="${tag}" data-i="${i}">
       <td class="l"><div class="pname">${r.name}</div><div class="psku">${r.sku}</div></td>
-      <td>${num(r.qty,'qty')}</td>
       ${ isSvc
          ? `<td class="derived" style="color:var(--muted)">—</td>
             <td>${num(r.cost,'cost')}</td>`
@@ -1098,76 +1169,40 @@ function renderGroup(group, rows, isSvc){
         <span class="seg-oxe" style="width:${oxeW}%"></span>
         <span class="seg-corev" style="width:${corevW}%"></span>
         <span class="seg-net" style="width:${netW}%"></span>
-      </div></td>
+      </div><div class="barpct">OxeFit ${oxeW.toFixed(0)}% · CoreV ${corevW.toFixed(0)}% · Net ${netW.toFixed(0)}%</div></td>
     </tr>`;
   });
-  const subNetPct = sub.sell ? sub.net/sub.sell : 0;
-  const subGrossPct = sub.netRev ? sub.gross/sub.netRev : 0;
-  html += `<tr class="subtotal">
-    <td class="l">${group} subtotal</td>
-    <td></td><td></td><td></td><td></td>
-    <td class="tnum">${fmt(sub.sell)}</td>
-    <td class="tnum">${fmt(sub.netRev)}</td>
-    <td class="tnum">${fmt(sub.oxe)}</td>
-    <td class="tnum">${fmt(sub.gross)} <span class="pct good">${pct(subGrossPct)}</span></td>
-    <td class="tnum">${fmt(sub.corev)}</td>
-    <td class="tnum net">${fmt(sub.net)} <span class="pct good">${pct(subNetPct)}</span></td>
-    <td></td>
-  </tr>`;
   return {html, sub};
 }
 
 function render(){
   let body = "";
-  let tot = {netRev:0, oxe:0, gross:0, corev:0, net:0, sell:0};
-  DATA.forEach(g=>{
-    const {html, sub} = renderGroup(g.group, g.rows, false);
-    body += html;
-    for(const k in tot) tot[k] += (k==='corev'?sub.corev:sub[k]);
-  });
-  const svcRender = renderGroup(SVC.group, SVC.rows, true);
-  body += svcRender.html;
-  for(const k in tot) tot[k] += (k==='corev'?svcRender.sub.corev:svcRender.sub[k]);
-
+  DATA.forEach(g=>{ body += renderGroup(g.group, g.rows, false).html; });
+  body += renderGroup(SVC.group, SVC.rows, true).html;
   $("tbody").innerHTML = body;
-
-  const totNetPct = tot.sell ? tot.net/tot.sell : 0;
-  const totGrossPct = tot.netRev ? tot.gross/tot.netRev : 0;
-  $("tfoot").innerHTML = `<tr>
-    <td class="l">Portfolio total — 1 unit each</td>
-    <td></td><td></td><td></td><td></td>
-    <td class="tnum">${fmt(tot.sell)}</td>
-    <td class="tnum">${fmt(tot.netRev)}</td>
-    <td class="tnum">${fmt(tot.oxe)}</td>
-    <td class="tnum">${fmt(tot.gross)} · ${pct(totGrossPct)}</td>
-    <td class="tnum">${fmt(tot.corev)}</td>
-    <td class="tnum">${fmt(tot.net)} · ${pct(totNetPct)}</td>
-    <td></td>
-  </tr>`;
-
+  $("tfoot").innerHTML = "";
   renderKPIs();
   bindCells();
   if(window.CoreVSync) window.CoreVSync.changed();
 }
 
 function renderKPIs(){
-  // gather per-row results across products + services
-  const all = [];
-  DATA.forEach(g=>g.rows.forEach(r=>all.push({r, c:calcRow(r)})));
-  SVC.rows.forEach(r=>all.push({r, c:calcRow(r)}));
-  const prodOnly = [];
-  DATA.forEach(g=>g.rows.forEach(r=>prodOnly.push(calcRow(r))));
+  const prodObjs = [];
+  DATA.forEach(g=>g.rows.forEach(r=>prodObjs.push({r, c:calcRow(r)})));
+  const prodOnly = prodObjs.map(x=>x.c);
 
-  const avg = arr => arr.reduce((a,b)=>a+b,0)/arr.length;
+  const avg = arr => arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0;
   const avgGross = avg(prodOnly.map(c=>c.grossPct));
   const avgNet = avg(prodOnly.map(c=>c.netPct));
-  let minObj = all.reduce((m,x)=> x.c.netPct < m.c.netPct ? x : m, all[0]);
+  const avgOxe = avg(prodOnly.map(c=>c.oxe));
+  let minObj = prodObjs.reduce((m,x)=> x.c.netPct < m.c.netPct ? x : m, prodObjs[0]);
   const corevLoad = G.comm + G.ref + G.op;
 
   const cards = [
     {lbl:"Avg gross margin", val:pct(avgGross), meta:"after OxeFit cost · products"},
     {lbl:"Avg net margin", val:pct(avgNet), meta:"CoreV net · on list price"},
     {lbl:"Lowest net margin", val:pct(minObj.c.netPct), meta:minObj.r.name},
+    {lbl:"Avg OxeFit cost", val:fmt(avgOxe), meta:"AED · per product unit"},
     {lbl:"CoreV cost load", val:pct(corevLoad), meta:"commission + referral + ops"},
   ];
   $("kpis").innerHTML = cards.map(c=>`
@@ -1182,7 +1217,7 @@ function flashKpis(){
 }
 
 function bindCells(){
-  ROOT.querySelectorAll(".cell-in").forEach(inp=>{
+  $("tbody").querySelectorAll(".cell-in").forEach(inp=>{
     inp.addEventListener("change", e=>{
       const tr = e.target.closest("tr");
       const tag = tr.dataset.tag, i = +tr.dataset.i, step = e.target.dataset.step;
@@ -1228,11 +1263,128 @@ $("resetBtn").addEventListener("click", ()=>{
   bindGlobals(); render();
 });
 
+/* ---------- Deal builder ---------- */
+let DEAL = { items:[], extra:0 };
+
+function catalogItems(){
+  const out=[];
+  DATA.forEach(g=>g.rows.forEach(r=>out.push({group:g.group, row:r})));
+  SVC.rows.forEach(r=>out.push({group:"Services", row:r}));
+  return out;
+}
+function findCatalog(sku){ const it=catalogItems().find(x=>x.row.sku===sku); return it?it.row:null; }
+
+function dealLineCalc(item){
+  const row=findCatalog(item.sku); if(!row) return null;
+  const base=calcRow(row);
+  const unitSell=(item.price!=null?item.price:base.sell);
+  const unitDisc=(item.disc!=null?item.disc:(row.disc||0));
+  const unitOxe=base.oxe;
+  const qty=item.qty||0, extra=DEAL.extra||0;
+  const lineSell=unitSell*qty;
+  const lineNetRev=(unitSell-unitDisc)*qty*(1-extra);
+  const lineOxe=unitOxe*qty;
+  const lineGross=lineNetRev-lineOxe;
+  const grossPct=lineNetRev?lineGross/lineNetRev:0;
+  const lineCorev=lineNetRev*(G.comm+G.ref+G.op);
+  const lineNet=lineGross-lineCorev;
+  const netPct=lineSell?lineNet/lineSell:0;
+  return {row,unitSell,unitDisc,unitOxe,qty,lineSell,lineNetRev,lineOxe,lineGross,grossPct,lineCorev,lineNet,netPct};
+}
+
+function dealOptions(sel){
+  let html="";
+  const groups={};
+  catalogItems().forEach(x=>{ (groups[x.group]=groups[x.group]||[]).push(x.row); });
+  Object.keys(groups).forEach(g=>{
+    html+=`<optgroup label="${g}">`+groups[g].map(r=>`<option value="${r.sku}" ${r.sku===sel?'selected':''}>${r.name}</option>`).join("")+`</optgroup>`;
+  });
+  return html;
+}
+
+function renderDeal(){
+  if(!$("dbody")) return;
+  let body="", tot={sell:0,netRev:0,oxe:0,gross:0,corev:0,net:0,units:0};
+  DEAL.items.forEach((item,i)=>{
+    const c=dealLineCalc(item); if(!c) return;
+    tot.sell+=c.lineSell; tot.netRev+=c.lineNetRev; tot.oxe+=c.lineOxe; tot.gross+=c.lineGross; tot.corev+=c.lineCorev; tot.net+=c.lineNet; tot.units+=c.qty;
+    const oxeW=c.lineNetRev>0?Math.max(0,(c.lineOxe/c.lineNetRev)*100):0;
+    const corevW=c.lineNetRev>0?Math.max(0,(c.lineCorev/c.lineNetRev)*100):0;
+    const netW=Math.max(0,100-oxeW-corevW);
+    const thin=c.netPct<0.27;
+    body+=`<tr data-i="${i}">
+      <td class="l"><select class="cell-in dl-sku">${dealOptions(item.sku)}</select><div class="psku">${c.row.sku}</div></td>
+      <td><input class="cell-in qty dl-qty" type="number" value="${c.qty}"></td>
+      <td><input class="cell-in dl-price" type="number" value="${Math.round(c.unitSell)}"></td>
+      <td><input class="cell-in dl-disc" type="number" value="${Math.round(c.unitDisc)}"></td>
+      <td class="derived">${fmt(c.lineNetRev)}</td>
+      <td class="derived">${fmt(c.lineOxe)}</td>
+      <td class="derived">${fmt(c.lineGross)} <span class="pct good">${pct(c.grossPct)}</span></td>
+      <td class="derived">${fmt(c.lineCorev)}</td>
+      <td class="derived net">${fmt(c.lineNet)} <span class="pct ${thin?'thin':'good'}">${pct(c.netPct)}</span></td>
+      <td class="barcell"><div class="bar" title="OxeFit ${oxeW.toFixed(0)}% · CoreV ${corevW.toFixed(0)}% · Net ${netW.toFixed(0)}%">
+        <span class="seg-oxe" style="width:${oxeW}%"></span><span class="seg-corev" style="width:${corevW}%"></span><span class="seg-net" style="width:${netW}%"></span>
+      </div></td>
+      <td><button class="dl-del" data-i="${i}">×</button></td></tr>`;
+  });
+  $("dbody").innerHTML = body || `<tr><td colspan="11" style="text-align:center;color:var(--muted);padding:20px">No line items yet — click \u201c+ Add line item\u201d to start building a deal.</td></tr>`;
+  const gP=tot.netRev?tot.gross/tot.netRev:0, nP=tot.sell?tot.net/tot.sell:0;
+  $("dfoot").innerHTML = DEAL.items.length ? `<tr>
+    <td class="l">Deal total${DEAL.extra?` · ${pct(DEAL.extra)} deal disc`:''}</td>
+    <td class="tnum">${fmt(tot.units)}</td><td></td><td></td>
+    <td class="tnum">${fmt(tot.netRev)}</td>
+    <td class="tnum">${fmt(tot.oxe)}</td>
+    <td class="tnum">${fmt(tot.gross)} <span class="pct good">${pct(gP)}</span></td>
+    <td class="tnum">${fmt(tot.corev)}</td>
+    <td class="tnum net">${fmt(tot.net)} <span class="pct good">${pct(nP)}</span></td>
+    <td></td><td></td></tr>` : "";
+
+  const cards=[
+    {lbl:"Deal net revenue", val:fmt(tot.netRev), meta:tot.units+" unit"+(tot.units===1?"":"s")},
+    {lbl:"Gross margin", val:pct(gP), meta:fmt(tot.gross)+" AED after OxeFit"},
+    {lbl:"Net margin", val:pct(nP), meta:fmt(tot.net)+" AED CoreV net"},
+    {lbl:"Net profit", val:fmt(tot.net), meta:"on "+fmt(tot.sell)+" list"},
+  ];
+  $("dkpis").innerHTML = cards.map(c=>`<div class="kpi"><div class="lbl">${c.lbl}</div><div class="val tnum">${c.val}</div><div class="meta">${c.meta}</div></div>`).join("");
+
+  bindDeal();
+  if(window.CoreVSync) window.CoreVSync.changed();
+}
+
+function bindDeal(){
+  $("dbody").querySelectorAll("tr[data-i]").forEach(tr=>{
+    const i=+tr.dataset.i, item=DEAL.items[i]; if(!item) return;
+    const sk=tr.querySelector(".dl-sku"); if(sk) sk.addEventListener("change",e=>{ const row=findCatalog(e.target.value); item.sku=e.target.value; if(row){ item.price=Math.round(calcRow(row).sell); item.disc=row.disc||0; } renderDeal(); });
+    const q=tr.querySelector(".dl-qty"); if(q) q.addEventListener("change",e=>{ item.qty=parseFloat(e.target.value)||0; renderDeal(); });
+    const p=tr.querySelector(".dl-price"); if(p) p.addEventListener("change",e=>{ item.price=parseFloat(e.target.value)||0; renderDeal(); });
+    const d=tr.querySelector(".dl-disc"); if(d) d.addEventListener("change",e=>{ item.disc=parseFloat(e.target.value)||0; renderDeal(); });
+  });
+  $("dbody").querySelectorAll(".dl-del").forEach(b=>b.addEventListener("click",e=>{ DEAL.items.splice(+e.target.dataset.i,1); renderDeal(); }));
+}
+
+function addDealLine(){
+  const first=catalogItems()[0]; if(!first) return;
+  const row=first.row;
+  DEAL.items.push({sku:row.sku, qty:1, price:Math.round(calcRow(row).sell), disc:row.disc||0});
+  renderDeal();
+}
+
+$("d_add").addEventListener("click", addDealLine);
+$("d_clear").addEventListener("click", ()=>{ DEAL.items=[]; DEAL.extra=0; $("d_extra").value=0; renderDeal(); });
+$("d_extra").addEventListener("input", e=>{ DEAL.extra=(parseFloat(e.target.value)||0)/100; renderDeal(); });
+
+ROOT.querySelectorAll(".costnav button").forEach(b=>b.addEventListener("click",()=>{
+  ROOT.querySelectorAll(".costnav button").forEach(x=>x.classList.remove("active"));
+  ROOT.querySelectorAll(".costsub").forEach(p=>p.classList.remove("active"));
+  b.classList.add("active"); $(b.dataset.cs).classList.add("active");
+  if(b.dataset.cs==="cost-deal") renderDeal();
+}));
+
 bindGlobals();
 render();
 if(window.CoreVSync) window.CoreVSync.register('costing',
-  ()=>({G,DATA,SVC}),
-  env=>{ try{ if(env.G)G=env.G; if(Array.isArray(env.DATA))DATA=env.DATA; if(env.SVC&&Array.isArray(env.SVC.rows))SVC=env.SVC; bindGlobals(); render(); }catch(_){} });
+  ()=>({G,DATA,SVC,DEAL}),
+  env=>{ try{ if(env.G)G=env.G; if(Array.isArray(env.DATA))DATA=env.DATA; if(env.SVC&&Array.isArray(env.SVC.rows))SVC=env.SVC; if(env.DEAL&&Array.isArray(env.DEAL.items))DEAL=env.DEAL; bindGlobals(); render(); renderDeal(); }catch(_){} });
 
 })();</script>
 <script>(function(){
