@@ -198,6 +198,7 @@
   .dl-del{cursor:pointer;border:1px solid var(--line);background:none;color:var(--muted);border-radius:6px;width:26px;height:26px;font-size:15px;line-height:1}
   .dl-del:hover{border-color:var(--warn);color:var(--warn)}
   .barpct{font-family:"JetBrains Mono",monospace;font-size:9.5px;color:var(--muted);margin-top:4px;white-space:nowrap}
+  .dealgive{margin:16px 0 2px;background:var(--input-soft);border:1px solid #CFE0FF;color:var(--ink);border-radius:10px;padding:11px 14px;font-size:12.5px;line-height:1.5}
 
 
   :root{
@@ -558,13 +559,13 @@
       <button id="altSignIn" class="gate-alt">Having trouble? Try popup sign-in</button>
       <div id="authErr" class="gate-err"></div>
       <div class="gate-foot">Management access only</div>
-      <div class="gate-ver">v1.10.1 · 2026-06-14</div>
+      <div class="gate-ver">v1.11.0 · 2026-06-14</div>
     </div>
   </div>
 
   <div id="appRoot" style="display:none">
   <header class="topbar">
-    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.10.1</span></div>
+    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.11.0</span></div>
     <nav class="tabnav">
       <button data-tab="tab-costing" class="active"><span class="n">01</span>Costing</button>
       <button data-tab="tab-commission"><span class="n">02</span>Commission</button>
@@ -673,6 +674,10 @@
             <label>Deal-wide extra discount</label>
             <div class="inputwrap"><input id="d_extra" type="number" step="0.5" value="0"><span class="affix">%</span></div>
           </div>
+          <div class="field">
+            <label>Free units (given)</label>
+            <div class="inputwrap"><input id="d_free" type="number" step="1" value="0"><span class="affix">units</span></div>
+          </div>
           <button class="addline" id="d_add">+ Add line item</button>
           <button class="addline" id="d_pdf" style="background:var(--ink)">⤓ Quote PDF</button>
           <button class="reset" id="d_clear">↺ Clear deal</button>
@@ -688,7 +693,6 @@
               <tr>
                 <th class="l">Line item</th>
                 <th>Qty</th>
-                <th>Free<span class="u">units · input</span></th>
                 <th>Unit price<span class="u">AED · input</span></th>
                 <th>Unit disc<span class="u">AED · input</span></th>
                 <th>Net revenue<span class="u">AED</span></th>
@@ -712,9 +716,11 @@
         </div>
       </section>
 
+      <div id="dgiveaway" class="dealgive" style="display:none"></div>
+
       <div class="note">
         <span class="ic">i</span>
-        <span>Pick any catalog product or service, set the quantity, then flex the <b>unit price</b> or <b>discount</b> — every line shows its own gross &amp; net margin and the KPI cards + deal total update live. The deal-wide discount applies on top of per-line discounts. Unit costs come straight from the catalog cost stack, so changing a global assumption (exchange, ops, commission) reprices the deal too.</span>
+        <span>Pick any catalog product or service, set the quantity, then flex the <b>unit price</b> or <b>discount</b> — every line shows its own gross &amp; net margin and the KPI cards + deal total update live. The deal-wide discount applies on top of per-line discounts. <b>Free units</b> are treated as a give-away discount: they are <b>not</b> taken out of revenue — instead their cost (free units × average OxeFit unit cost) is <b>deducted from net profit</b>. Unit costs come straight from the catalog cost stack.</span>
       </div>
     </div><!-- /cost-deal -->
 
@@ -1266,7 +1272,7 @@ $("resetBtn").addEventListener("click", ()=>{
 });
 
 /* ---------- Deal builder ---------- */
-let DEAL = { items:[], extra:0 };
+let DEAL = { items:[], extra:0, freeUnits:0 };
 
 function catalogItems(){
   const out=[];
@@ -1283,17 +1289,15 @@ function dealLineCalc(item){
   const unitDisc=(item.disc!=null?item.disc:(row.disc||0));
   const unitOxe=base.oxe;
   const qty=item.qty||0, extra=DEAL.extra||0;
-  const free=Math.min(Math.max(0,item.free||0), qty);   // units given free (one-time), within delivered qty
-  const charged=Math.max(0, qty-free);
-  const lineSell=unitSell*charged;
-  const lineNetRev=(unitSell-unitDisc)*charged*(1-extra);
-  const lineOxe=unitOxe*qty;                              // OxeFit cost still incurred on every delivered unit
+  const lineSell=unitSell*qty;
+  const lineNetRev=(unitSell-unitDisc)*qty*(1-extra);
+  const lineOxe=unitOxe*qty;
   const lineGross=lineNetRev-lineOxe;
   const grossPct=lineNetRev?lineGross/lineNetRev:0;
   const lineCorev=lineNetRev*(G.comm+G.ref+G.op);
   const lineNet=lineGross-lineCorev;
   const netPct=lineSell?lineNet/lineSell:0;
-  return {row,unitSell,unitDisc,unitOxe,qty,free,charged,lineSell,lineNetRev,lineOxe,lineGross,grossPct,lineCorev,lineNet,netPct};
+  return {row,unitSell,unitDisc,unitOxe,qty,lineSell,lineNetRev,lineOxe,lineGross,grossPct,lineCorev,lineNet,netPct};
 }
 
 function dealOptions(sel){
@@ -1308,10 +1312,10 @@ function dealOptions(sel){
 
 function renderDeal(){
   if(!$("dbody")) return;
-  let body="", tot={sell:0,netRev:0,oxe:0,gross:0,corev:0,net:0,units:0,free:0};
+  let body="", tot={sell:0,netRev:0,oxe:0,gross:0,corev:0,net:0,units:0};
   DEAL.items.forEach((item,i)=>{
     const c=dealLineCalc(item); if(!c) return;
-    tot.sell+=c.lineSell; tot.netRev+=c.lineNetRev; tot.oxe+=c.lineOxe; tot.gross+=c.lineGross; tot.corev+=c.lineCorev; tot.net+=c.lineNet; tot.units+=c.qty; tot.free+=c.free;
+    tot.sell+=c.lineSell; tot.netRev+=c.lineNetRev; tot.oxe+=c.lineOxe; tot.gross+=c.lineGross; tot.corev+=c.lineCorev; tot.net+=c.lineNet; tot.units+=c.qty;
     const oxeW=c.lineNetRev>0?Math.max(0,(c.lineOxe/c.lineNetRev)*100):0;
     const corevW=c.lineNetRev>0?Math.max(0,(c.lineCorev/c.lineNetRev)*100):0;
     const netW=Math.max(0,100-oxeW-corevW);
@@ -1319,10 +1323,9 @@ function renderDeal(){
     body+=`<tr data-i="${i}">
       <td class="l"><select class="cell-in dl-sku">${dealOptions(item.sku)}</select><div class="psku">${c.row.sku}</div></td>
       <td><input class="cell-in qty dl-qty" type="number" value="${c.qty}"></td>
-      <td><input class="cell-in qty dl-free" type="number" value="${c.free}"></td>
       <td><input class="cell-in dl-price" type="number" value="${Math.round(c.unitSell)}"></td>
       <td><input class="cell-in dl-disc" type="number" value="${Math.round(c.unitDisc)}"></td>
-      <td class="derived">${fmt(c.lineNetRev)}${c.free?`<div class="psku">${c.charged} charged · ${c.free} free</div>`:''}</td>
+      <td class="derived">${fmt(c.lineNetRev)}</td>
       <td class="derived">${fmt(c.lineOxe)}</td>
       <td class="derived">${fmt(c.lineGross)} <span class="pct ${c.grossPct<0?'thin':'good'}">${pct(c.grossPct)}</span></td>
       <td class="derived">${fmt(c.lineCorev)}</td>
@@ -1332,23 +1335,36 @@ function renderDeal(){
       </div><div class="barpct">OxeFit ${oxeW.toFixed(0)}% · CoreV ${corevW.toFixed(0)}% · Net ${netW.toFixed(0)}%</div></td>
       <td><button class="dl-del" data-i="${i}">×</button></td></tr>`;
   });
-  $("dbody").innerHTML = body || `<tr><td colspan="12" style="text-align:center;color:var(--muted);padding:20px">No line items yet — click \u201c+ Add line item\u201d to start building a deal.</td></tr>`;
-  const gP=tot.netRev?tot.gross/tot.netRev:0, nP=tot.sell?tot.net/tot.sell:0;
+  $("dbody").innerHTML = body || `<tr><td colspan="11" style="text-align:center;color:var(--muted);padding:20px">No line items yet — click \u201c+ Add line item\u201d to start building a deal.</td></tr>`;
+
+  // deal-level free units: NOT taken from revenue — their cost is deducted from net profit only
+  const freeUnits=Math.max(0, DEAL.freeUnits||0);
+  const avgOxe = tot.units>0 ? tot.oxe/tot.units : 0;
+  const freeCost = freeUnits*avgOxe;
+  const netAfter = tot.net - freeCost;
+
+  const gP=tot.netRev?tot.gross/tot.netRev:0, nP=tot.sell?netAfter/tot.sell:0;
   $("dfoot").innerHTML = DEAL.items.length ? `<tr>
-    <td class="l">Deal total${DEAL.extra?` · ${pct(DEAL.extra)} deal disc`:''}${tot.free?` · ${fmt(tot.free)} free`:''}</td>
-    <td class="tnum">${fmt(tot.units)}</td><td class="tnum">${fmt(tot.free)}</td><td></td><td></td>
+    <td class="l">Deal total${DEAL.extra?` · ${pct(DEAL.extra)} deal disc`:''}</td>
+    <td class="tnum">${fmt(tot.units)}</td><td></td><td></td>
     <td class="tnum">${fmt(tot.netRev)}</td>
     <td class="tnum">${fmt(tot.oxe)}</td>
     <td class="tnum">${fmt(tot.gross)} <span class="pct good">${pct(gP)}</span></td>
     <td class="tnum">${fmt(tot.corev)}</td>
-    <td class="tnum net">${fmt(tot.net)} <span class="pct good">${pct(nP)}</span></td>
+    <td class="tnum net">${fmt(netAfter)} <span class="pct ${nP<0?'thin':'good'}">${pct(nP)}</span></td>
     <td></td><td></td></tr>` : "";
 
+  // giveaway note line
+  const gv=$("dgiveaway");
+  if(gv){ if(freeUnits>0 && tot.units>0){ gv.style.display="block";
+      gv.innerHTML=`🎁 <b>${fmt(freeUnits)} free unit${freeUnits===1?'':'s'}</b> given — revenue unchanged; cost deducted from profit: ${fmt(freeUnits)} × ${fmt(avgOxe)} avg OxeFit unit cost = <b>−${fmt(freeCost)} AED</b>. Net profit ${fmt(tot.net)} → <b>${fmt(netAfter)} AED</b>.`;
+    } else { gv.style.display="none"; gv.innerHTML=""; } }
+
   const cards=[
-    {lbl:"Deal net revenue", val:fmt(tot.netRev), meta:fmt(tot.units)+" unit"+(tot.units===1?"":"s")+(tot.free?` · ${fmt(tot.free)} free`:"")},
+    {lbl:"Deal net revenue", val:fmt(tot.netRev), meta:fmt(tot.units)+" unit"+(tot.units===1?"":"s")},
     {lbl:"Gross margin", val:pct(gP), meta:fmt(tot.gross)+" AED after OxeFit"},
-    {lbl:"Net margin", val:pct(nP), meta:fmt(tot.net)+" AED CoreV net"},
-    {lbl:"Net profit", val:fmt(tot.net), meta:"on "+fmt(tot.sell)+" list"},
+    {lbl:"Net margin", val:pct(nP), meta:fmt(netAfter)+" AED CoreV net"},
+    {lbl:"Net profit", val:fmt(netAfter), meta:freeUnits>0?`after ${fmt(freeUnits)} free (−${fmt(freeCost)})`:"on "+fmt(tot.sell)+" list"},
   ];
   $("dkpis").innerHTML = cards.map(c=>`<div class="kpi"><div class="lbl">${c.lbl}</div><div class="val tnum">${c.val}</div><div class="meta">${c.meta}</div></div>`).join("");
 
@@ -1361,7 +1377,6 @@ function bindDeal(){
     const i=+tr.dataset.i, item=DEAL.items[i]; if(!item) return;
     const sk=tr.querySelector(".dl-sku"); if(sk) sk.addEventListener("change",e=>{ const row=findCatalog(e.target.value); item.sku=e.target.value; if(row){ item.price=Math.round(calcRow(row).sell); item.disc=row.disc||0; } renderDeal(); });
     const q=tr.querySelector(".dl-qty"); if(q) q.addEventListener("change",e=>{ item.qty=parseFloat(e.target.value)||0; renderDeal(); });
-    const fr=tr.querySelector(".dl-free"); if(fr) fr.addEventListener("change",e=>{ item.free=parseFloat(e.target.value)||0; renderDeal(); });
     const p=tr.querySelector(".dl-price"); if(p) p.addEventListener("change",e=>{ item.price=parseFloat(e.target.value)||0; renderDeal(); });
     const d=tr.querySelector(".dl-disc"); if(d) d.addEventListener("change",e=>{ item.disc=parseFloat(e.target.value)||0; renderDeal(); });
   });
@@ -1371,7 +1386,7 @@ function bindDeal(){
 function addDealLine(){
   const first=catalogItems()[0]; if(!first) return;
   const row=first.row;
-  DEAL.items.push({sku:row.sku, qty:1, free:0, price:Math.round(calcRow(row).sell), disc:row.disc||0});
+  DEAL.items.push({sku:row.sku, qty:1, price:Math.round(calcRow(row).sell), disc:row.disc||0});
   renderDeal();
 }
 
@@ -1386,54 +1401,58 @@ function dealPDF(){
   doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(120,130,150); doc.text("Generated "+dateStr,W-40,40,{align:"right"});
   doc.setDrawColor(59,91,219); doc.setLineWidth(2); doc.line(40,84,W-40,84);
 
-  let tot={sell:0,netRev:0,oxe:0,gross:0,corev:0,net:0,units:0,free:0};
+  let tot={sell:0,netRev:0,oxe:0,gross:0,corev:0,net:0,units:0};
   const rows=DEAL.items.map(item=>{ const c=dealLineCalc(item); if(!c)return null;
-    tot.sell+=c.lineSell;tot.netRev+=c.lineNetRev;tot.oxe+=c.lineOxe;tot.gross+=c.lineGross;tot.corev+=c.lineCorev;tot.net+=c.lineNet;tot.units+=c.qty;tot.free+=c.free;
-    return [c.row.name, String(c.qty), String(c.free), fmt(c.unitSell), fmt(c.unitDisc), fmt(c.lineNetRev), fmt(c.lineOxe), fmt(c.lineGross)+" ("+pct(c.grossPct)+")", fmt(c.lineNet)+" ("+pct(c.netPct)+")"];
+    tot.sell+=c.lineSell;tot.netRev+=c.lineNetRev;tot.oxe+=c.lineOxe;tot.gross+=c.lineGross;tot.corev+=c.lineCorev;tot.net+=c.lineNet;tot.units+=c.qty;
+    return [c.row.name, String(c.qty), fmt(c.unitSell), fmt(c.unitDisc), fmt(c.lineNetRev), fmt(c.lineOxe), fmt(c.lineGross)+" ("+pct(c.grossPct)+")", fmt(c.lineNet)+" ("+pct(c.netPct)+")"];
   }).filter(Boolean);
-  const gP=tot.netRev?tot.gross/tot.netRev:0, nP=tot.sell?tot.net/tot.sell:0;
+  const freeUnits=Math.max(0, DEAL.freeUnits||0);
+  const avgOxe=tot.units>0?tot.oxe/tot.units:0, freeCost=freeUnits*avgOxe, netAfter=tot.net-freeCost;
+  const gP=tot.netRev?tot.gross/tot.netRev:0, nP=tot.sell?netAfter/tot.sell:0;
 
   doc.autoTable({
     startY:100,
-    head:[["Line item","Qty","Free","Unit price","Unit disc","Net revenue","OxeFit cost","Gross profit","Net profit"]],
+    head:[["Line item","Qty","Unit price","Unit disc","Net revenue","OxeFit cost","Gross profit","Net profit"]],
     body:rows,
-    foot:[["Deal total"+(DEAL.extra?" · "+pct(DEAL.extra)+" disc":""), String(tot.units), String(tot.free), "", "", fmt(tot.netRev), fmt(tot.oxe), fmt(tot.gross)+" ("+pct(gP)+")", fmt(tot.net)+" ("+pct(nP)+")"]],
+    foot:[["Deal total"+(DEAL.extra?" · "+pct(DEAL.extra)+" disc":""), String(tot.units), "", "", fmt(tot.netRev), fmt(tot.oxe), fmt(tot.gross)+" ("+pct(gP)+")", fmt(tot.net)]],
     styles:{font:"helvetica",fontSize:8,cellPadding:4,textColor:[20,30,50]},
     headStyles:{fillColor:[14,22,38],textColor:[255,255,255],fontStyle:"bold"},
     footStyles:{fillColor:[240,243,250],textColor:[14,22,38],fontStyle:"bold"},
-    columnStyles:{0:{halign:"left",cellWidth:120},1:{halign:"right"},2:{halign:"right"},3:{halign:"right"},4:{halign:"right"},5:{halign:"right"},6:{halign:"right"},7:{halign:"right"},8:{halign:"right"}},
+    columnStyles:{0:{halign:"left",cellWidth:150},1:{halign:"right"},2:{halign:"right"},3:{halign:"right"},4:{halign:"right"},5:{halign:"right"},6:{halign:"right"},7:{halign:"right"}},
     margin:{left:40,right:40}
   });
 
   let y=doc.lastAutoTable.finalY+22;
   doc.setFont("helvetica","bold"); doc.setFontSize(11); doc.setTextColor(14,22,38); doc.text("Deal summary",40,y);
+  const sumRows=[
+    ["Deal net revenue", fmt(tot.netRev)+" AED"],
+    ["OxeFit cost", fmt(tot.oxe)+" AED"],
+    ["Gross profit", fmt(tot.gross)+" AED ("+pct(gP)+")"],
+    ["CoreV cost (commission + referral + ops · "+pct(G.comm+G.ref+G.op)+")", fmt(tot.corev)+" AED"],
+    ["Net profit (before give-away)", fmt(tot.net)+" AED"],
+  ];
+  if(freeUnits>0) sumRows.push(["Less: "+fmt(freeUnits)+" free unit"+(freeUnits===1?"":"s")+" (× "+fmt(avgOxe)+" avg OxeFit unit cost)", "− "+fmt(freeCost)+" AED"]);
+  sumRows.push(["CoreV net profit", fmt(netAfter)+" AED ("+pct(nP)+")"]);
+  sumRows.push(["Deal-wide extra discount", pct(DEAL.extra||0)]);
   doc.autoTable({
-    startY:y+8, theme:"plain",
-    body:[
-      ["Deal net revenue", fmt(tot.netRev)+" AED"],
-      ["OxeFit cost", fmt(tot.oxe)+" AED"],
-      ["Gross profit", fmt(tot.gross)+" AED ("+pct(gP)+")"],
-      ["CoreV cost (commission + referral + ops · "+pct(G.comm+G.ref+G.op)+")", fmt(tot.corev)+" AED"],
-      ["CoreV net profit", fmt(tot.net)+" AED ("+pct(nP)+")"],
-      ["Units delivered (free of which)", fmt(tot.units)+"  ("+fmt(tot.free)+" free)"],
-      ["Deal-wide extra discount", pct(DEAL.extra||0)],
-    ],
+    startY:y+8, theme:"plain", body:sumRows,
     styles:{font:"helvetica",fontSize:9,cellPadding:3},
-    columnStyles:{0:{cellWidth:300,textColor:[100,110,130]},1:{halign:"right",fontStyle:"bold",textColor:[14,22,38]}},
+    columnStyles:{0:{cellWidth:320,textColor:[100,110,130]},1:{halign:"right",fontStyle:"bold",textColor:[14,22,38]}},
     margin:{left:40,right:40}
   });
 
   y=doc.lastAutoTable.finalY+18;
   doc.setFont("helvetica","normal"); doc.setFontSize(7.5); doc.setTextColor(150,160,175);
-  doc.text("Indicative figures based on current catalog cost stack and assumptions. OxeFit cost is incurred on every delivered unit, including units given free.",40,y,{maxWidth:W-80});
+  doc.text("Indicative figures based on current catalog cost stack and assumptions. Free units are a give-away discount: revenue is unchanged and their cost is deducted from net profit only.",40,y,{maxWidth:W-80});
 
   doc.save("OXEFIT-CoreV-Deal-Quote-"+dateStr+".pdf");
 }
 
 $("d_add").addEventListener("click", addDealLine);
 $("d_pdf").addEventListener("click", dealPDF);
-$("d_clear").addEventListener("click", ()=>{ DEAL.items=[]; DEAL.extra=0; $("d_extra").value=0; renderDeal(); });
+$("d_clear").addEventListener("click", ()=>{ DEAL.items=[]; DEAL.extra=0; DEAL.freeUnits=0; $("d_extra").value=0; $("d_free").value=0; renderDeal(); });
 $("d_extra").addEventListener("input", e=>{ DEAL.extra=(parseFloat(e.target.value)||0)/100; renderDeal(); });
+$("d_free").addEventListener("input", e=>{ DEAL.freeUnits=parseInt(e.target.value)||0; renderDeal(); });
 
 ROOT.querySelectorAll(".costnav button").forEach(b=>b.addEventListener("click",()=>{
   ROOT.querySelectorAll(".costnav button").forEach(x=>x.classList.remove("active"));
