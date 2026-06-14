@@ -533,6 +533,7 @@
   .bm-chip.over b{color:var(--warn)}
   .ctrls .grow{flex:1}
   .synced{font-size:12px;color:var(--muted)}
+  .resync-wrap{display:flex;align-items:center;gap:10px}
   .synced b{color:var(--text)}
 
   .rm-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:16px}
@@ -642,13 +643,13 @@
       <button id="altSignIn" class="gate-alt">Having trouble? Try popup sign-in</button>
       <div id="authErr" class="gate-err"></div>
       <div class="gate-foot">Management access only</div>
-      <div class="gate-ver">v1.24.1 · 2026-06-14</div>
+      <div class="gate-ver">v1.26.0 · 2026-06-14</div>
     </div>
   </div>
 
   <div id="appRoot" style="display:none">
   <header class="topbar">
-    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.24.1</span></div>
+    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.26.0</span></div>
     <nav class="tabnav">
       <button data-tab="tab-costing" class="active"><span class="n">01</span>Costing</button>
       <button data-tab="tab-commission"><span class="n">02</span>Commission</button>
@@ -1033,24 +1034,6 @@
   <div id="tab-reminders" class="tabpanel">
   <div class="wrap">
 
-    <!-- CONTROLS -->
-    <section class="blk">
-      <div class="blkhead"><h2>Payment reminders</h2><span class="why">— receivables sync from the Commission tab; payables are entered here.</span></div>
-      <div class="panel pad">
-        <div class="ctrls">
-          <div class="f"><label>Due-soon window</label><input id="rm_soon" type="number" step="1"><span style="font-size:11px;color:var(--muted);margin-left:4px">days</span></div>
-          <div class="grow"></div>
-          <div style="text-align:right"><div class="synced" id="rm-synced"></div><button class="btn" id="rm-resync" style="margin-top:6px">↻ Re-sync from commission</button></div>
-        </div>
-        <div class="ms-editor">
-          <div class="ms-head"><h3>Default payment milestones</h3><span class="ms-total" id="rm_mstotal"></span><span style="flex:1"></span><button class="btn ghost" id="rm_msadd">+ Add milestone</button></div>
-          <div class="ms-cols"><span>Milestone</span><span>Share</span><span>Reminder offset</span><span></span></div>
-          <div id="rm_ms"></div>
-          <div class="ms-hint">This default applies to every deal that doesn't have its own schedule (starts at 100% on PO/Contract). To set a <b>special schedule for one deal</b>, use <b>⚙ Edit</b> next to that deal in Receivables below. Shares should total 100%; the reminder offset is days after the deal's closed month.</div>
-        </div>
-      </div>
-    </section>
-
     <!-- DASHBOARD -->
     <section class="blk">
       <div class="blkhead"><h2>Dashboard</h2></div>
@@ -1072,7 +1055,8 @@
 
     <!-- RECEIVABLES -->
     <section class="blk">
-      <div class="blkhead"><h2>Receivables — customer milestones</h2><span class="why">— configurable payment milestones (set above). Paid status follows each deal's collected % from commission.</span></div>
+      <div class="blkhead"><h2>Receivables — customer milestones</h2><span class="why">— back-to-back milestones from the Commission tab. Paid status follows each deal's collected %.</span></div>
+      <div class="note" style="margin-top:0"><span class="ic">i</span><span>Each deal defaults to <b>100% on PO/Contract</b>. To set a <b>special schedule for one deal</b>, use <b>⚙ Edit</b> next to that deal in the table below. Shares should total 100%; the reminder offset is days after the deal's closed month.</span></div>
       <div class="rm-filters">
         <div class="ff"><label>Deal</label><select id="rm_fname"></select></div>
         <div class="ff"><label>Month</label><select id="rm_fmonth"></select></div>
@@ -1080,6 +1064,8 @@
           <option value="">All statuses</option><option value="over">Overdue</option><option value="soon">Due soon</option><option value="up">Upcoming</option><option value="paid">Paid</option>
         </select></div>
         <button class="btn" id="rm_fclear">Clear filters</button>
+        <div style="flex:1"></div>
+        <div class="resync-wrap"><span class="synced" id="rm-synced"></span><button class="btn" id="rm-resync">↻ Re-sync from commission</button></div>
       </div>
       <div class="panel scroll">
         <table class="data">
@@ -1097,12 +1083,10 @@
     <section class="blk">
       <div class="blkhead"><h2>Payables — money owed out</h2><span class="why">— OxeFit is back-to-back with client deals; other vendors are manual.</span></div>
 
-      <div class="panel pad">
-        <div class="ctrls">
-          <div class="grow"></div>
-          <div class="oxe-tot" id="rm-oxeTot" style="text-align:right"></div>
-        </div>
-        <div class="ms-hint">OxeFit owes follow each client deal <b>back-to-back</b>: same milestone schedule &amp; dates, settled as the client collects. The amount is OxeFit's <b>actual cost from the Costing catalog</b> — tap <b>🖥 Devices</b> on a deal to set its device type(s) &amp; quantity. You can also type a cost manually for any deal.</div>
+      <div class="oxe-exec">
+        <div class="blkhead" style="margin-bottom:10px"><h2 style="font-size:16px">Executive dashboard</h2><span class="why">— OxeFit obligations, back-to-back with client deals.</span></div>
+        <div class="rm-kpis" id="rm-oxeKpis"></div>
+        <div class="rm-bymonth" id="rm-oxeMonths"></div>
       </div>
 
       <div class="panel scroll" style="margin-top:12px">
@@ -2804,12 +2788,21 @@ function oxeDealView(g){
 }
 function renderOxe(){
   if(!$("rm-oxeBody")) return;
-  const groups=oxefitGroups(); let body="",totalOut=0,totalCost=0,shown=0;
+  const groups=oxefitGroups(); let body="",totalOut=0,totalCost=0,shown=0,paidSum=0,overdueSum=0; const mMap={};
   groups.forEach(g=>{
     if(!dealPasses(g.deal)) return;
     const d=g.deal, v=oxeDealView(g);
     if(FILTER.status && v.status!==FILTER.status) return;
     shown++; totalCost+=v.totalCost; totalOut+=v.outstanding;
+    g.rows.forEach(r=>{
+      if(r.paid){ paidSum+=r.amount; }
+      else {
+        if(statusOf(r.due,false)==="over") overdueSum+=r.amount;
+        const dd=r.due, key=dd.getFullYear()+"-"+String(dd.getMonth()+1).padStart(2,"0");
+        (mMap[key]=mMap[key]||{lbl:MONTHS[dd.getMonth()]+" "+dd.getFullYear(),amt:0,over:false}).amt+=r.amount;
+        if(statusOf(dd,false)==="over") mMap[key].over=true;
+      }
+    });
     const src=oxeCostSource(d), items=oxeItemsOf(d);
     const costTop = (src==="devices")
       ? `<span class="oxe-derived">${fmt(v.totalCost)}</span>`
@@ -2834,7 +2827,18 @@ function renderOxe(){
   });
   $("rm-oxeBody").innerHTML=body || `<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:16px">No client deals${anyFilter()?" match the filters":" yet — they appear automatically from the Commission tab"}.</td></tr>`;
   $("rm-oxeFoot").innerHTML=shown?`<tr><td class="l">Total OxeFit · ${shown} deal${shown===1?"":"s"}</td><td></td><td></td><td></td><td class="tnum">${fmt(totalCost)}</td><td class="l">out ${fmt(totalOut)}</td><td></td><td></td></tr>`:"";
-  const tot=$("rm-oxeTot"); if(tot) tot.innerHTML=`Total OxeFit cost: <b>${fmt(totalCost)}</b> · outstanding <b>${fmt(totalOut)}</b>`;
+  if($("rm-oxeKpis")) $("rm-oxeKpis").innerHTML=[
+    {l:"Total OxeFit cost",v:fmt(totalCost),m:shown+" deal"+(shown===1?"":"s"),c:""},
+    {l:"Paid to OxeFit",v:fmt(paidSum),m:"settled",c:"posv"},
+    {l:"Outstanding to OxeFit",v:fmt(totalOut),m:"to be paid",c:""},
+    {l:"Overdue to OxeFit",v:fmt(overdueSum),m:overdueSum>0?"past due":"none overdue",c:overdueSum>0?"neg":""},
+  ].map(k=>`<div class="kpi ${k.c}"><div class="lbl">${k.l}</div><div class="val tnum">${k.v}</div><div class="meta">${k.m}</div></div>`).join("");
+  if($("rm-oxeMonths")){
+    const mArr=Object.keys(mMap).sort().map(k=>mMap[k]);
+    $("rm-oxeMonths").innerHTML = mArr.length
+      ? `<div class="bm-title">OxeFit owed by month</div>`+mArr.map(m=>`<span class="bm-chip ${m.over?'over':''}"><b>${m.lbl}</b> ${fmt(m.amt)}</span>`).join("")
+      : "";
+  }
   $("rm-oxeBody").querySelectorAll(".oxe-cost").forEach(inp=>inp.addEventListener("change",e=>{
     const k=decodeURIComponent(e.target.dataset.dk); CTRL.oxeOv=CTRL.oxeOv||{}; CTRL.oxeOv[k]=parseFloat(e.target.value)||0; renderOxe(); renderDashboard(); rmChanged();
   }));
@@ -3005,7 +3009,7 @@ $("rm_fname").addEventListener("change",e=>{FILTER.cust=e.target.value;renderRec
 $("rm_fmonth").addEventListener("change",e=>{FILTER.month=e.target.value;renderRecv();renderOxe();});
 $("rm_fstatus").addEventListener("change",e=>{FILTER.status=e.target.value;renderRecv();renderOxe();});
 $("rm_fclear").addEventListener("click",()=>{FILTER={cust:"",month:"",status:""};renderFilters();renderRecv();renderOxe();});
-$("rm_msadd").addEventListener("click",()=>{ if(!Array.isArray(CTRL.def))CTRL.def=defaultDef(); CTRL.def.push({name:"New milestone",pct:0,off:0}); renderMsEditor(); renderDashboard(); renderRecv(); rmChanged(); });
+$("rm_msadd")?.addEventListener("click",()=>{ if(!Array.isArray(CTRL.def))CTRL.def=defaultDef(); CTRL.def.push({name:"New milestone",pct:0,off:0}); renderMsEditor(); renderDashboard(); renderRecv(); rmChanged(); });
 $("rm-msAddRow").addEventListener("click",()=>{ msEditWork.push({name:"New milestone",pct:0,off:0}); renderMsModalBody(); });
 $("rm-msClose").addEventListener("click",closeMsModal);
 $("rm-msCancel").addEventListener("click",closeMsModal);
@@ -3018,8 +3022,6 @@ $("rm-msSave").addEventListener("click",()=>{
   CTRL.perDeal=CTRL.perDeal||{}; CTRL.perDeal[msEditKey]=work;
   closeMsModal(); renderRecv(); renderDashboard(); rmChanged();
 });
-$("rm_soon").value=CTRL.soon;
-$("rm_soon").addEventListener("input",e=>{CTRL.soon=parseInt(e.target.value)||0;renderAll();rmChanged();});
 $("rm-oxeAddRow").addEventListener("click",()=>{ oxeEditWork.push({sku:"",qty:1}); renderOxeModalBody(); });
 $("rm-oxeClose").addEventListener("click",closeOxeModal);
 $("rm-oxeCancel").addEventListener("click",closeOxeModal);
@@ -3057,7 +3059,6 @@ if(window.CoreVSync) window.CoreVSync.register('reminders',
     if(!CTRL.oxeOv) CTRL.oxeOv={};
     if(!CTRL.oxeItems) CTRL.oxeItems={};
     if(!CTRL.oxePaid) CTRL.oxePaid={};
-    $("rm_soon").value=CTRL.soon;
     renderAll();
   }catch(_){} });
 
