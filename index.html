@@ -577,13 +577,13 @@
       <button id="altSignIn" class="gate-alt">Having trouble? Try popup sign-in</button>
       <div id="authErr" class="gate-err"></div>
       <div class="gate-foot">Management access only</div>
-      <div class="gate-ver">v1.15.1 · 2026-06-14</div>
+      <div class="gate-ver">v1.16.0 · 2026-06-14</div>
     </div>
   </div>
 
   <div id="appRoot" style="display:none">
   <header class="topbar">
-    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.15.1</span></div>
+    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.16.0</span></div>
     <nav class="tabnav">
       <button data-tab="tab-costing" class="active"><span class="n">01</span>Costing</button>
       <button data-tab="tab-commission"><span class="n">02</span>Commission</button>
@@ -641,7 +641,7 @@
     </section>
 
     <!-- KPIS -->
-    <section class="kpis" id="kpis"></section>
+    <section class="dgkpis" id="kpis"></section>
 
     <!-- TABLE -->
     <section class="tablecard">
@@ -1310,16 +1310,15 @@ function renderKPIs(){
   let minObj = prodObjs.reduce((m,x)=> x.c.netPct < m.c.netPct ? x : m, prodObjs[0]);
   const corevLoad = G.comm + G.ref + G.op;
 
-  const cards = [
+  const small = [
     {lbl:"Avg gross margin", val:pct(avgGross), meta:"after OxeFit cost · products"},
-    {lbl:"Avg net margin", val:pct(avgNet), meta:"CoreV net · on list price"},
     {lbl:"Lowest net margin", val:pct(minObj.c.netPct), meta:minObj.r.name},
     {lbl:"Avg OxeFit cost", val:fmt(avgOxe), meta:"AED · per product unit"},
     {lbl:"CoreV cost load", val:pct(corevLoad), meta:"commission + referral + ops"},
   ];
-  $("kpis").innerHTML = cards.map(c=>`
-    <div class="kpi"><div class="lbl">${c.lbl}</div>
-    <div class="val tnum">${c.val}</div><div class="meta">${c.meta}</div></div>`).join("");
+  $("kpis").innerHTML =
+    `<div class="dgkpi-grid">`+small.map(c=>`<div class="kpi"><div class="lbl">${c.lbl}</div><div class="val tnum">${c.val}</div><div class="meta">${c.meta}</div></div>`).join("")+`</div>`+
+    `<div class="kpi dgkpi-hero"><div class="lbl">Avg net margin</div><div class="val tnum">${pct(avgNet)}</div><div class="meta">CoreV net profit ÷ list price · across products</div></div>`;
 }
 
 function flashKpis(){
