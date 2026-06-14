@@ -10,7 +10,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.3/lib/msal-browser.min.js"></script>
-<script>if(typeof msal==='undefined'){document.write('<scr'+'ipt src="https://cdnjs.cloudflare.com/ajax/libs/msal-browser/2.38.3/msal-browser.min.js"><\/scr'+'ipt>');}</script>
 <style>
 
   :root{
@@ -288,6 +287,7 @@
   .d-der.elig{font-weight:700;color:var(--pos)}
   .d-der.pend{color:var(--pend)}
   .collauto{font-family:"JetBrains Mono";font-size:11.5px;color:var(--pend);font-weight:600}
+  .collab-tag{font-size:10px;color:var(--blue);margin-top:3px;font-weight:600;max-width:160px}
   .planbtn{cursor:pointer;border:1px solid var(--line);background:#fff;border-radius:6px;padding:4px 8px;font-size:11px;font-weight:600;color:var(--muted)}
   .planbtn.on{background:var(--pend-soft);border-color:var(--pend);color:var(--pend)}
   .del{cursor:pointer;color:#B7C0CE;border:0;background:none;font-size:16px;padding:2px 6px}
@@ -527,13 +527,13 @@
       <button id="altSignIn" class="gate-alt">Having trouble? Try popup sign-in</button>
       <div id="authErr" class="gate-err"></div>
       <div class="gate-foot">Management access only</div>
-      <div class="gate-ver">v1.5.0 · 2026-06-14</div>
+      <div class="gate-ver">v1.6.0 · 2026-06-14</div>
     </div>
   </div>
 
   <div id="appRoot" style="display:none">
   <header class="topbar">
-    <div class="brand"><span class="mark">Core<span class="v">V</span></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.5.0</span></div>
+    <div class="brand"><span class="mark">Core<span class="v">V</span></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.6.0</span></div>
     <nav class="tabnav">
       <button data-tab="tab-costing" class="active"><span class="n">01</span>Costing</button>
       <button data-tab="tab-commission"><span class="n">02</span>Commission</button>
@@ -748,7 +748,7 @@
       </div>
     </section>
 
-    <div class="note"><span class="ic">i</span><span>Commission is calculated <b>month by month</b>: each month's closures are gated at the <b>25% minimum</b> and accelerated independently — a strong month earns its accelerator even if another month falls below minimum. Per-deal commission is verified against your v2 sheet (Wafiq 5,758.85 → 1,727.66 after 30% collection). Tick <b>Future</b> on a deal to attach a payment plan — eligible commission then unlocks as installments fall due.</span></div>
+    <div class="note"><span class="ic">i</span><span>Commission is calculated <b>month by month</b>. The <b>25% minimum</b> and the over-100% accelerator apply <b>from May 2026 onward</b>; deals closed before May 2026 earn the flat base rate with no minimum and no accelerator. HubSpot <b>collaborators</b> are pulled in automatically — the owner is credited <b>TEAMING+</b> and each collaborator <b>TEAMING</b> (adjust roles as needed). Tick <b>Future</b> on a deal to attach a payment plan.</span></div>
   </div>
 
 </div>
@@ -1194,6 +1194,7 @@ const ROOT = document.getElementById('tab-commission');
   const $ = id => ROOT.querySelector('#'+id);
 
 const BASE_RULES = { vat:0.05, base:0.02, thr:0.25, a1:0.035, a2:0.05, b:0.035, ref:0.05 };
+const GATE_FROM = "2026-05";   // 25% minimum + accelerator apply from May/26 onward; earlier deals = flat base commission
 const BASE_MATRIX = {
   "FULL":{target:1.0,earn:1.0,cls:"full"}, "TEAMING+":{target:1.0,earn:0.7,cls:"tp"},
   "HALF":{target:0.5,earn:0.5,cls:"half"}, "TEAMING":{target:0.3,earn:0.3,cls:"team"}, "N/A":{target:0.0,earn:0.0,cls:"na"},
@@ -1245,12 +1246,13 @@ function monthSortKey(label){
   const iso=label.match(/^(\d{4})-(\d{2})/); if(iso) return iso[1]+"-"+iso[2];
   return "8888-"+label;
 }
-function rollDeals(r,deals){
+function rollDeals(r,deals,monthLabel){
   let sales=0,tgt=0,commRaw=0,eligRaw=0;
   deals.forEach(d=>{const c=dealCalc(d);sales+=c.ex;tgt+=c.tgt;commRaw+=c.comm;eligRaw+=c.elig;});
-  const attain=r.target>0?tgt/r.target:0, minReq=r.target*RULES.thr, gated=(r.target>0&&attain<RULES.thr);
+  const ruleOn = monthSortKey(monthLabel) >= GATE_FROM;   // 25% min + accelerator only from May/26
+  const attain=r.target>0?tgt/r.target:0, minReq=r.target*RULES.thr, gated=(ruleOn&&r.target>0&&attain<RULES.thr);
   let accelEarned=0;
-  if(!gated&&r.target>0&&tgt>r.target){
+  if(ruleOn&&!gated&&r.target>0&&tgt>r.target){
     const t130=r.target*1.3,t150=r.target*1.5;
     accelEarned+=(Math.min(tgt,t130)-r.target)*RULES.a1;
     if(tgt>t130)accelEarned+=(Math.min(tgt,t150)-t130)*RULES.a2;
@@ -1258,14 +1260,14 @@ function rollDeals(r,deals){
   }
   const blendColl=commRaw>0?eligRaw/commRaw:0, accelElig=accelEarned*blendColl;
   const earned=gated?0:(commRaw+accelEarned), eligible=gated?0:(eligRaw+accelElig), pending=gated?0:(earned-eligible);
-  return {sales,tgt,attain,minReq,gated,commRaw,eligRaw,accelEarned,accelElig,blendColl,earned,eligible,pending};
+  return {sales,tgt,attain,minReq,gated,ruleOn,commRaw,eligRaw,accelEarned,accelElig,blendColl,earned,eligible,pending};
 }
 // group a rep's deals by closure month; each month gated + accelerated on its own
 function repMonths(r){
   const g={};
   r.deals.forEach(d=>{ const k=d.month||"—"; (g[k]=g[k]||[]).push(d); });
   return Object.keys(g).sort((a,b)=>monthSortKey(a).localeCompare(monthSortKey(b)))
-    .map(k=>({month:k, deals:g[k], R:rollDeals(r,g[k])}));
+    .map(k=>({month:k, deals:g[k], R:rollDeals(r,g[k],k)}));
 }
 function repRoll(r){
   const months=repMonths(r);
@@ -1377,7 +1379,7 @@ function renderRep(){
       : `<input class="d-in coll" data-k="coll" type="number" step="0.05" value="${d.coll}">`;
     body+=`<tr data-i="${i}">
       <td class="l"><select class="d-sel" data-k="type"><option ${d.type==='B2C'?'selected':''}>B2C</option><option ${d.type==='B2B'?'selected':''}>B2B</option></select></td>
-      <td class="l"><input class="d-in cust" data-k="cust" value="${d.cust}"></td>
+      <td class="l"><input class="d-in cust" data-k="cust" value="${d.cust}">${d.collab&&d.collab.length?`<div class="collab-tag" title="HubSpot collaborators">+ ${d.collab.join(", ")}</div>`:""}</td>
       <td><input class="d-in" data-k="gross" type="number" value="${d.gross}"></td>
       <td class="d-der">${fmt(c.ex)}</td>
       <td class="l"><select class="d-sel" data-k="tag">${tagOpts(d.tag)}</select></td>
@@ -1406,7 +1408,7 @@ function renderRep(){
   $("monthlyBox").innerHTML = months.length ? `<div class="mstmt"><div class="ph">Monthly commission — each month gated at ${pct(RULES.thr,0)} minimum and accelerated on that month's closures · click a month to filter</div>
     <table><thead><tr><th class="l">Month</th><th>Credited</th><th>Attain</th><th class="l">Status</th><th>Earned</th><th>Eligible</th><th>Pending</th><th class="l">Payout</th></tr></thead><tbody>`+
     months.map(mo=>{const M=mo.R; const lbl=mo.month==="—"?"Unscheduled":mo.month; const act=monthFilter===mo.month?" mrow-active":""; const paid=payoutPaid(r,mo.month);
-      const status=M.gated?`<span class="att-pill a-min">below min</span>`:(M.accelEarned>0?`<span class="att-pill a-on">accelerator</span>`:`<span class="att-pill a-below">base</span>`);
+      const status=M.gated?`<span class="att-pill a-min">below min</span>`:(M.accelEarned>0?`<span class="att-pill a-on">accelerator</span>`:(M.ruleOn?`<span class="att-pill a-below">base</span>`:`<span class="att-pill a-below">base · pre-rule</span>`));
       const paybtn=`<span class="paypill ${paid?'paid':'unpaid'}" data-pm="${mo.month}" title="Click to mark ${paid?'unpaid':'paid'}">${paid?'✓ Paid':'Pending'}</span>`;
       return `<tr class="mrow${act}" data-m="${mo.month}"><td class="l">${lbl}</td><td>${fmt(M.tgt)}</td><td>${pct(M.attain,0)}</td><td class="l">${status}</td><td>${f2(M.earned)}</td><td style="color:var(--pos)">${f2(M.eligible)}</td><td style="color:var(--pend)">${f2(M.pending)}</td><td class="l">${paybtn}</td></tr>`;}).join("")+
     `</tbody><tfoot><tr><td class="l">Total</td><td>${fmt(R.tgt)}</td><td></td><td></td><td>${f2(R.earned)}</td><td class="tot-pos">${f2(R.eligible)}</td><td class="tot-pend">${f2(R.pending)}</td><td class="l"></td></tr></tfoot></table>
@@ -1496,9 +1498,9 @@ function renderAll(){ renderMatrix(); renderSummary(); renderTabs(); renderRep()
 /* ---------- HubSpot ---------- */
 function monthFromISO(s){ if(!s)return""; const d=new Date(s); if(isNaN(d))return""; return MON[d.getMonth()]+"/"+String(d.getFullYear()).slice(2); }
 function findRep(name){ if(!name)return null; return REPS.find(r=>r.name.toLowerCase()===name.toLowerCase()); }
-function pushHubDeal(rep,{hsId,cust,amount,month}){
-  if(hsId){ const ex=rep.deals.find(d=>d.hsId===hsId); if(ex){ ex.gross=amount||0; ex.cust=cust||ex.cust; ex.month=month||ex.month; return false; } }
-  rep.deals.push({type:"B2B",cust:cust||"HubSpot deal",gross:amount||0,tag:"FULL",coll:0,month:month||"",future:false,plan:[],hsId:hsId||null}); return true;
+function pushHubDeal(rep,{hsId,cust,amount,month,tag,collab}){
+  if(hsId){ const ex=rep.deals.find(d=>d.hsId===hsId); if(ex){ ex.gross=amount||0; ex.cust=cust||ex.cust; ex.month=month||ex.month; if(collab!==undefined)ex.collab=collab; return false; } }
+  rep.deals.push({type:"B2B",cust:cust||"HubSpot deal",gross:amount||0,tag:tag||"FULL",coll:0,month:month||"",future:false,plan:[],hsId:hsId||null,collab:collab||[]}); return true;
 }
 function addHubDeal(cust,amount,owner,month,assign){
   let rep;
@@ -1598,22 +1600,35 @@ async function hsFetchClosedWon(silent){
   const mapped=REPS.filter(r=>HS.ownerMap[r.name]);
   if(!mapped.length){ hsStatus("Map at least one rep to a HubSpot owner — click <b>Connect HubSpot</b>.","err"); return; }
   if(!silent) hsStatus("Fetching closed-won deals…"); let total=0,added=0;
+  // reverse maps for collaborator resolution
+  const id2rep={}; REPS.forEach(rp=>{ if(HS.ownerMap[rp.name]) id2rep[HS.ownerMap[rp.name]]=rp.name; });
+  const id2name={}; (HS.owners||[]).forEach(o=>{ id2name[o.id]=o.name; });
+  const nameOf=id=>id2name[id]||id2rep[id]||("owner "+id);
   try{
     for(const rep of mapped){
       const ownerId=HS.ownerMap[rep.name]; let after,guard=0;
       do{
         const body={filterGroups:[{filters:[{propertyName:"hubspot_owner_id",operator:"EQ",value:ownerId},{propertyName:"dealstage",operator:"NEQ",value:"closedlost"}]}],
-          properties:["dealname","amount","closedate","dealstage","hs_is_closed_won","hs_is_closed"],sorts:[{propertyName:"closedate",direction:"DESCENDING"}],limit:100};
+          properties:["dealname","amount","closedate","dealstage","hs_is_closed_won","hs_is_closed","hs_all_collaborator_owner_ids"],sorts:[{propertyName:"closedate",direction:"DESCENDING"}],limit:100};
         if(after)body.after=after;
         const data=await hsApi("/crm/v3/objects/deals/search",{method:"POST",body:JSON.stringify(body)});
         (data.results||[]).forEach(d=>{ const p=d.properties||{}; const rs=(p.dealstage||"").toLowerCase();
           const won=p.hs_is_closed_won==="true"||rs==="closedwon"||rs.includes("closed won"); if(!won)return; total++;
-          if(pushHubDeal(rep,{hsId:d.id,cust:p.dealname,amount:parseFloat(p.amount)||0,month:monthFromISO(p.closedate)})) added++;
+          const collabIds=(p.hs_all_collaborator_owner_ids||"").split(/[;,]/).map(s=>s.trim()).filter(s=>s&&s!==ownerId);
+          const collabNames=collabIds.map(nameOf);
+          const month=monthFromISO(p.closedate), amount=parseFloat(p.amount)||0;
+          // owner — lead share (TEAMING+ when collaborated, else FULL)
+          if(pushHubDeal(rep,{hsId:d.id,cust:p.dealname,amount,month,tag:collabIds.length?"TEAMING+":"FULL",collab:collabNames})) added++;
+          // collaborators that map to our reps — supporting share (TEAMING)
+          collabIds.forEach(cid=>{ const crepName=id2rep[cid]; if(!crepName||crepName===rep.name)return;
+            const crep=REPS.find(x=>x.name===crepName); if(!crep)return;
+            if(pushHubDeal(crep,{hsId:d.id,cust:p.dealname,amount,month,tag:"TEAMING",collab:[rep.name].concat(collabNames.filter(n=>n!==crepName))})) added++;
+          });
         });
         after=data.paging&&data.paging.next&&data.paging.next.after; guard++;
       }while(after&&guard<50);
     }
-    hsStatus(`Synced ${total} closed-won deal${total===1?"":"s"} across ${mapped.length} rep${mapped.length===1?"":"s"} (${added} new, rest updated).`,"ok");
+    hsStatus(`Synced ${total} closed-won deal${total===1?"":"s"} across ${mapped.length} rep${mapped.length===1?"":"s"} (${added} new, rest updated). Collaborated deals split as TEAMING+ / TEAMING — adjust roles as needed.`,"ok");
     renderAll();
   }catch(e){ hsStatus("Fetch failed: "+e.message,"err"); }
 }
@@ -1717,8 +1732,8 @@ function repPDF(r){
   const rules=[
     "Commission is calculated each month on that month's closed-won deals.",
     "Base rate: "+pct(RULES.base,1)+" of the net sales value (after "+pct(RULES.vat,0)+" VAT is removed).",
-    "Minimum threshold: a rep must reach "+pct(RULES.thr,0)+" of the monthly target in a month, otherwise no commission is payable for that month.",
-    "Over-achievement accelerator, applied only to credited sales above 100% of the monthly target: "+pct(RULES.a1,1)+" on 100-130%, "+pct(RULES.a2,1)+" on 130-150%, "+pct(RULES.b,1)+" above 150%.",
+    "Minimum threshold (from May 2026): a rep must reach "+pct(RULES.thr,0)+" of the monthly target in a month, otherwise no commission is payable that month. Deals closed before May 2026 earn the flat base rate with no minimum.",
+    "Over-achievement accelerator (from May 2026, applied only to credited sales above 100% of the monthly target): "+pct(RULES.a1,1)+" on 100-130%, "+pct(RULES.a2,1)+" on 130-150%, "+pct(RULES.b,1)+" above 150%.",
     "Paid on collection: eligible commission = commission x collected %. The balance stays pending until the customer pays.",
     "Referral commission: flat "+pct(RULES.ref,0)+" of net value, also paid on collection."
   ];
