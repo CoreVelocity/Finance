@@ -643,13 +643,13 @@
       <button id="altSignIn" class="gate-alt">Having trouble? Try popup sign-in</button>
       <div id="authErr" class="gate-err"></div>
       <div class="gate-foot">Management access only</div>
-      <div class="gate-ver">v1.28.0 · 2026-06-14</div>
+      <div class="gate-ver">v1.29.0 · 2026-06-14</div>
     </div>
   </div>
 
   <div id="appRoot" style="display:none">
   <header class="topbar">
-    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.28.0</span></div>
+    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.29.0</span></div>
     <nav class="tabnav">
       <button data-tab="tab-costing" class="active"><span class="n">01</span>Costing</button>
       <button data-tab="tab-commission"><span class="n">02</span>Commission</button>
@@ -1304,6 +1304,37 @@ window.CoreVCloud = (function(){
   init();
 })();
 </script>
+<script>(function(){
+  var IDLE_MS=15*60*1000, WARN_MS=60*1000, last=Date.now(), warned=false, bar=null;
+  function signedIn(){ var a=document.getElementById('appRoot'); return a && a.style.display!=='none'; }
+  function ensureBar(){
+    if(bar) return bar;
+    bar=document.createElement('div'); bar.id='idleWarn';
+    bar.style.cssText='position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:99999;background:#1C4ED8;color:#fff;font-family:Inter,system-ui,sans-serif;font-size:13px;font-weight:600;padding:11px 16px;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.25);display:none;align-items:center;gap:12px';
+    var t=document.createElement('span'); t.id='idleWarnTxt';
+    var b=document.createElement('button'); b.textContent="I'm here"; b.style.cssText='background:#fff;color:#1C4ED8;border:0;border-radius:7px;padding:6px 12px;font-weight:700;cursor:pointer';
+    b.addEventListener('click',function(){ bump(); });
+    bar.appendChild(t); bar.appendChild(b); document.body.appendChild(bar);
+    return bar;
+  }
+  function hideBar(){ if(bar) bar.style.display='none'; }
+  function bump(){ last=Date.now(); warned=false; hideBar(); }
+  ['mousemove','mousedown','keydown','scroll','touchstart','click','wheel'].forEach(function(ev){
+    window.addEventListener(ev, bump, {passive:true});
+  });
+  setInterval(function(){
+    if(!signedIn()){ warned=false; hideBar(); return; }
+    var idle=Date.now()-last, remain=IDLE_MS-idle;
+    if(remain<=0){
+      var btn=document.getElementById('signOut'); hideBar();
+      if(btn){ btn.click(); } 
+    } else if(remain<=WARN_MS){
+      var el=ensureBar(); el.style.display='flex'; warned=true;
+      var secs=Math.ceil(remain/1000);
+      document.getElementById('idleWarnTxt').textContent='Signing you out in '+secs+'s due to inactivity';
+    }
+  }, 1000);
+})();</script>
 <script>
 document.querySelectorAll('.tabnav button').forEach(b=>b.addEventListener('click',()=>{
   document.querySelectorAll('.tabnav button').forEach(x=>x.classList.remove('active'));
