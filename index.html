@@ -1256,7 +1256,9 @@ window.CoreVCloud = (function(){
   const nameFor=e=>ALLOWED[(e||'').toLowerCase().trim()]||null;
   const showErr=m=>{errEl.innerHTML=m;errEl.style.display='block';};
   const clearErr=()=>{errEl.style.display='none';};
-  function startCloud(){ try{ if(window.CoreVCloud) window.CoreVCloud.start(getGraphToken); }catch(_){} }
+  function startCloud(){ window.getGraphToken=getGraphToken; try{ if(window.CoreVCloud) window.CoreVCloud.start(getGraphToken); }catch(_){}
+    try{ const cc=document.getElementById('cloudChip'); if(cc&&!cc._hrWired){ cc._hrWired=true; cc.addEventListener('click',()=>{ if(window.pullHRPayables) window.pullHRPayables(); }); } }catch(_){}
+    setTimeout(()=>{ try{ if(window.pullHRPayables) window.pullHRPayables(); }catch(_){} },2200); }
   function unlock(name){ gate.style.display='none'; app.style.display='block'; nameEl.textContent=name; chip.style.display='flex'; startCloud(); }
   function lock(){ gate.style.display='flex'; app.style.display='none'; chip.style.display='none'; }
   function forget(){ try{Object.keys(localStorage).filter(k=>k.indexOf('msal.')===0).forEach(k=>localStorage.removeItem(k));}catch(_){} account=null; }
@@ -2688,12 +2690,29 @@ function statusOf(due,paid){
 }
 const STLBL={paid:"Paid",over:"Overdue",soon:"Due soon",up:"Upcoming"};
 
+let HRPAY=[];
+async function pullHRPayables(){
+  try{
+    if(!window.getGraphToken) return;
+    const tok=await window.getGraphToken();
+    const url='https://graph.microsoft.com/v1.0/users/'+encodeURIComponent('demo@core-velocity.com')+'/drive/root:/OXEFIT/corev-payables.json:/content';
+    const res=await fetch(url,{headers:{Authorization:'Bearer '+tok}});
+    if(!res.ok) return;
+    const feed=await res.json();
+    const rows=(feed&&(feed.consolidated||feed.payables))||[];
+    HRPAY=rows.map(r=>({payee:r.supplier||'Supplier',desc:'HR \u00b7 '+(r.month||'')+(r.description?(' \u00b7 '+r.description):''),amount:+r.amount||0,due:(r.dueDate&&/^\d{4}-\d{2}-\d{2}/.test(r.dueDate))?String(r.dueDate).slice(0,10):((r.month||'2026-01')+'-28'),recur:'Monthly',paid:(r.status==='Paid'),_hr:true,month:r.month||'',status:r.status||''}));
+    if(typeof renderPay==='function') renderPay();
+    if(typeof renderDashboard==='function') renderDashboard();
+  }catch(e){ try{console.warn('pullHRPayables',e);}catch(_){} }
+}
+window.pullHRPayables=pullHRPayables;
 function renderDashboard(){
   const recv=receivables();
   const payManual=PAY.map(p=>({...p,due:new Date(p.due+"T00:00:00")}));
   const oxe=oxefitPayables();   // each has due (Date), amount, paid, payee, desc, customer, name
+  const hrPay=(HRPAY||[]).map(p=>({...p,due:new Date(p.due+"T00:00:00")}));
   const recvOut=recv.filter(r=>!r.paid);
-  const payOut=[...payManual.filter(p=>!p.paid), ...oxe.filter(p=>!p.paid)];
+  const payOut=[...payManual.filter(p=>!p.paid), ...oxe.filter(p=>!p.paid), ...hrPay.filter(p=>!p.paid)];
   const recvSum=recvOut.reduce((a,r)=>a+r.amount,0);
   const paySum=payOut.reduce((a,p)=>a+p.amount,0);
   const overR=recvOut.filter(r=>statusOf(r.due,false)==="over").reduce((a,r)=>a+r.amount,0);
@@ -2701,7 +2720,7 @@ function renderDashboard(){
   const net=recvSum-paySum;
   $("rm-kpis").innerHTML=[
     {l:"Receivable outstanding",v:fmt(recvSum),m:recvOut.length+" milestones",c:"posv"},
-    {l:"Payable outstanding",v:fmt(paySum),m:payOut.length+" payments · incl OxeFit",c:""},
+    {l:"Payable outstanding",v:fmt(paySum),m:payOut.length+" payments · incl OxeFit + HR",c:""},
     {l:"Net position",v:(net<0?"−":"")+fmt(Math.abs(net)),m:net>=0?"net inflow":"net outflow",c:net>=0?"posv":"neg"},
     {l:"Overdue total",v:fmt(overR+overP),m:"in "+fmt(overR)+" · out "+fmt(overP),c:overR+overP>0?"neg":""},
   ].map(k=>`<div class="kpi ${k.c}"><div class="lbl">${k.l}</div><div class="val tnum">${k.v}</div><div class="meta">${k.m}</div></div>`).join("");
@@ -2946,8 +2965,19 @@ function renderPay(){
       <td><button class="del" data-i="${i}">×</button></td>
     </tr>`;
   });
+  (HRPAY||[]).forEach(p=>{ const due=new Date(p.due+"T00:00:00"); const st=statusOf(due,p.paid); if(!p.paid) out+=p.amount;
+    body+=`<tr class="hrrow" title="Synced from the HR portal (read-only)">
+      <td class="l">${p.payee} <span style="font-size:9px;background:#E7F0EF;color:#127d6e;padding:1px 6px;border-radius:6px;margin-left:4px;font-weight:700;letter-spacing:.3px">HR</span></td>
+      <td class="l" style="color:var(--muted)">${p.desc}</td>
+      <td>${fmt(p.amount)}</td>
+      <td class="l">${p.due}</td>
+      <td class="l">${p.recur}</td>
+      <td><span class="st ${st}">${STLBL[st]}</span></td>
+      <td>${p.paid?"✓":""}</td>
+      <td></td></tr>`;
+  });
   $("rm-payBody").innerHTML=body || `<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:16px">No payables.</td></tr>`;
-  $("rm-payFoot").innerHTML=PAY.length?`<tr><td class="l">Outstanding</td><td></td><td>${fmt(out)}</td><td></td><td></td><td></td><td></td><td></td></tr>`:"";
+  $("rm-payFoot").innerHTML=(PAY.length||(HRPAY&&HRPAY.length))?`<tr><td class="l">Outstanding</td><td></td><td>${fmt(out)}</td><td></td><td></td><td></td><td></td><td></td></tr>`:"";
   $("rm-payBody").querySelectorAll("[data-k]").forEach(el=>{
     const apply=e=>{
       const i=+e.target.closest("tr").dataset.i,k=e.target.dataset.k;
