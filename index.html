@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -2690,22 +2691,34 @@ function statusOf(due,paid){
 }
 const STLBL={paid:"Paid",over:"Overdue",soon:"Due soon",up:"Upcoming"};
 
-let HRPAY=[];
+let HRPAY=[], HRSTATUS={};
+const HR_BASE='https://graph.microsoft.com/v1.0/users/'+encodeURIComponent('demo@core-velocity.com')+'/drive/root:/OXEFIT/';
 async function pullHRPayables(){
   try{
     if(!window.getGraphToken) return;
     const tok=await window.getGraphToken();
-    const url='https://graph.microsoft.com/v1.0/users/'+encodeURIComponent('demo@core-velocity.com')+'/drive/root:/OXEFIT/corev-payables.json:/content';
-    const res=await fetch(url,{headers:{Authorization:'Bearer '+tok}});
-    if(!res.ok) return;
-    const feed=await res.json();
+    const [fRes,sRes]=await Promise.all([
+      fetch(HR_BASE+'corev-payables.json:/content',{headers:{Authorization:'Bearer '+tok}}),
+      fetch(HR_BASE+'corev-payables-status.json:/content',{headers:{Authorization:'Bearer '+tok}}).catch(()=>null)
+    ]);
+    if(sRes&&sRes.ok){ try{ const st=await sRes.json(); HRSTATUS=(st&&st.status)||{}; }catch(_){} }
+    if(!fRes.ok) return;
+    const feed=await fRes.json();
     const rows=(feed&&(feed.consolidated||feed.payables))||[];
-    HRPAY=rows.map(r=>({payee:r.supplier||'Supplier',desc:'HR \u00b7 '+(r.month||'')+(r.description?(' \u00b7 '+r.description):''),amount:+r.amount||0,due:(r.dueDate&&/^\d{4}-\d{2}-\d{2}/.test(r.dueDate))?String(r.dueDate).slice(0,10):((r.month||'2026-01')+'-28'),recur:'Monthly',paid:(r.status==='Paid'),_hr:true,month:r.month||'',status:r.status||''}));
+    HRPAY=rows.map(r=>{ const id=r.id||('sup-'+r.supplierId+'-'+r.month); const fin=HRSTATUS[id]; const paid=fin?!!fin.paid:(r.status==='Paid');
+      return {id,payee:r.supplier||'Supplier',desc:'HR \u00b7 '+(r.month||'')+(r.description?(' \u00b7 '+r.description):''),amount:+r.amount||0,due:(r.dueDate&&/^\d{4}-\d{2}-\d{2}/.test(r.dueDate))?String(r.dueDate).slice(0,10):((r.month||'2026-01')+'-28'),recur:'Monthly',paid,_hr:true,month:r.month||'',status:r.status||''};});
     if(typeof renderPay==='function') renderPay();
     if(typeof renderDashboard==='function') renderDashboard();
   }catch(e){ try{console.warn('pullHRPayables',e);}catch(_){} }
 }
-window.pullHRPayables=pullHRPayables;
+async function writeHRStatus(){
+  try{ if(!window.getGraphToken) return; const tok=await window.getGraphToken();
+    const body={updated:new Date().toISOString(),source:'CoreV Finance Suite',status:HRSTATUS};
+    await fetch(HR_BASE+'corev-payables-status.json:/content',{method:'PUT',headers:{Authorization:'Bearer '+tok,'Content-Type':'application/json'},body:JSON.stringify(body,null,2)});
+  }catch(e){ try{console.warn('writeHRStatus',e);}catch(_){} }
+}
+function setHRPaid(id,paid){ if(!id) return; HRSTATUS[id]=Object.assign({},HRSTATUS[id],{paid:!!paid,on:new Date().toISOString().slice(0,10)}); const row=HRPAY.find(r=>r.id===id); if(row) row.paid=!!paid; if(typeof renderPay==='function') renderPay(); if(typeof renderDashboard==='function') renderDashboard(); writeHRStatus(); }
+window.pullHRPayables=pullHRPayables; window.setHRPaid=setHRPaid;
 function renderDashboard(){
   const recv=receivables();
   const payManual=PAY.map(p=>({...p,due:new Date(p.due+"T00:00:00")}));
@@ -2973,7 +2986,7 @@ function renderPay(){
       <td class="l">${p.due}</td>
       <td class="l">${p.recur}</td>
       <td><span class="st ${st}">${STLBL[st]}</span></td>
-      <td>${p.paid?"✓":""}</td>
+      <td><input type="checkbox" class="hr-paid" data-id="${p.id}" ${p.paid?"checked":""}></td>
       <td></td></tr>`;
   });
   $("rm-payBody").innerHTML=body || `<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:16px">No payables.</td></tr>`;
@@ -2988,6 +3001,7 @@ function renderPay(){
     el.addEventListener("input",e=>{ apply(e); renderDashboard(); rmChanged(); });          // live update, no re-render → keeps typing focus
     el.addEventListener("change",e=>{ apply(e); renderPay(); renderDashboard(); rmChanged(); }); // commit → refresh status/total
   });
+  ROOT.querySelectorAll("#rm-payBody .hr-paid").forEach(cb=>cb.addEventListener("change",e=>{ if(window.setHRPaid) setHRPaid(e.target.dataset.id, e.target.checked); }));
   $("rm-payBody").querySelectorAll(".del").forEach(b=>b.addEventListener("click",e=>{PAY.splice(+e.target.dataset.i,1);renderPay();renderDashboard();rmChanged();}));
 }
 
