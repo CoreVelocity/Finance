@@ -722,13 +722,13 @@
       <button id="altSignIn" class="gate-alt">Having trouble? Try popup sign-in</button>
       <div id="authErr" class="gate-err"></div>
       <div class="gate-foot">Management access only</div>
-      <div class="gate-ver">v1.32.0 · 2026-06-14</div>
+      <div class="gate-ver">v1.32.1 · 2026-06-14</div>
     </div>
   </div>
 
   <div id="appRoot" style="display:none">
   <header class="topbar">
-    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.32.0</span></div>
+    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.32.1</span></div>
     <nav class="tabnav">
       <button data-tab="tab-costing" class="active"><span class="n">01</span>Costing</button>
       <button data-tab="tab-commission"><span class="n">02</span>Commission</button>
@@ -3464,13 +3464,16 @@ function distPDF(internal){
   const cat=CATS[ACTIVE], m=compute(cat);
   const { jsPDF }=window.jspdf; const doc=new jsPDF({orientation:"landscape",unit:"pt",format:"a4"});
   const W=doc.internal.pageSize.getWidth(); const M=40; let y=42;
-  if(window.COREV_LOGO){ try{ doc.addImage(window.COREV_LOGO,"PNG",M,20,120,26); }catch(e){} }
-  doc.setDrawColor(28,78,216); doc.setLineWidth(2); doc.line(M,52,W-M,52);
-  doc.setFont("helvetica","bold"); doc.setFontSize(15); doc.setTextColor(14,22,38);
-  doc.text(`Distributor Proposal — ${cat.label}`, M, 74);
-  doc.setFont("helvetica","normal"); doc.setFontSize(9.5); doc.setTextColor(107,122,147);
-  doc.text(internal?"Internal — includes CoreV margins":"Prepared for distributor review", M, 89);
-  doc.text(new Date().toLocaleDateString(), W-M, 89, {align:"right"});
+  const drawHeader = (sub)=>{
+    if(window.COREV_LOGO){ try{ doc.addImage(window.COREV_LOGO,"PNG",M,18,62,26); }catch(e){} }   // 640x267 → keep 2.4:1
+    doc.setDrawColor(28,78,216); doc.setLineWidth(2); doc.line(M,52,W-M,52);
+    doc.setFont("helvetica","bold"); doc.setFontSize(15); doc.setTextColor(14,22,38);
+    doc.text(`Distributor Proposal — ${cat.label}`, M, 74);
+    doc.setFont("helvetica","normal"); doc.setFontSize(9.5); doc.setTextColor(107,122,147);
+    doc.text(sub, M, 89);
+    doc.text(new Date().toLocaleDateString(), W-M, 89, {align:"right"});
+  };
+  drawHeader(internal?"Internal — includes CoreV margins":"Prepared for distributor review");
   y=104;
 
   // KPI strip
@@ -3512,7 +3515,7 @@ function distPDF(internal){
     : [ ["XS1 units", m.e16[0],m.e16[1],m.e16[2],m.e16[3], fmt0(m.minXS1), "",""],
         ["XP1 units", m.e17[0],m.e17[1],m.e17[2],m.e17[3], fmt0(m.minXP1), "",""],
         ["Payment to CoreV / qtr", fmt(m.quarterOrder[0]),fmt(m.quarterOrder[1]),fmt(m.quarterOrder[2]),fmt(m.quarterOrder[3]), "", fmt(m.totalResellerGP), fmt(m.totalToCoreV)] ];
-  if(y>460){ doc.addPage(); y=42; }
+  doc.addPage(); y=42; drawHeader("Annual order plan — quantities & quarterly payments"); y=104;
   doc.autoTable({ startY:y, head:ordHead, body:ordBody, foot:ordFoot, theme:"grid", margin:{left:M,right:M},
     styles:{font:"helvetica",fontSize:8,cellPadding:4,textColor:[27,39,64],lineColor:[228,233,242]},
     headStyles:{fillColor:[14,22,38],textColor:[255,255,255],fontSize:7.5,halign:"right"},
