@@ -647,6 +647,11 @@
   #tab-distributor .yin{width:100%;border:1.5px solid var(--yellow-line);background:var(--yellow);border-radius:8px;padding:8px 10px;font-family:"JetBrains Mono";font-size:14px;color:#5A4B00;font-weight:600}
   #tab-distributor .yin:focus{outline:none;box-shadow:0 0 0 3px rgba(231,201,72,.3)}
   #tab-distributor select.yin{font-family:"Inter";font-size:12.5px}
+  #tab-distributor .ein{width:118px;border:1.5px solid var(--blue);background:#EEF3FF;border-radius:7px;padding:6px 8px;font-family:"JetBrains Mono";font-size:12.5px;color:var(--blue);font-weight:600;text-align:right}
+  #tab-distributor .ein:focus{outline:none;box-shadow:0 0 0 3px rgba(28,78,216,.2)}
+  #tab-distributor .pcell{position:relative;flex:1}
+  #tab-distributor .pcell .yin{width:100%;padding-right:26px}
+  #tab-distributor .pcell .ps{position:absolute;right:11px;top:50%;transform:translateY(-50%);font-family:"JetBrains Mono";font-size:12px;color:#8A7A2E;font-weight:700;pointer-events:none}
   #tab-distributor .qgrid{display:grid;grid-template-columns:120px repeat(4,1fr);gap:8px;align-items:end}
   #tab-distributor .qgrid .qh{font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:700;padding-bottom:2px}
   #tab-distributor .qgrid .qlbl{font-size:12px;color:var(--text);font-weight:600;align-self:center}
@@ -715,13 +720,13 @@
       <button id="altSignIn" class="gate-alt">Having trouble? Try popup sign-in</button>
       <div id="authErr" class="gate-err"></div>
       <div class="gate-foot">Management access only</div>
-      <div class="gate-ver">v1.30.0 · 2026-06-14</div>
+      <div class="gate-ver">v1.31.0 · 2026-06-14</div>
     </div>
   </div>
 
   <div id="appRoot" style="display:none">
   <header class="topbar">
-    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.30.0</span></div>
+    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.31.0</span></div>
     <nav class="tabnav">
       <button data-tab="tab-costing" class="active"><span class="n">01</span>Costing</button>
       <button data-tab="tab-commission"><span class="n">02</span>Commission</button>
@@ -3253,39 +3258,34 @@ function derive(cat){
   });
 }
 
+// largest-remainder split so integer parts sum exactly to `total`
+function allocate(total,w){
+  total=Math.max(0,Math.round(total)); const s=w.reduce((a,b)=>a+b,0);
+  if(s<=0) return w.map(()=>0);
+  const exact=w.map(x=>total*x/s), base=exact.map(Math.floor);
+  let rem=total-base.reduce((a,b)=>a+b,0);
+  const order=exact.map((x,i)=>[i,x-base[i]]).sort((a,b)=>b[1]-a[1]);
+  for(let i=0;i<rem;i++) base[order[i%order.length][0]]++;
+  return base;
+}
 function compute(cat){
   derive(cat);
   const a=cat.a, P=cat.products;
+  // accept ratios entered as percentages (50) or fractions (0.5)
+  ['consumer','commercial','w1yr','w3yr','wflow','wpeak'].forEach(k=>{ if(a[k]>1.5) a[k]=a[k]/100; });
+  // container plan drives XS1 & XP1 volume per quarter
   const e16=[0,0,0,0], e17=[0,0,0,0];
-  for(let q=0;q<4;q++){ const c=CONT[a.cType[q]]; e16[q]=c.xs1*(+a.nCont[q]||0); e17[q]=c.xp1*(+a.nCont[q]||0); }
-  const minXS1 = cat.minMode==="fixed" ? cat.minXS1 : (e16[0]+e16[1]+e16[2]+e16[3]);
-  const minXP1 = e17[0]+e17[1]+e17[2]+e17[3];
-  const B21=minXS1*a.wflow, C21=minXS1*a.wpeak;
-  const subC22 = cat.planVariant==="me" ? 1 : 0;
-  const B22=B21*a.w1yr*a.consumer, C22=B21*a.w3yr*a.consumer - subC22;
-  const B23=C21*a.w1yr*a.consumer, C23=C21*a.w3yr*a.consumer;
-  const B24=R(minXS1*a.commercial*a.wpeak), B25=R(minXS1*a.commercial*a.wflow);
-  const same=q=>a.cType[q]===a.cType[0];
-  const H=(E,F,q)=> same(q)?E:F;
-  let R28,R29,R30,R31,R32,R33,R34,R35;
-  if(cat.planVariant==="me"){
-    R28=[R(B23/4)-1,R(B23/4)+1,R(B23/4)-1,0]; R28[3]=H(R28[0],R28[1],3);
-    R29=[R(B22/4)-1,R(B22/4)+1,R(B22/4)-1,0]; R29[3]=H(R29[0],R29[1],3);
-    R31=[R(C23/4)-2,R(C23/4),R(C23/4)-2,0];   R31[3]=H(R31[0],R31[1],3);
-    R32=[R(C22/4),R(C22/4),R(C22/4),0];       R32[3]=H(R32[0],R32[1],3);
-    R33=[R(B24/4),R(B24/4),R(B24/4),0];       R33[3]=H(R33[0],R33[1],3);
-    R34=[R(B25/4),R(B25/4),R(B25/4),0];       R34[3]=H(R34[0],R34[1],3);
-    R30=[R(e17[0]*a.consumer),R(e17[1]*a.consumer),0,0]; R30[2]=H(R30[0],R30[1],2); R30[3]=H(R30[0],R30[1],3);
-    R35=[R(e17[0]*a.commercial),R(e17[1]*a.commercial),R(e17[2]*a.commercial),0]; R35[3]=H(R35[0],R35[1],3);
-  } else {
-    R28=[R(B23/4),R(B23/4)-2,R(B23/4)-2,R(B23/4)];
-    R29=[R(B22/4),R(B22/4),R(B22/4),R(B22/4)];
-    R31=[R(C23/4)+2,R(C23/4),R(C23/4),R(C23/4)+2];
-    R32=[R(C22/4),R(C22/4)-2,R(C22/4)-2,R(C22/4)];
-    R33=[R(B24/4),R(B24/4),R(B24/4),R(B24/4)];
-    R34=[R(B25/4),R(B25/4),R(B25/4),R(B25/4)];
-    R30=[R(e17[0]*a.consumer),R(e17[1]*a.consumer),R(e17[2]*a.consumer),R(e17[3]*a.consumer)];
-    R35=[R(e17[0]*a.commercial),R(e17[1]*a.commercial),R(e17[2]*a.commercial),R(e17[3]*a.commercial)];
+  for(let q=0;q<4;q++){ const c=CONT[a.cType[q]], n=(+a.nCont[q]||0); e16[q]=c.xs1*n; e17[q]=c.xp1*n; }
+  const minXS1=e16.reduce((x,y)=>x+y,0), minXP1=e17.reduce((x,y)=>x+y,0);
+  // split each quarter's container units across bundles by the mix & weights
+  const xs1w=[ a.consumer*a.wpeak*a.w1yr, a.consumer*a.wflow*a.w1yr, a.consumer*a.wpeak*a.w3yr,
+               a.consumer*a.wflow*a.w3yr, a.commercial*a.wpeak, a.commercial*a.wflow ];
+  const xp1w=[ a.consumer, a.commercial ];
+  const R28=[0,0,0,0],R29=[0,0,0,0],R30=[0,0,0,0],R31=[0,0,0,0],R32=[0,0,0,0],R33=[0,0,0,0],R34=[0,0,0,0],R35=[0,0,0,0];
+  for(let q=0;q<4;q++){
+    const xs=allocate(e16[q],xs1w), xp=allocate(e17[q],xp1w);
+    R28[q]=xs[0]; R29[q]=xs[1]; R31[q]=xs[2]; R32[q]=xs[3]; R33[q]=xs[4]; R34[q]=xs[5];
+    R30[q]=xp[0]; R35[q]=xp[1];
   }
   // order rows: pIdx=product index, qty[4], demo, spare
   const rows=[
@@ -3324,7 +3324,7 @@ function compute(cat){
   const corevGross = quarterTotal - orderToOxe;              // internal
   const referralPaid = cat.referral*quarterTotal;            // internal
   const corevNet = corevGross - referralPaid;                // internal
-  return {rows,quarterOrder,minXS1,minXP1,e16,e17,B22,B23,C22,C23,B24,B25,
+  return {rows,quarterOrder,minXS1,minXP1,e16,e17,
           totalToCoreV,totalResellerGP,orderToOxe,corevGross,referralPaid,corevNet,quarterTotal};
 }
 
@@ -3339,6 +3339,7 @@ function render(){
   const cat=CATS[ACTIVE], m=compute(cat);
   $("dist-nav").querySelectorAll("button").forEach(b=>b.classList.toggle("active",b.dataset.k===ACTIVE));
   const a=cat.a;
+  const pv=x=>Math.round(x*100);   // fraction -> percent for display
   const contOpts = t => Object.keys(CONT).map(k=>`<option value="${k}" ${a.cType[t]===k?"selected":""}>${CONT[k].label}</option>`).join("");
 
   // KPI cards
@@ -3359,12 +3360,15 @@ function render(){
   let assum = `<section class="blk"><div class="blkhead"><h3>Assumptions</h3><span class="legend"><span class="sw"></span>yellow = editable</span></div>
     <div class="panel pad">
       <div class="agrid">
-        <div class="afield"><label>Consumer : Commercial</label><div class="split">
-          <input class="yin" type="number" step="0.05" data-a="consumer" value="${a.consumer}"><input class="yin" type="number" step="0.05" data-a="commercial" value="${a.commercial}"></div></div>
-        <div class="afield"><label>1 YR : 3 YR weight</label><div class="split">
-          <input class="yin" type="number" step="0.05" data-a="w1yr" value="${a.w1yr}"><input class="yin" type="number" step="0.05" data-a="w3yr" value="${a.w3yr}"></div></div>
-        <div class="afield"><label>FLOW : PEAK weight</label><div class="split">
-          <input class="yin" type="number" step="0.05" data-a="wflow" value="${a.wflow}"><input class="yin" type="number" step="0.05" data-a="wpeak" value="${a.wpeak}"></div></div>
+        <div class="afield"><label>Consumer : Commercial (%)</label><div class="split">
+          <div class="pcell"><input class="yin" type="number" step="5" min="0" data-a="consumer" value="${pv(a.consumer)}"><span class="ps">%</span></div>
+          <div class="pcell"><input class="yin" type="number" step="5" min="0" data-a="commercial" value="${pv(a.commercial)}"><span class="ps">%</span></div></div></div>
+        <div class="afield"><label>1 YR : 3 YR weight (%)</label><div class="split">
+          <div class="pcell"><input class="yin" type="number" step="5" min="0" data-a="w1yr" value="${pv(a.w1yr)}"><span class="ps">%</span></div>
+          <div class="pcell"><input class="yin" type="number" step="5" min="0" data-a="w3yr" value="${pv(a.w3yr)}"><span class="ps">%</span></div></div></div>
+        <div class="afield"><label>FLOW : PEAK weight (%)</label><div class="split">
+          <div class="pcell"><input class="yin" type="number" step="5" min="0" data-a="wflow" value="${pv(a.wflow)}"><span class="ps">%</span></div>
+          <div class="pcell"><input class="yin" type="number" step="5" min="0" data-a="wpeak" value="${pv(a.wpeak)}"><span class="ps">%</span></div></div></div>
       </div>
       <div style="margin-top:16px" class="qgrid">
         <div class="qh">Container plan</div><div class="qh">Quarter 1</div><div class="qh">Quarter 2</div><div class="qh">Quarter 3</div><div class="qh">Quarter 4</div>
@@ -3373,20 +3377,18 @@ function render(){
         <div class="qlbl">Container type</div>
         ${[0,1,2,3].map(q=>`<select class="yin" data-ctype="${q}">${contOpts(q)}</select>`).join("")}
       </div>
-      <div class="note"><span class="ic">i</span><span>${cat.minMode==="fixed"
-        ? `XS1 minimum order is fixed at <b>${cat.minXS1}</b> units/yr for ${cat.label}; XP1 volume follows your container plan.`
-        : `XS1 &amp; XP1 volumes are <b>derived from your container plan</b> for ${cat.label}.`} The mix &amp; weights above drive how those units split across bundles and quarters.</span></div>
+      <div class="note"><span class="ic">i</span><span>XS1 &amp; XP1 volumes are <b>driven by your container plan</b> — Container A = 21 XS1 + 2 XP1, B = 27 XS1 + 0 XP1, C = 0 XS1 + 8 XP1, per quarter × # of containers. The mix &amp; weights split those units across bundles. Change a container or a count and every total updates.</span></div>
     </div></section>`;
 
   // Pricing table
   const extraHead = showInternal ? `<th class="internal-col">OxeFit cost</th><th class="internal-col">CoreV margin $</th><th class="internal-col">CoreV %</th>` : "";
   let priceRows="", lastGrp="";
-  cat.products.forEach(p=>{
+  cat.products.forEach((p,pi)=>{
     if(p.grp!==lastGrp){ priceRows+=`<tr class="grp"><td class="l" colspan="${showInternal?9:6}">${p.grp}</td></tr>`; lastGrp=p.grp; }
     const extra = showInternal ? `<td class="internal-col">${fmt(p.oxefit)}</td><td class="internal-col">${fmt(p.menaMargin)}</td><td class="internal-col">${pct(p.menaPct)}</td>` : "";
     priceRows+=`<tr>
       <td class="l"><span class="bundle">${p.name}</span></td>
-      <td>${fmt(p.transfer)}</td>
+      <td><input class="ein" type="number" step="1" min="0" data-pi="${pi}" value="${Math.round(p.transfer)}"></td>
       <td>${fmt(p.list)}</td>
       <td>${fmt(p.msrp)}</td>
       <td class="pos">${fmt(p.rprofit)}</td>
@@ -3394,7 +3396,7 @@ function render(){
       ${extra}
     </tr>`;
   });
-  let pricing = `<section class="blk"><div class="blkhead"><h3>Bundle pricing — ${cat.label}</h3><span class="why">dealer price = your cost from CoreV · list = market excl VAT · MSRP = floor (do not sell below)</span></div>
+  let pricing = `<section class="blk"><div class="blkhead"><h3>Bundle pricing — ${cat.label}</h3><span class="why">dealer price is editable (blue) — profit &amp; margin % update live · list = market excl VAT · MSRP = floor</span></div>
     <div class="panel scroll"><table class="data">
       <thead><tr><th class="l">Bundle</th><th>Dealer price</th><th>Market list</th><th>MSRP floor</th><th>Your profit/unit</th><th>Your margin %</th>${extraHead}</tr></thead>
       <tbody>${priceRows}</tbody>
@@ -3435,7 +3437,10 @@ function render(){
 
   // bind assumptions
   $("dist-body").querySelectorAll("[data-a]").forEach(inp=>inp.addEventListener("change",e=>{
-    cat.a[e.target.dataset.a]=parseFloat(e.target.value)||0; render(); pushDist();
+    cat.a[e.target.dataset.a]=(parseFloat(e.target.value)||0)/100; render(); pushDist();
+  }));
+  $("dist-body").querySelectorAll("[data-pi]").forEach(inp=>inp.addEventListener("change",e=>{
+    const v=parseFloat(e.target.value); if(!isNaN(v)&&v>0){ cat.products[+e.target.dataset.pi].transfer=v; render(); pushDist(); }
   }));
   $("dist-body").querySelectorAll("[data-cont]").forEach(inp=>inp.addEventListener("change",e=>{
     cat.a.nCont[+e.target.dataset.cont]=parseInt(e.target.value)||0; render(); pushDist();
@@ -3522,10 +3527,15 @@ function savePdfDoc(doc,fname){
 
 /* ---------- sync ---------- */
 function distState(){ const o={}; Object.keys(CATS).forEach(k=>o[k]=CATS[k].a); return o; }
+function priceState(){ const o={}; Object.keys(CATS).forEach(k=>o[k]=CATS[k].products.map(p=>p.transfer)); return o; }
 function pushDist(){ if(window.CoreVSync) window.CoreVSync.changed(); }
 if(window.CoreVSync) window.CoreVSync.register('distributor',
-  ()=>({assum:distState()}),
-  env=>{ try{ if(env.assum) Object.keys(CATS).forEach(k=>{ if(env.assum[k]) CATS[k].a=Object.assign(CATS[k].a,env.assum[k]); }); render(); }catch(_){}}
+  ()=>({assum:distState(), prices:priceState()}),
+  env=>{ try{
+    if(env.assum) Object.keys(CATS).forEach(k=>{ if(env.assum[k]) CATS[k].a=Object.assign(CATS[k].a,env.assum[k]); });
+    if(env.prices) Object.keys(CATS).forEach(k=>{ if(Array.isArray(env.prices[k])) env.prices[k].forEach((t,i)=>{ if(CATS[k].products[i]&&typeof t==="number"&&t>0) CATS[k].products[i].transfer=t; }); });
+    render();
+  }catch(_){}}
 );
 
 renderNav();
