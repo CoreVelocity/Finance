@@ -722,13 +722,13 @@
       <button id="altSignIn" class="gate-alt">Having trouble? Try popup sign-in</button>
       <div id="authErr" class="gate-err"></div>
       <div class="gate-foot">Management access only</div>
-      <div class="gate-ver">v1.32.1 · 2026-06-14</div>
+      <div class="gate-ver">v1.32.2 · 2026-06-14</div>
     </div>
   </div>
 
   <div id="appRoot" style="display:none">
   <header class="topbar">
-    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.32.1</span></div>
+    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.32.2</span></div>
     <nav class="tabnav">
       <button data-tab="tab-costing" class="active"><span class="n">01</span>Costing</button>
       <button data-tab="tab-commission"><span class="n">02</span>Commission</button>
@@ -2168,7 +2168,7 @@ function renderRep(){
       <button class="btn sm" id="rep_email">✉ Email</button>
       <button class="btn sm danger" id="rep_del">Delete rep</button>
     </div>`;
-  $("rep_name").addEventListener("input",e=>{r.name=e.target.value;renderTabs();renderSummary();});
+  $("rep_name").addEventListener("input",e=>{r.name=e.target.value;renderTabs();renderSummary();publishStore();});
   $("rep_target").addEventListener("change",e=>{r.target=parseFloat(e.target.value)||0;renderAll();});
   $("rep_pdf").addEventListener("click",()=>repPDF(r));
   $("rep_email").addEventListener("click",()=>emailRep(r));
