@@ -590,6 +590,9 @@
   @media (max-width:980px){.rm-kpis{grid-template-columns:1fr 1fr}}
   @media (max-width:560px){.wrap{padding:16px}header.topbar{padding:14px 16px}}
   @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+  .rm-hr-bar{display:flex;align-items:center;gap:12px;margin:2px 0 10px;flex-wrap:wrap}
+  .rm-hr-msg{font-size:12px;color:var(--muted)}
+  .rm-tag{display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:#5A6B86;background:#EEF2F8;border-radius:5px;padding:1px 6px;margin-left:4px}
 
 
   :root{
@@ -722,13 +725,13 @@
       <button id="altSignIn" class="gate-alt">Having trouble? Try popup sign-in</button>
       <div id="authErr" class="gate-err"></div>
       <div class="gate-foot">Management access only</div>
-      <div class="gate-ver">v1.32.2 · 2026-06-14</div>
+      <div class="gate-ver">v1.33.0 · 2026-06-14</div>
     </div>
   </div>
 
   <div id="appRoot" style="display:none">
   <header class="topbar">
-    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.32.2</span></div>
+    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.33.0</span></div>
     <nav class="tabnav">
       <button data-tab="tab-costing" class="active"><span class="n">01</span>Costing</button>
       <button data-tab="tab-commission"><span class="n">02</span>Commission</button>
@@ -1181,6 +1184,22 @@
         </table>
       </div>
 
+      <div class="blkhead" style="margin-top:20px"><h2 style="font-size:16px">HR expenses</h2><span class="why">— supplier &amp; recurring payables imported from the HR Portal.</span></div>
+      <div class="rm-hr-bar">
+        <button class="btn primary" id="rm-hrSync">⟳ Sync HR expenses</button>
+        <span id="rm-hrMsg" class="rm-hr-msg"></span>
+      </div>
+      <div class="panel scroll">
+        <table class="data">
+          <thead><tr>
+            <th class="l">Supplier</th><th class="l">Description</th><th class="l">Month</th>
+            <th class="l">Due date</th><th>Amount</th><th>Status</th><th>Paid</th>
+          </tr></thead>
+          <tbody id="rm-hrBody"></tbody>
+          <tfoot id="rm-hrFoot"></tfoot>
+        </table>
+      </div>
+
       <div class="blkhead" style="margin-top:20px"><h2 style="font-size:16px">Other payables</h2><span class="why">— logistics, marketing &amp; other vendors (manual).</span></div>
       <div class="panel scroll">
         <table class="data">
@@ -1351,6 +1370,7 @@ window.CoreVCloud = (function(){
   const nameFor=e=>ALLOWED[(e||'').toLowerCase().trim()]||null;
   const showErr=m=>{errEl.innerHTML=m;errEl.style.display='block';};
   const clearErr=()=>{errEl.style.display='none';};
+  window.CoreVGraphToken=getGraphToken;
   function startCloud(){ try{ if(window.CoreVCloud) window.CoreVCloud.start(getGraphToken); }catch(_){} }
   function unlock(name){ gate.style.display='none'; app.style.display='block'; nameEl.textContent=name; chip.style.display='flex'; startCloud(); }
   function lock(){ gate.style.display='flex'; app.style.display='none'; chip.style.display='none'; }
@@ -1399,6 +1419,16 @@ window.CoreVCloud = (function(){
   init();
 })();
 </script>
+<script>window.CoreVGraph=(function(){
+  var USER='demo@core-velocity.com';
+  function base(){ return 'https://graph.microsoft.com/v1.0/users/'+encodeURIComponent(USER)+'/drive/root:'; }
+  async function token(){ if(window.CoreVGraphToken) return await window.CoreVGraphToken(); throw new Error('Not signed in'); }
+  return {
+    user:USER,
+    async readJson(path){ var t=await token(); var r=await fetch(base()+path+':/content',{headers:{Authorization:'Bearer '+t}}); if(r.status===404) return null; if(!r.ok) throw new Error('HTTP '+r.status); return await r.json(); },
+    async writeJson(path,obj){ var t=await token(); var r=await fetch(base()+path+':/content',{method:'PUT',headers:{Authorization:'Bearer '+t,'Content-Type':'application/json'},body:JSON.stringify(obj,null,2)}); if(!r.ok) throw new Error('HTTP '+r.status); return true; }
+  };
+})();</script>
 <script>(function(){
   var IDLE_MS=15*60*1000, WARN_MS=60*1000, last=Date.now(), warned=false, bar=null;
   function signedIn(){ var a=document.getElementById('appRoot'); return a && a.style.display!=='none'; }
@@ -2709,6 +2739,34 @@ function defaultDef(){ return [ {name:"PO / Contract", pct:1.0, off:0} ]; }
 let CTRL={soon:7, def:defaultDef(), perDeal:{}, oxeRatio:0.50, oxeOv:{}, oxeItems:{}, oxePaid:{}, oxeDue:{}};
 let RECV_OV={};            // overrides keyed by milestone
 let OXE_OV={};             // OxeFit milestone paid overrides (local)
+// --- HR expenses (imported from HR Portal via OneDrive corev-payables.json) ---
+let HR_ITEMS=[];           // payables lines from the HR feed
+let HR_STATUS={};          // Finance-owned paid status, keyed by sup-<supplierId>-<month>
+let HR_META={ts:0,gen:""}; // last sync info
+function hesc(s){ return String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+function hrStatusKey(it){ return (it.supplierId!=null&&it.supplierId!=="") ? ("sup-"+it.supplierId+"-"+(it.month||"")) : (it.id||""); }
+function hrPaidOf(it){ const f=HR_STATUS[hrStatusKey(it)]; return !!(f&&f.paid); }
+function hrPayables(){ return HR_ITEMS.map(it=>({ due:new Date((it.dueDate||iso(today))+"T00:00:00"), amount:+it.amount||0, paid:hrPaidOf(it), payee:it.supplier||"HR expense", desc:it.description||it.category||"", name:(it.supplier||"HR expense")+" · "+(it.description||"expense"), hr:true })); }
+let _hrPushT=null;
+async function hrPushStatus(){ if(!window.CoreVGraph) return; try{ await window.CoreVGraph.writeJson("/OXEFIT/corev-payables-status.json",{ schema:"corev.payables-status/v1", source:"CoreV | OxeFit Finance Suite", updated:new Date().toISOString(), status:HR_STATUS }); }catch(e){} }
+function hrPushStatusDebounced(){ clearTimeout(_hrPushT); _hrPushT=setTimeout(()=>{ try{hrPushStatus();}catch(_){}} ,1200); }
+function hrMsg(t){ const el=$("rm-hrMsg"); if(el) el.textContent=t; }
+async function hrSync(btn){
+  if(!window.CoreVGraph){ hrMsg("Sign in with Microsoft first."); return; }
+  try{
+    hrMsg("Syncing…"); if(btn) btn.disabled=true;
+    const feed=await window.CoreVGraph.readJson("/OXEFIT/corev-payables.json");
+    if(!feed){ hrMsg("No HR feed found yet (OXEFIT/corev-payables.json) — ask HR to click “Publish to OneDrive feed”."); if(btn) btn.disabled=false; return; }
+    HR_ITEMS=Array.isArray(feed.payables)?feed.payables:[];
+    HR_META={ ts:Date.now(), gen:feed.generated||"" };
+    // adopt HR's own paid marks the first time we see a line we have no Finance status for
+    HR_ITEMS.forEach(it=>{ const k=hrStatusKey(it); if(k && HR_STATUS[k]===undefined && it.status==="Paid") HR_STATUS[k]={paid:true,on:it.paidOn||iso(today),amount:+it.amount||0}; });
+    await hrPushStatus();
+    renderHR(); renderDashboard(); rmChanged();
+    hrMsg("Synced "+HR_ITEMS.length+" expense line"+(HR_ITEMS.length===1?"":"s")+" · "+new Date().toLocaleString());
+  }catch(e){ hrMsg("Sync failed: "+((e&&e.message)||e)); }
+  finally{ if(btn) btn.disabled=false; }
+}
 let FILTER={cust:"",month:"",status:""};
 function dealPasses(d){
   if(FILTER.cust && (d.customer||"")!==FILTER.cust) return false;
@@ -2787,8 +2845,9 @@ function renderDashboard(){
   const recv=receivables();
   const payManual=PAY.map(p=>({...p,due:new Date(p.due+"T00:00:00")}));
   const oxe=oxefitPayables();   // each has due (Date), amount, paid, payee, desc, customer, name
+  const hr=hrPayables();        // imported HR expenses
   const recvOut=recv.filter(r=>!r.paid);
-  const payOut=[...payManual.filter(p=>!p.paid), ...oxe.filter(p=>!p.paid)];
+  const payOut=[...payManual.filter(p=>!p.paid), ...oxe.filter(p=>!p.paid), ...hr.filter(p=>!p.paid)];
   const recvSum=recvOut.reduce((a,r)=>a+r.amount,0);
   const paySum=payOut.reduce((a,p)=>a+p.amount,0);
   const overR=recvOut.filter(r=>statusOf(r.due,false)==="over").reduce((a,r)=>a+r.amount,0);
@@ -2796,7 +2855,7 @@ function renderDashboard(){
   const net=recvSum-paySum;
   $("rm-kpis").innerHTML=[
     {l:"Receivable outstanding",v:fmt(recvSum),m:recvOut.length+" milestones",c:"posv"},
-    {l:"Payable outstanding",v:fmt(paySum),m:payOut.length+" payments · incl OxeFit",c:""},
+    {l:"Payable outstanding",v:fmt(paySum),m:payOut.length+" payments · incl OxeFit + HR",c:""},
     {l:"Net position",v:(net<0?"−":"")+fmt(Math.abs(net)),m:net>=0?"net inflow":"net outflow",c:net>=0?"posv":"neg"},
     {l:"Overdue total",v:fmt(overR+overP),m:"in "+fmt(overR)+" · out "+fmt(overP),c:overR+overP>0?"neg":""},
   ].map(k=>`<div class="kpi ${k.c}"><div class="lbl">${k.l}</div><div class="val tnum">${k.v}</div><div class="meta">${k.m}</div></div>`).join("");
@@ -3026,6 +3085,33 @@ function renderOxeModalBody(){
   }));
 }
 
+function renderHR(){
+  let body="",out=0;
+  const items=HR_ITEMS.slice().sort((a,b)=>((b.month||"").localeCompare(a.month||""))||((a.dueDate||"").localeCompare(b.dueDate||"")));
+  items.forEach(it=>{
+    const paid=hrPaidOf(it); const due=new Date((it.dueDate||iso(today))+"T00:00:00"); const st=statusOf(due,paid);
+    if(!paid) out+=(+it.amount||0);
+    const inv=it.source==="HR:supplier-invoice"?' <span class="rm-tag">invoice</span>':"";
+    body+=`<tr>
+      <td class="l"><b>${hesc(it.supplier||"—")}</b>${it.category?` <span class="rm-tag">${hesc(it.category)}</span>`:""}</td>
+      <td class="l">${hesc(it.description||"")}${inv}</td>
+      <td class="l">${hesc(it.month||"—")}</td>
+      <td class="l">${hesc(it.dueDate||"—")}</td>
+      <td>${fmt(+it.amount||0)}</td>
+      <td><span class="st ${st}">${STLBL[st]}</span></td>
+      <td><input type="checkbox" class="rm-hrchk" data-k="${encodeURIComponent(hrStatusKey(it))}" ${paid?"checked":""}></td>
+    </tr>`;
+  });
+  $("rm-hrBody").innerHTML=body || `<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:16px">No HR expenses imported yet — click “Sync HR expenses”.</td></tr>`;
+  $("rm-hrFoot").innerHTML=HR_ITEMS.length?`<tr><td class="l">Outstanding</td><td></td><td></td><td></td><td>${fmt(out)}</td><td></td><td></td></tr>`:"";
+  if(HR_META.ts && $("rm-hrMsg") && !$("rm-hrMsg").textContent) $("rm-hrMsg").textContent="Last synced "+new Date(HR_META.ts).toLocaleString()+" · "+HR_ITEMS.length+" lines";
+  $("rm-hrBody").querySelectorAll(".rm-hrchk").forEach(c=>c.addEventListener("change",e=>{
+    const key=decodeURIComponent(e.target.dataset.k); if(!key) return;
+    if(e.target.checked) HR_STATUS[key]={paid:true,on:iso(today),amount:0}; else delete HR_STATUS[key];
+    renderHR(); renderDashboard(); rmChanged(); hrPushStatusDebounced();
+  }));
+}
+
 function renderPay(){
   let body="",out=0;
   PAY.forEach((p,i)=>{
@@ -3136,9 +3222,10 @@ function renderFilters(){
   fill("rm_fmonth",months,FILTER.month,"All months");
   const st=$("rm_fstatus"); if(st) st.value=FILTER.status||"";
 }
-function renderAll(){ syncedNote(); renderFilters(); renderMsEditor(); renderDashboard(); renderRecv(); renderOxe(); renderPay(); }
+function renderAll(){ syncedNote(); renderFilters(); renderMsEditor(); renderDashboard(); renderRecv(); renderOxe(); renderPay(); renderHR(); }
 
 $("rm-addPay").addEventListener("click",()=>{PAY.push({payee:"New payee",desc:"",amount:0,due:iso(addDays(today,14)),recur:"One-time",paid:false});renderPay();renderDashboard();rmChanged();});
+$("rm-hrSync").addEventListener("click",e=>hrSync(e.currentTarget));
 $("rm-resync").addEventListener("click",renderAll);
 $("rm_fname").addEventListener("change",e=>{FILTER.cust=e.target.value;renderRecv();renderOxe();});
 $("rm_fmonth").addEventListener("change",e=>{FILTER.month=e.target.value;renderRecv();renderOxe();});
@@ -3174,9 +3261,12 @@ window.addEventListener("corev:store",renderAll);
 
 function rmChanged(){ if(window.CoreVSync) window.CoreVSync.changed(); }
 if(window.CoreVSync) window.CoreVSync.register('reminders',
-  ()=>({PAY,CTRL,RECV_OV}),
+  ()=>({PAY,CTRL,RECV_OV,HR_ITEMS,HR_STATUS,HR_META}),
   env=>{ try{
     if(Array.isArray(env.PAY))PAY=env.PAY;
+    if(Array.isArray(env.HR_ITEMS)) HR_ITEMS=env.HR_ITEMS;
+    if(env.HR_STATUS && typeof env.HR_STATUS==='object') HR_STATUS=env.HR_STATUS;
+    if(env.HR_META && typeof env.HR_META==='object') HR_META=env.HR_META;
     if(env.RECV_OV && typeof env.RECV_OV==='object') RECV_OV=env.RECV_OV;   // receivable Paid/Due edits
     if(env.CTRL && typeof env.CTRL==='object'){
       const c=env.CTRL;
