@@ -1281,36 +1281,33 @@
     #tab-performance .why{font-size:12px;color:var(--muted)}
     #tab-performance .sec{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 20px;margin-bottom:20px}
     #tab-performance .sechead{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap;border-bottom:1px solid var(--line-2);padding-bottom:11px}
-    /* integrations bar */
-    #tab-performance .intbar{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:20px}
-    #tab-performance .chip{display:flex;align-items:center;gap:9px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:8px 15px;box-shadow:var(--shadow);font-size:12.5px}
+    #tab-performance .intbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:20px}
+    #tab-performance .chip{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:8px 14px;box-shadow:var(--shadow);font-size:12px}
     #tab-performance .chip .dot{width:9px;height:9px;border-radius:50%;background:var(--muted)}
     #tab-performance .chip.on .dot{background:var(--pos)} #tab-performance .chip.off .dot{background:#C9A23A}
-    #tab-performance .chip b{font-family:"Space Grotesk";font-weight:600}
-    #tab-performance .chip .mono{color:var(--muted)}
-    #tab-performance .intnote{font-size:12px;color:var(--muted);margin-left:auto;max-width:420px;text-align:right}
-    /* KPI strip */
+    #tab-performance .chip b{font-family:"Space Grotesk";font-weight:600} #tab-performance .chip .mono{color:var(--muted);font-family:"JetBrains Mono";font-size:11px}
     #tab-performance .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
     #tab-performance .kpi{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:15px 17px;box-shadow:var(--shadow)}
     #tab-performance .kpi .lbl{font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:600}
     #tab-performance .kpi .val{font-family:"Space Grotesk";font-size:26px;font-weight:600;letter-spacing:-.02em;margin-top:6px}
     #tab-performance .kpi .val.gold{color:var(--corev)} #tab-performance .kpi .val.pos{color:var(--pos)}
     #tab-performance .kpi .meta{font-size:11.5px;color:var(--muted);margin-top:3px}
-    /* settings */
-    #tab-performance .agrid{display:grid;grid-template-columns:repeat(4,1fr) auto;gap:14px;align-items:end}
-    #tab-performance .field label{display:block;font-size:10.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:5px}
-    #tab-performance .field input,#tab-performance .field select{width:100%;border:1px solid var(--line);border-radius:8px;background:var(--input-soft);padding:9px 10px;font-family:"JetBrains Mono";font-size:14px;font-weight:600;color:var(--input);outline:none}
+    #tab-performance .agrid{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;align-items:end}
+    #tab-performance .field label{display:block;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:5px}
+    #tab-performance .field input,#tab-performance .field select{width:100%;border:1px solid var(--line);border-radius:8px;background:var(--input-soft);padding:8px 9px;font-family:"JetBrains Mono";font-size:13px;font-weight:600;color:var(--input);outline:none}
     #tab-performance .field select{color:var(--text);font-family:"Inter"}
     #tab-performance .field input:focus,#tab-performance .field select:focus{border-color:var(--input);box-shadow:0 0 0 3px rgba(28,78,216,.12)}
-    #tab-performance .btn{cursor:pointer;border:1px solid var(--ink);background:var(--ink);color:#fff;font-family:"Inter";font-size:12.5px;font-weight:600;padding:10px 16px;border-radius:8px;white-space:nowrap}
+    #tab-performance .toolrow{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:14px}
+    #tab-performance .btn{cursor:pointer;border:1px solid var(--ink);background:var(--ink);color:#fff;font-family:"Inter";font-size:12.5px;font-weight:600;padding:9px 15px;border-radius:8px;white-space:nowrap}
     #tab-performance .btn.ghost{background:#fff;color:var(--ink)} #tab-performance .btn:hover{opacity:.92}
-    /* mapping */
+    #tab-performance .lt{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--text);font-weight:600}
+    #tab-performance .lt input{width:16px;height:16px;accent-color:var(--pos)}
+    #tab-performance .syncmsg{font-size:12px;color:var(--muted)}
     #tab-performance .maptbl{width:100%;border-collapse:collapse;margin-top:4px}
     #tab-performance .maptbl th{font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);text-align:left;padding:6px 10px;border-bottom:1px solid var(--line)}
     #tab-performance .maptbl td{padding:6px 10px;border-bottom:1px solid var(--line-2);font-size:13px}
     #tab-performance .maptbl td.r{text-align:right;font-family:"JetBrains Mono"}
     #tab-performance .maptbl select{border:1px solid var(--line);border-radius:6px;padding:5px 8px;font-family:"Inter";font-size:12.5px}
-    /* regions */
     #tab-performance .regions{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
     #tab-performance .rcard{border:1px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:var(--shadow);background:#fff}
     #tab-performance .rhead{padding:12px 16px;background:var(--ink);color:#fff;display:flex;justify-content:space-between;align-items:center}
@@ -1318,9 +1315,14 @@
     #tab-performance .rhead h3{font-family:"Space Grotesk";font-size:16px;font-weight:600;margin:0}
     #tab-performance .rhead .lead{text-align:right;font-size:12px} #tab-performance .rhead .lead b{font-family:"Space Grotesk"}
     #tab-performance .rbody{padding:13px 15px}
-    #tab-performance .ig{display:grid;grid-template-columns:1fr 1fr;gap:8px 11px}
-    #tab-performance .ig label{font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:600;display:block;margin-bottom:3px}
-    #tab-performance .ig input{width:100%;border:1px solid var(--line);border-radius:7px;background:var(--input-soft);padding:6px 8px;font-family:"JetBrains Mono";font-size:12.5px;font-weight:600;color:var(--input);text-align:right;outline:none}
+    #tab-performance .plrow{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+    #tab-performance .plrow .pll{flex:1;min-width:0;font-size:11px;color:var(--text);font-weight:600}
+    #tab-performance .plrow input{width:112px;border:1px solid var(--line);border-radius:7px;background:var(--input-soft);padding:6px 8px;font-family:"JetBrains Mono";font-size:12.5px;font-weight:600;color:var(--input);text-align:right;outline:none}
+    #tab-performance .plrow input.lock{background:#EEF3F9;color:#274060;border-style:dashed}
+    #tab-performance .src{font-size:8px;letter-spacing:.03em;text-transform:uppercase;padding:1px 5px;border-radius:999px;font-weight:700}
+    #tab-performance .src.hs{background:#E7F0FF;color:#1C4ED8}#tab-performance .src.cost{background:#FBF6E9;color:#8a6a1f}#tab-performance .src.comm{background:#EDE9FB;color:#5B3FB0}#tab-performance .src.pay{background:#E7F4EC;color:#117A4E}#tab-performance .src.man{background:#EEF1F6;color:#6B7688}
+    #tab-performance .subg{display:grid;grid-template-columns:1fr 1fr;gap:6px 10px;margin-top:8px}
+    #tab-performance .subg .plrow{margin-bottom:0}
     #tab-performance .kg{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:12px}
     #tab-performance .k{background:var(--surface);border:1px solid var(--line-2);border-radius:8px;padding:8px 10px}
     #tab-performance .k.big{grid-column:1/3;background:#FBF6E9;border-color:#EBD9A8}
@@ -1328,13 +1330,7 @@
     #tab-performance .k .kv{font-family:"Space Grotesk";font-size:15px;font-weight:600;color:var(--text);margin-top:1px}
     #tab-performance .k.big .kv{font-size:21px;color:#8a6a1f}
     #tab-performance .bdg{display:inline-block;font-family:"Inter";font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px}
-    #tab-performance .bdg.ok{background:var(--pos-soft);color:var(--pos)} #tab-performance .bdg.bad{background:var(--warn-soft);color:var(--warn)}
-    #tab-performance .crm{display:flex;gap:8px;margin-top:11px;padding-top:11px;border-top:1px dashed var(--line)}
-    #tab-performance .crm .c{flex:1;text-align:center}
-    #tab-performance .crm .cl{font-size:9px;letter-spacing:.03em;text-transform:uppercase;color:var(--muted)}
-    #tab-performance .crm input{width:100%;border:1px solid var(--line);border-radius:6px;padding:4px;font-family:"JetBrains Mono";font-size:12px;text-align:center;color:var(--input);font-weight:600}
-    #tab-performance .crmtag{font-size:10px;color:var(--muted);font-style:italic;margin-top:7px}
-    /* tables */
+    #tab-performance .bdg.ok{background:var(--pos-soft);color:var(--pos)}#tab-performance .bdg.bad{background:var(--warn-soft);color:var(--warn)}
     #tab-performance table.data{width:100%;border-collapse:collapse}
     #tab-performance table.data thead th{background:var(--ink);color:#C7D3E8;font-size:10px;letter-spacing:.05em;text-transform:uppercase;font-weight:600;padding:10px 12px;text-align:right}
     #tab-performance table.data thead th.l{text-align:left}
@@ -1346,58 +1342,63 @@
     #tab-performance .two{display:grid;grid-template-columns:1fr 1fr;gap:20px}
     #tab-performance .flow{display:flex;flex-direction:column;gap:8px}
     #tab-performance .fbox{border-radius:10px;padding:12px 16px;color:#fff}
-    #tab-performance .fbox .p{font-size:11.5px;opacity:.92} #tab-performance .fbox .n{font-family:"Space Grotesk";font-size:20px;font-weight:600}
+    #tab-performance .fbox .p{font-size:11.5px;opacity:.92}#tab-performance .fbox .n{font-family:"Space Grotesk";font-size:20px;font-weight:600}
     #tab-performance .bar{height:26px;border-radius:6px;background:var(--surface);overflow:hidden;display:flex;border:1px solid var(--line-2)}
-    #tab-performance .bar .own{background:var(--input)} #tab-performance .bar .con{background:var(--corev)}
-    #tab-performance .barrow{margin-bottom:13px} #tab-performance .barrow .bl{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:4px}
-    #tab-performance .barrow .bl b{font-family:"Space Grotesk"}
-    #tab-performance .legend{display:flex;gap:16px;font-size:12px;color:var(--muted)}
-    #tab-performance .legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:middle}
+    #tab-performance .bar .own{background:var(--input)}#tab-performance .bar .con{background:var(--corev)}
+    #tab-performance .barrow{margin-bottom:13px}#tab-performance .barrow .bl{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:4px}#tab-performance .barrow .bl b{font-family:"Space Grotesk"}
+    #tab-performance .legend{display:flex;gap:16px;font-size:12px;color:var(--muted)}#tab-performance .legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:middle}
     #tab-performance .narr{background:var(--surface);border-left:4px solid var(--corev);padding:14px 18px;border-radius:0 10px 10px 0;font-size:13px;color:var(--ink);margin-top:14px}
-    @media(max-width:960px){#tab-performance .kpis{grid-template-columns:repeat(2,1fr)}#tab-performance .agrid{grid-template-columns:1fr 1fr}#tab-performance .regions{grid-template-columns:1fr}#tab-performance .two{grid-template-columns:1fr}}
+    @media(max-width:1000px){#tab-performance .kpis{grid-template-columns:repeat(2,1fr)}#tab-performance .agrid{grid-template-columns:repeat(3,1fr)}#tab-performance .regions{grid-template-columns:1fr}#tab-performance .two{grid-template-columns:1fr}}
   </style>
   <div class="wrap">
 
     <div class="intbar">
-      <div class="chip" id="pf_chip_cost"><span class="dot"></span><b>Costing</b> <span class="mono" id="pf_costinfo">—</span></div>
       <div class="chip" id="pf_chip_hs"><span class="dot"></span><b>HubSpot</b> <span class="mono" id="pf_hsinfo">—</span></div>
-      <div class="chip on"><span class="dot"></span><b>Contribution engine</b> <span class="mono">net-profit driven</span></div>
-      <div class="intnote">Pulls live deals from the Costing tab &amp; HubSpot sync. Map reps to regions, then <b>Pull revenue</b> to feed the regional P&amp;Ls.</div>
+      <div class="chip" id="pf_chip_cost"><span class="dot"></span><b>Costing</b> <span class="mono" id="pf_costinfo">—</span></div>
+      <div class="chip" id="pf_chip_comm"><span class="dot"></span><b>Commission</b> <span class="mono" id="pf_comminfo">—</span></div>
+      <div class="chip" id="pf_chip_pay"><span class="dot"></span><b>Payouts</b> <span class="mono" id="pf_payinfo">—</span></div>
     </div>
 
     <div class="kpis">
-      <div class="kpi"><div class="lbl">Company revenue</div><div class="val" id="pf_s_rev">—</div><div class="meta">all profit centres</div></div>
+      <div class="kpi"><div class="lbl">Company revenue</div><div class="val" id="pf_s_rev">—</div><div class="meta" id="pf_s_period">all periods</div></div>
       <div class="kpi"><div class="lbl">Operating profit</div><div class="val" id="pf_s_op">—</div><div class="meta">after central costs</div></div>
       <div class="kpi"><div class="lbl">Distributed to partners</div><div class="val gold" id="pf_s_dist">—</div><div class="meta" id="pf_s_distpct">60% of profit</div></div>
       <div class="kpi"><div class="lbl">Retained annual profit</div><div class="val pos" id="pf_s_ann">—</div><div class="meta">leftover of the reserve</div></div>
     </div>
 
     <div class="sec">
-      <div class="sechead"><div><h2 class="blk">Model settings &amp; data sync</h2><span class="why">Distribution rules, cost allocation, and pulling live figures from Costing / HubSpot</span></div></div>
+      <div class="sechead"><div><h2 class="blk">Settings, period filter &amp; data sync</h2><span class="why">Pulls Revenue from HubSpot, Cost of sales from Costing, Commission from the Commission tab, Marketing from Payouts</span></div></div>
       <div class="agrid">
         <div class="field"><label>Reserve % (CoreV)</label><input type="number" id="pf_reservePct" value="40"></div>
-        <div class="field"><label>Ownership % of the 60%</label><input type="number" id="pf_ownPct" value="40"></div>
+        <div class="field"><label>Ownership % of 60%</label><input type="number" id="pf_ownPct" value="40"></div>
         <div class="field"><label>Allocation basis</label><select id="pf_basis"><option value="revenue">Revenue</option><option value="headcount">Headcount</option><option value="equal">Equal</option></select></div>
         <div class="field"><label>Annual future expenses</label><input type="number" id="pf_annExp" value="2400000"></div>
-        <button class="btn" id="pf_pull">↧ Pull revenue from Costing / HubSpot</button>
+        <div class="field"><label>View by</label><select id="pf_gran"><option value="all">All time</option><option value="month">Month</option><option value="quarter">Quarter</option><option value="half">Half-year</option><option value="year">Year</option></select></div>
+        <div class="field"><label>Period</label><select id="pf_period"><option value="">All</option></select></div>
+      </div>
+      <div class="toolrow">
+        <label class="lt"><input type="checkbox" id="pf_live" checked> Live from data (auto-pull)</label>
+        <button class="btn ghost" id="pf_pull">↻ Pull now</button>
+        <button class="btn" id="pf_push">☁ Push to shared drive</button>
+        <span class="syncmsg" id="pf_syncmsg"></span>
       </div>
       <div id="pf_mapwrap" style="margin-top:16px">
-        <div class="why" style="margin-bottom:6px"><b>Rep → region mapping</b> — assign each sales rep (from the Costing/HubSpot data) to a profit centre.</div>
-        <table class="maptbl"><thead><tr><th>Rep</th><th>Region</th><th style="text-align:right">Closed won</th><th style="text-align:right">Pipeline</th></tr></thead>
-        <tbody id="pf_mapbody"><tr><td colspan="4" style="color:var(--muted)">No deals loaded yet — data appears once the Costing tab / HubSpot sync has records.</td></tr></tbody></table>
+        <div class="why" style="margin-bottom:6px"><b>Rep → region mapping</b> — assign each sales rep (from Costing / HubSpot) to a profit centre. Figures below reflect the selected period.</div>
+        <table class="maptbl"><thead><tr><th>Rep</th><th>Region</th><th style="text-align:right">Closed won</th><th style="text-align:right">Pipeline</th><th style="text-align:right">Commission</th></tr></thead>
+        <tbody id="pf_mapbody"><tr><td colspan="5" style="color:var(--muted)">No deals loaded — records appear once the Costing tab / HubSpot sync has data.</td></tr></tbody></table>
       </div>
     </div>
 
     <div class="sec">
-      <div class="sechead"><div><h2 class="blk">Profit centres</h2><span class="why">Each region owns its P&amp;L · reward basis = <b>net operating profit</b></span></div></div>
+      <div class="sechead"><div><h2 class="blk">Profit centres</h2><span class="why">Live P&amp;L per region · reward basis = <b>net operating profit</b></span></div></div>
       <div class="regions" id="pf_regions"></div>
     </div>
 
     <div class="sec">
       <div class="sechead"><div><h2 class="blk">Central cost centre &amp; company P&amp;L</h2><span class="why">Shared services pooled, then allocated to every profit centre</span></div></div>
       <div class="two">
-        <table class="data"><thead><tr><th class="l">Central shared services (cost centre)</th><th>AED / month</th></tr></thead><tbody id="pf_cenBody"></tbody></table>
-        <table class="data"><thead><tr><th class="l">Company consolidated P&amp;L</th><th>AED / month</th></tr></thead><tbody>
+        <table class="data"><thead><tr><th class="l">Central shared services (cost centre)</th><th>AED</th></tr></thead><tbody id="pf_cenBody"></tbody></table>
+        <table class="data"><thead><tr><th class="l">Company consolidated P&amp;L</th><th>AED</th></tr></thead><tbody>
           <tr><td class="l">Revenue</td><td id="pf_c_rev">—</td></tr>
           <tr><td class="l">Gross profit</td><td id="pf_c_gp">—</td></tr>
           <tr><td class="l">Total controllable costs</td><td id="pf_c_ctrl">—</td></tr>
@@ -1413,12 +1414,12 @@
       <div class="two">
         <div>
           <div class="flow">
-            <div class="fbox" style="background:var(--ink)"><div class="p">Company operating profit (monthly)</div><div class="n" id="pf_f_profit">—</div></div>
+            <div class="fbox" style="background:var(--ink)"><div class="p">Company operating profit</div><div class="n" id="pf_f_profit">—</div></div>
             <div class="fbox" style="background:var(--oxe)"><div class="p">Reserved for CoreV — <span id="pf_f_respct">40%</span></div><div class="n" id="pf_f_reserve">—</div></div>
             <div class="fbox" style="background:var(--accent)"><div class="p">Distributed to partners — <span id="pf_f_distpct">60%</span></div><div class="n" id="pf_f_distamt">—</div></div>
           </div>
           <table class="data" style="margin-top:14px"><thead><tr><th class="l">Contribution factor</th><th>Weight</th><th>Ahmed</th><th>Kamal</th><th>Sami</th></tr></thead><tbody id="pf_factorBody"></tbody></table>
-          <div class="crmtag">Sales factor is auto-scored from each partner's region net operating profit (Ahmed = International, Kamal = Abu Dhabi, Sami = Dubai). Other factors are editable points.</div>
+          <div class="why" style="margin-top:8px;font-style:italic">Sales factor auto-scored from each partner's region net operating profit (Ahmed = International, Kamal = Abu Dhabi, Sami = Dubai). Other factors are editable points.</div>
         </div>
         <div>
           <div id="pf_bars"></div>
@@ -1434,148 +1435,6 @@
 
   </div>
   </div>
-  <script>(function(){
-    "use strict";
-    var REGIONS=[
-      {key:"dubai",name:"Dubai",tag:"Profit centre",partner:"Sami",
-       rev:3000000,cogs:1800000,sal:300000,com:120000,trv:60000,mkt:90000,oth:30000,cap:100000,hc:8,tgt:150000,pipeline:1200000,won:620000,win:28},
-      {key:"abudhabi",name:"Abu Dhabi",tag:"Profit centre",partner:"Kamal",
-       rev:5000000,cogs:3050000,sal:420000,com:200000,trv:90000,mkt:110000,oth:40000,cap:120000,hc:12,tgt:350000,pipeline:2100000,won:980000,win:33},
-      {key:"intl",name:"International",tag:"Profit centre · MD",partner:"Ahmed",
-       rev:2000000,cogs:1300000,sal:150000,com:80000,trv:70000,mkt:60000,oth:40000,cap:60000,hc:4,tgt:25000,pipeline:900000,won:410000,win:22}
-    ];
-    var CENTRAL=[["Operations",260000],["Finance & administration",180000],["IT & systems",140000],["Logistics & warehousing",220000],["Rent & facilities",200000],["Management / MD office",300000],["Other central",100000]];
-    var FACTORS=[{key:"op",name:"Operational scope & load",w:0.30,pts:[9,4,3]},{key:"comp",name:"Company managing",w:0.15,pts:[9,2,1]},{key:"dist",name:"Distribution & partnership",w:0.15,pts:[7,5,4]}];
-    var SW=0.40, PARTNERS=["Ahmed","Kamal","Sami"], PMAP={Ahmed:2,Kamal:1,Sami:0};
-    var root=document.getElementById("tab-performance");
-    var $=function(id){return document.getElementById(id);};
-    var fmt=function(n){n=Math.round(n||0);return (n<0?"(":"")+Math.abs(n).toLocaleString("en-US")+(n<0?")":"");};
-    var pctf=function(n){return (n*100).toFixed(1)+"%";};
-    var val=function(id){var e=$(id);return e?(parseFloat(e.value)||0):0;};
-    var repMap={}; // repName -> region key
-
-    // build region cards
-    function inp(id,v){return '<input type="number" id="'+id+'" value="'+v+'">';}
-    function card(r){var p=r.key;return '<div class="rcard"><div class="rhead"><div><div class="tag">'+r.tag+'</div><h3>'+r.name+'</h3></div>'+
-      '<div class="lead"><div class="tag">Lead</div><b>'+r.partner+'</b></div></div><div class="rbody"><div class="ig">'+
-      '<div><label>Revenue</label>'+inp(p+"_rev",r.rev)+'</div><div><label>Cost of sales</label>'+inp(p+"_cogs",r.cogs)+'</div>'+
-      '<div><label>Sales salaries</label>'+inp(p+"_sal",r.sal)+'</div><div><label>Commissions</label>'+inp(p+"_com",r.com)+'</div>'+
-      '<div><label>Travel & ent.</label>'+inp(p+"_trv",r.trv)+'</div><div><label>Marketing & events</label>'+inp(p+"_mkt",r.mkt)+'</div>'+
-      '<div><label>Other costs</label>'+inp(p+"_oth",r.oth)+'</div><div><label>Events cap</label>'+inp(p+"_cap",r.cap)+'</div>'+
-      '<div><label>Headcount</label>'+inp(p+"_hc",r.hc)+'</div><div><label>Net profit target</label>'+inp(p+"_tgt",r.tgt)+'</div></div>'+
-      '<div class="kg"><div class="k big"><div class="kl">Net operating profit</div><div class="kv" id="'+p+'_net">—</div></div>'+
-      '<div class="k"><div class="kl">Gross margin</div><div class="kv" id="'+p+'_gm">—</div></div>'+
-      '<div class="k"><div class="kl">Contribution margin</div><div class="kv" id="'+p+'_cm">—</div></div>'+
-      '<div class="k"><div class="kl">Net margin</div><div class="kv" id="'+p+'_nm">—</div></div>'+
-      '<div class="k"><div class="kl">Allocated central</div><div class="kv" id="'+p+'_alloc">—</div></div>'+
-      '<div class="k"><div class="kl">vs target</div><div class="kv" id="'+p+'_var">—</div></div>'+
-      '<div class="k"><div class="kl">Events cap</div><div class="kv" id="'+p+'_capst">—</div></div></div>'+
-      '<div class="crm"><div class="c"><div class="cl">Pipeline</div>'+inp(p+"_pipeline",r.pipeline)+'</div>'+
-      '<div class="c"><div class="cl">Closed won</div>'+inp(p+"_won",r.won)+'</div>'+
-      '<div class="c"><div class="cl">Win rate %</div>'+inp(p+"_win",r.win)+'</div></div>'+
-      '<div class="crmtag">CRM KPIs — sync from HubSpot / Sales CRM.</div></div></div>';}
-    $("pf_regions").innerHTML=REGIONS.map(card).join("");
-    $("pf_cenBody").innerHTML=CENTRAL.map(function(c,i){return '<tr><td class="l">'+c[0]+'</td><td><input class="mini" type="number" id="pf_cen_'+i+'" value="'+c[1]+'"></td></tr>';}).join("")+'<tr class="tot"><td class="l">Total central cost pool</td><td id="pf_cen_total">—</td></tr>';
-    $("pf_factorBody").innerHTML='<tr><td class="l">Sales — regional net profit vs. target</td><td>'+pctf(SW)+'</td><td id="pf_fs_A">—</td><td id="pf_fs_K">—</td><td id="pf_fs_S">—</td></tr>'+
-      FACTORS.map(function(f){return '<tr><td class="l">'+f.name+'</td><td>'+pctf(f.w)+'</td>'+[0,1,2].map(function(j){return '<td><input class="mini" style="width:52px;text-align:center" type="number" id="pf_fp_'+f.key+'_'+j+'" value="'+f.pts[j]+'"></td>';}).join("")+'</tr>';}).join("")+
-      '<tr class="tot"><td class="l">Contribution score</td><td></td><td id="pf_cs_A">—</td><td id="pf_cs_K">—</td><td id="pf_cs_S">—</td></tr>';
-
-    // ---------- integration ----------
-    function repList(){var s=window.CoreVStore;if(!s||!s.deals)return[];var m={};s.deals.forEach(function(d){var k=d.rep||"(unassigned)";if(!m[k])m[k]={rep:k,won:0,pipe:0};if(d.future)m[k].pipe+=(+d.gross||0);else m[k].won+=(+d.gross||0);});return Object.keys(m).map(function(k){return m[k];});}
-    function autoRegion(name){var n=(name||"").toLowerCase();if(n.indexOf("dubai")>=0)return"dubai";if(n.indexOf("abu")>=0)return"abudhabi";if(n.indexOf("intl")>=0||n.indexOf("international")>=0||n.indexOf("export")>=0)return"intl";return"";}
-    function renderIntegration(){
-      var reps=repList();
-      var s=window.CoreVStore;
-      var totalGross=0,hsCount=0;
-      if(s&&s.deals){s.deals.forEach(function(d){totalGross+=(+d.gross||0);if(d.hsId)hsCount++;});}
-      // costing chip
-      var cc=$("pf_chip_cost");cc.className="chip "+(s&&s.deals&&s.deals.length?"on":"off");
-      $("pf_costinfo").textContent=(s&&s.deals?s.deals.length:0)+" deals · AED "+fmt(totalGross);
-      // hubspot chip
-      var tok="";try{tok=localStorage.getItem("corev_hs_token")||"";}catch(e){}
-      var hc=$("pf_chip_hs");hc.className="chip "+(tok?"on":"off");
-      $("pf_hsinfo").textContent=(tok?"connected":"not connected")+" · "+hsCount+" synced deals";
-      // mapping table
-      if(!reps.length){$("pf_mapbody").innerHTML='<tr><td colspan="4" style="color:var(--muted)">No deals loaded yet — records appear once the Costing tab or HubSpot sync has data.</td></tr>';return;}
-      $("pf_mapbody").innerHTML=reps.map(function(x){
-        if(repMap[x.rep]===undefined)repMap[x.rep]=autoRegion(x.rep);
-        var opts=[["","— unassigned —"],["dubai","Dubai"],["abudhabi","Abu Dhabi"],["intl","International"]].map(function(o){return '<option value="'+o[0]+'"'+(repMap[x.rep]===o[0]?" selected":"")+'>'+o[1]+'</option>';}).join("");
-        return '<tr><td>'+x.rep+'</td><td><select data-rep="'+encodeURIComponent(x.rep)+'">'+opts+'</select></td><td class="r">'+fmt(x.won)+'</td><td class="r">'+fmt(x.pipe)+'</td></tr>';
-      }).join("");
-      $("pf_mapbody").querySelectorAll("select[data-rep]").forEach(function(sel){sel.addEventListener("change",function(){repMap[decodeURIComponent(sel.dataset.rep)]=sel.value;});});
-    }
-    function pullRevenue(){
-      var reps=repList();
-      if(!reps.length){renderIntegration();return;}
-      var agg={dubai:{won:0,pipe:0},abudhabi:{won:0,pipe:0},intl:{won:0,pipe:0}};
-      reps.forEach(function(x){var rg=repMap[x.rep];if(agg[rg]){agg[rg].won+=x.won;agg[rg].pipe+=x.pipe;}});
-      Object.keys(agg).forEach(function(k){
-        if($(k+"_rev")){ $(k+"_rev").value=Math.round(agg[k].won); $(k+"_won").value=Math.round(agg[k].won); $(k+"_pipeline").value=Math.round(agg[k].pipe); }
-      });
-      compute();
-    }
-
-    // ---------- compute ----------
-    function compute(){
-      var basis=$("pf_basis").value, pool=0;
-      CENTRAL.forEach(function(c,i){pool+=val("pf_cen_"+i);});
-      $("pf_cen_total").textContent=fmt(pool);
-      var R=REGIONS.map(function(r){var p=r.key;var rev=val(p+"_rev"),cogs=val(p+"_cogs");
-        var ctrl=val(p+"_sal")+val(p+"_com")+val(p+"_trv")+val(p+"_mkt")+val(p+"_oth");
-        return {r:r,p:p,rev:rev,gp:rev-cogs,ctrl:ctrl,cm:(rev-cogs)-ctrl,hc:val(p+"_hc"),mkt:val(p+"_mkt"),cap:val(p+"_cap"),tgt:val(p+"_tgt")};});
-      var drv=R.map(function(x){return basis==="revenue"?x.rev:basis==="headcount"?x.hc:1;});
-      var dt=drv.reduce(function(a,b){return a+b;},0)||1;
-      R.forEach(function(x,i){x.alloc=pool*drv[i]/dt;x.net=x.cm-x.alloc;});
-      R.forEach(function(x){var p=x.p;
-        $(p+"_net").textContent=fmt(x.net);
-        $(p+"_gm").textContent=x.rev?pctf(x.gp/x.rev):"—";
-        $(p+"_cm").textContent=fmt(x.cm);
-        $(p+"_nm").textContent=x.rev?pctf(x.net/x.rev):"—";
-        $(p+"_alloc").textContent=fmt(x.alloc);
-        var v=x.net-x.tgt;
-        $(p+"_var").innerHTML='<span class="bdg '+(v>=0?"ok":"bad")+'">'+(v>=0?"+":"")+fmt(v)+'</span>';
-        $(p+"_capst").innerHTML=x.mkt<=x.cap?'<span class="bdg ok">Within cap</span>':'<span class="bdg bad">Over cap</span>';});
-      var rev=R.reduce(function(a,x){return a+x.rev;},0),gp=R.reduce(function(a,x){return a+x.gp;},0),
-          ctrl=R.reduce(function(a,x){return a+x.ctrl;},0),cm=R.reduce(function(a,x){return a+x.cm;},0),op=cm-pool;
-      $("pf_c_rev").textContent=fmt(rev);$("pf_c_gp").textContent=fmt(gp);$("pf_c_ctrl").textContent=fmt(ctrl);
-      $("pf_c_cm").textContent=fmt(cm);$("pf_c_central").textContent=fmt(pool);$("pf_c_op").textContent=fmt(op);
-      var resPct=val("pf_reservePct")/100,ownPct=val("pf_ownPct")/100;
-      var reserve=op*resPct,distr=op-reserve,ownPool=distr*ownPct,conPool=distr-ownPool;
-      $("pf_f_profit").textContent=fmt(op);$("pf_f_reserve").textContent=fmt(reserve);$("pf_f_distamt").textContent=fmt(distr);
-      $("pf_f_respct").textContent=(resPct*100).toFixed(0)+"%";$("pf_f_distpct").textContent=((1-resPct)*100).toFixed(0)+"%";
-      var netByP=PARTNERS.map(function(pn){return R[PMAP[pn]].net;});
-      var netPos=netByP.map(function(n){return Math.max(n,0);});
-      var netTot=netPos.reduce(function(a,b){return a+b;},0);
-      var salesShare=netTot>0?netPos.map(function(n){return n/netTot;}):[1/3,1/3,1/3];
-      var fShares=FACTORS.map(function(f){var pts=[0,1,2].map(function(j){return val("pf_fp_"+f.key+"_"+j);});var t=pts.reduce(function(a,b){return a+b;},0)||1;return pts.map(function(x){return x/t;});});
-      var score=PARTNERS.map(function(pn,i){var s=SW*salesShare[i];FACTORS.forEach(function(f,k){s+=f.w*fShares[k][i];});return s;});
-      var st=score.reduce(function(a,b){return a+b;},0)||1;
-      var conShare=score.map(function(s){return s/st;});
-      ["A","K","S"].forEach(function(s,i){$("pf_fs_"+s).textContent=pctf(salesShare[i]);$("pf_cs_"+s).textContent=pctf(conShare[i]);});
-      var own=ownPool/3,pb="",bars="",totals=[];
-      PARTNERS.forEach(function(pn,i){var con=conPool*conShare[i],tot=own+con;totals.push({pn:pn,own:own,con:con,tot:tot});
-        pb+='<tr><td class="l">'+pn+'</td><td>'+fmt(own)+'</td><td>'+fmt(con)+'</td><td><b>'+fmt(tot)+'</b></td><td>'+(distr?pctf(tot/distr):"—")+'</td></tr>';});
-      $("pf_partnerBody").innerHTML=pb;
-      var mx=Math.max.apply(null,totals.map(function(t){return t.tot;}).concat([1]));
-      totals.forEach(function(t){var w=(t.tot/mx)*100,ow=t.tot?(t.own/t.tot)*w:0,cw=w-ow;
-        bars+='<div class="barrow"><div class="bl"><b>'+t.pn+'</b><span>'+fmt(t.tot)+' · '+(distr?pctf(t.tot/distr):"—")+'</span></div><div class="bar"><div class="own" style="width:'+ow+'%"></div><div class="con" style="width:'+cw+'%"></div></div></div>';});
-      $("pf_bars").innerHTML=bars;
-      $("pf_p_own").textContent=fmt(ownPool);$("pf_p_con").textContent=fmt(conPool);$("pf_p_tot").textContent=fmt(distr);
-      $("pf_s_rev").textContent=fmt(rev);$("pf_s_op").textContent=fmt(op);$("pf_s_dist").textContent=fmt(distr);
-      $("pf_s_distpct").textContent=((1-resPct)*100).toFixed(0)+"% of profit";
-      $("pf_s_ann").textContent=fmt(reserve*12-val("pf_annExp"));
-      var lead=totals.slice().sort(function(a,b){return b.tot-a.tot;})[0];
-      $("pf_narr").innerHTML='<b>How contribution flows:</b> of AED '+fmt(op)+' monthly operating profit, '+(resPct*100).toFixed(0)+'% (AED '+fmt(reserve)+') is reserved for CoreV and '+((1-resPct)*100).toFixed(0)+'% (AED '+fmt(distr)+') is shared. Every partner takes an equal ownership slice of AED '+fmt(own)+'; the contribution pool of AED '+fmt(conPool)+' then follows performance — the sales factor is driven by each region’s <b>net operating profit</b>, so discounts, event spend and cost overruns directly move a partner’s share. On current inputs, <b>'+lead.pn+'</b> earns the largest total (AED '+fmt(lead.tot)+'). Adjust any figure, or pull live revenue from Costing/HubSpot, to see the impact.';
-    }
-
-    root.addEventListener("input",compute);
-    root.addEventListener("change",compute);
-    $("pf_pull").addEventListener("click",pullRevenue);
-    window.addEventListener("corev:store",renderIntegration);
-    window.addEventListener("corev:products",renderIntegration);
-    renderIntegration();
-    compute();
-  })();</script>
 
   </div>
 
@@ -1887,6 +1746,7 @@ function publishProducts(){
     DATA.forEach(g=>g.rows.forEach(r=>list.push({sku:r.sku,name:r.name,group:g.group,oxeUnit:(r.cost||0)*G.exch})));
     SVC.rows.forEach(r=>list.push({sku:r.sku,name:r.name,group:SVC.group,oxeUnit:(r.cost||0)}));
     window.CoreVProducts=list;
+    try{let cS=0,mS=0;DATA.forEach(g=>g.rows.forEach(p=>{const q=p.qty||1;cS+=(p.cost||0)*q;mS+=(p.msrp||0)*q;}));window.CoreVCosting={machineRatio:mS>0?cS/mS:0,opRate:G.op||0,vat:G.vat||0,ts:Date.now()};window.dispatchEvent(new CustomEvent('corev:costing'));}catch(_){}
     window.dispatchEvent(new CustomEvent('corev:products'));
   }catch(_){}
 }
@@ -2656,7 +2516,7 @@ function renderRefs(){
 
 function publishStore(){
   const deals=[];
-  REPS.forEach(r=>r.deals.forEach(d=>deals.push({rep:r.name,customer:d.cust,gross:d.gross,collected:effColl(d),month:d.month||"",future:!!d.future,hsId:d.hsId||null})));
+  REPS.forEach(r=>r.deals.forEach(d=>{const _c=dealCalc(d);deals.push({rep:r.name,customer:d.cust,gross:d.gross,collected:effColl(d),comm:_c.comm,commElig:_c.elig,month:d.month||"",future:!!d.future,hsId:d.hsId||null});}));
   window.CoreVStore={deals,ts:Date.now()}; window.dispatchEvent(new CustomEvent('corev:store'));
   if(window.CoreVSync) window.CoreVSync.changed();
 }
@@ -3147,7 +3007,10 @@ function statusOf(due,paid){
 }
 const STLBL={paid:"Paid",over:"Overdue",soon:"Due soon",up:"Upcoming"};
 
+function publishPayoutsPerf(){try{var mm=function(s){if(!s)return"";var d=new Date(s+"T00:00:00");if(isNaN(d))return"";return MONTHS[d.getMonth()]+"/"+String(d.getFullYear()).slice(2);};window.CoreVPayouts={items:(PAY||[]).map(function(p){return {payee:p.payee||"",desc:p.desc||"",amount:+p.amount||0,due:p.due||"",month:mm(p.due)};}),ts:Date.now()};window.dispatchEvent(new CustomEvent("corev:payouts"));}catch(_){}}
+window.CoreVPayoutsPublish=publishPayoutsPerf;
 function renderDashboard(){
+  publishPayoutsPerf();
   const recv=receivables();
   const payManual=PAY.map(p=>({...p,due:new Date(p.due+"T00:00:00")}));
   const oxe=oxefitPayables();   // each has due (Date), amount, paid, payee, desc, customer, name
@@ -3950,5 +3813,150 @@ renderNav();
 render();
 
 })();</script>
+  <script>(function(){
+    "use strict";
+    var MONO=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    var REGIONS=[
+      {key:"dubai",name:"Dubai",tag:"Profit centre",partner:"Sami",rev:3000000,cogs:1800000,sal:300000,com:120000,trv:60000,mkt:90000,oth:30000,cap:100000,hc:8,tgt:150000,pipeline:1200000,won:620000,win:28},
+      {key:"abudhabi",name:"Abu Dhabi",tag:"Profit centre",partner:"Kamal",rev:5000000,cogs:3050000,sal:420000,com:200000,trv:90000,mkt:110000,oth:40000,cap:120000,hc:12,tgt:350000,pipeline:2100000,won:980000,win:33},
+      {key:"intl",name:"International",tag:"Profit centre · MD",partner:"Ahmed",rev:2000000,cogs:1300000,sal:150000,com:80000,trv:70000,mkt:60000,oth:40000,cap:60000,hc:4,tgt:25000,pipeline:900000,won:410000,win:22}
+    ];
+    var CENTRAL=[["Operations",260000],["Finance & administration",180000],["IT & systems",140000],["Logistics & warehousing",220000],["Rent & facilities",200000],["Management / MD office",300000],["Other central",100000]];
+    var FACTORS=[{key:"op",name:"Operational scope & load",w:0.30,pts:[9,4,3]},{key:"comp",name:"Company managing",w:0.15,pts:[9,2,1]},{key:"dist",name:"Distribution & partnership",w:0.15,pts:[7,5,4]}];
+    var SW=0.40, PARTNERS=["Ahmed","Kamal","Sami"], PMAP={Ahmed:2,Kamal:1,Sami:0};
+    var root=document.getElementById("tab-performance");
+    var $=function(id){return document.getElementById(id);};
+    var fmt=function(n){n=Math.round(n||0);return (n<0?"(":"")+Math.abs(n).toLocaleString("en-US")+(n<0?")":"");};
+    var pctf=function(n){return (n*100).toFixed(1)+"%";};
+    var val=function(id){var e=$(id);return e?(parseFloat(e.value)||0):0;};
+    var setVal=function(id,v){var e=$(id);if(e)e.value=v;};
+    var repMap={};
+
+    // ---- build region cards ----
+    function pr(label,id,v,cls,tag){return '<div class="plrow"><span class="pll">'+label+'</span><span class="src '+cls+'">'+tag+'</span><input type="number" id="'+id+'" value="'+v+'"></div>';}
+    function card(r){var p=r.key;return '<div class="rcard"><div class="rhead"><div><div class="tag">'+r.tag+'</div><h3>'+r.name+'</h3></div><div class="lead"><div class="tag">Lead</div><b>'+r.partner+'</b></div></div><div class="rbody">'+
+      pr("Revenue",p+"_rev",r.rev,"hs","HubSpot")+
+      pr("Cost of sales",p+"_cogs",r.cogs,"cost","Costing")+
+      pr("Commissions",p+"_com",r.com,"comm","Commission")+
+      pr("Marketing & events",p+"_mkt",r.mkt,"pay","Payouts")+
+      pr("Sales salaries",p+"_sal",r.sal,"man","HR / manual")+
+      pr("Travel & ent.",p+"_trv",r.trv,"man","manual")+
+      pr("Other costs",p+"_oth",r.oth,"man","manual")+
+      pr("Events cap",p+"_cap",r.cap,"man","manual")+
+      pr("Headcount",p+"_hc",r.hc,"man","manual")+
+      pr("Net profit target",p+"_tgt",r.tgt,"man","manual")+
+      '<div class="kg"><div class="k big"><div class="kl">Net operating profit</div><div class="kv" id="'+p+'_net">—</div></div>'+
+      '<div class="k"><div class="kl">Gross margin</div><div class="kv" id="'+p+'_gm">—</div></div>'+
+      '<div class="k"><div class="kl">Contribution margin</div><div class="kv" id="'+p+'_cm">—</div></div>'+
+      '<div class="k"><div class="kl">Net margin</div><div class="kv" id="'+p+'_nm">—</div></div>'+
+      '<div class="k"><div class="kl">Allocated central</div><div class="kv" id="'+p+'_alloc">—</div></div>'+
+      '<div class="k"><div class="kl">vs target</div><div class="kv" id="'+p+'_var">—</div></div>'+
+      '<div class="k"><div class="kl">Events cap</div><div class="kv" id="'+p+'_capst">—</div></div></div>'+
+      '<div class="subg" style="margin-top:10px">'+pr("Pipeline",p+"_pipeline",r.pipeline,"hs","HubSpot")+pr("Closed won",p+"_won",r.won,"hs","HubSpot")+pr("Win rate %",p+"_win",r.win,"man","CRM")+'</div>'+
+      '</div></div>';}
+    $("pf_regions").innerHTML=REGIONS.map(card).join("");
+    $("pf_cenBody").innerHTML=CENTRAL.map(function(c,i){return '<tr><td class="l">'+c[0]+'</td><td><input class="mini" type="number" id="pf_cen_'+i+'" value="'+c[1]+'"></td></tr>';}).join("")+'<tr class="tot"><td class="l">Total central cost pool</td><td id="pf_cen_total">—</td></tr>';
+    $("pf_factorBody").innerHTML='<tr><td class="l">Sales — regional net profit vs. target</td><td>'+pctf(SW)+'</td><td id="pf_fs_A">—</td><td id="pf_fs_K">—</td><td id="pf_fs_S">—</td></tr>'+
+      FACTORS.map(function(f){return '<tr><td class="l">'+f.name+'</td><td>'+pctf(f.w)+'</td>'+[0,1,2].map(function(j){return '<td><input class="mini" style="width:50px;text-align:center" type="number" id="pf_fp_'+f.key+'_'+j+'" value="'+f.pts[j]+'"></td>';}).join("")+'</tr>';}).join("")+
+      '<tr class="tot"><td class="l">Contribution score</td><td></td><td id="pf_cs_A">—</td><td id="pf_cs_K">—</td><td id="pf_cs_S">—</td></tr>';
+
+    // ---- period filter ----
+    function mkey(label){if(!label||label==="—")return null;var m=String(label).match(/^([A-Za-z]{3})\/(\d{2,4})$/);if(m){var mi=MONO.indexOf(m[1][0].toUpperCase()+m[1].slice(1,3).toLowerCase());var y=m[2];if(y.length===2)y="20"+y;return {y:+y,m:(mi<0?0:mi)+1};}var iso=String(label).match(/^(\d{4})-(\d{2})/);if(iso)return {y:+iso[1],m:+iso[2]};return null;}
+    function labelKey(label,gran){var k=mkey(label);if(!k)return null;if(gran==="month")return k.y+"-"+String(k.m).padStart(2,"0");if(gran==="quarter")return k.y+"-Q"+Math.ceil(k.m/3);if(gran==="half")return k.y+"-H"+(k.m<=6?1:2);if(gran==="year")return ""+k.y;return null;}
+    function granLabel(key,gran){if(gran==="month"){var p=key.split("-");return MONO[(+p[1])-1]+"/"+p[0].slice(2);}if(gran==="quarter")return key.replace("-"," ");if(gran==="half")return key.replace("-"," ");return key;}
+    function allLabels(){var s={};var st=window.CoreVStore;if(st&&st.deals)st.deals.forEach(function(d){if(d.month)s[d.month]=1;});var py=window.CoreVPayouts;if(py&&py.items)py.items.forEach(function(it){if(it.month)s[it.month]=1;});return Object.keys(s);}
+    function buildPeriods(){var gran=$("pf_gran").value,sel=$("pf_period").value;var opts='<option value="">All</option>';if(gran!=="all"){var keys={};allLabels().forEach(function(l){var k=labelKey(l,gran);if(k)keys[k]=1;});var arr=Object.keys(keys).sort().reverse();arr.forEach(function(k){opts+='<option value="'+k+'">'+granLabel(k,gran)+'</option>';});}$("pf_period").innerHTML=opts;if(sel&&$("pf_period").querySelector('option[value="'+sel+'"]'))$("pf_period").value=sel;}
+    function inPeriod(label){var gran=$("pf_gran").value,per=$("pf_period").value;if(gran==="all"||!per)return true;return labelKey(label,gran)===per;}
+    function periodLabel(){var gran=$("pf_gran").value,per=$("pf_period").value;if(gran==="all"||!per)return "all periods";var o=$("pf_period").querySelector('option[value="'+per+'"]');return o?o.textContent:per;}
+
+    // ---- integration ----
+    function repAgg(){var m={};var st=window.CoreVStore;if(st&&st.deals)st.deals.forEach(function(d){if(!inPeriod(d.month))return;var k=d.rep||"(unassigned)";if(!m[k])m[k]={rep:k,won:0,pipe:0,comm:0};if(d.future)m[k].pipe+=(+d.gross||0);else m[k].won+=(+d.gross||0);m[k].comm+=(+d.comm||0);});return Object.keys(m).map(function(k){return m[k];});}
+    function autoRegion(n){n=(n||"").toLowerCase();if(n.indexOf("dubai")>=0)return"dubai";if(n.indexOf("abu")>=0)return"abudhabi";if(n.indexOf("intl")>=0||n.indexOf("international")>=0||n.indexOf("export")>=0||n.indexOf("global")>=0)return"intl";return"";}
+    function marketingTotal(){var t=0,py=window.CoreVPayouts;if(py&&py.items)py.items.forEach(function(it){if(!inPeriod(it.month))return;if(/market|event|advert|campaign|expo|exhibit|brand|sponsor|promo/i.test((it.payee||"")+" "+(it.desc||"")))t+=(+it.amount||0);});return t;}
+    function renderIntegration(){
+      var st=window.CoreVStore, cost=window.CoreVCosting||{}, tok="";try{tok=localStorage.getItem("corev_hs_token")||"";}catch(e){}
+      var deals=(st&&st.deals)?st.deals.filter(function(d){return inPeriod(d.month);}):[];
+      var hsCount=deals.filter(function(d){return d.hsId;}).length, totComm=deals.reduce(function(a,d){return a+(+d.comm||0);},0);
+      $("pf_chip_hs").className="chip "+(tok?"on":"off");$("pf_hsinfo").textContent=(tok?"connected":"not connected")+" · "+hsCount+" synced";
+      $("pf_chip_cost").className="chip "+(window.CoreVCosting?"on":"off");$("pf_costinfo").textContent=window.CoreVCosting?("machines "+((cost.machineRatio||0)*100).toFixed(0)+"% + op "+((cost.opRate||0)*100).toFixed(0)+"%"):"—";
+      $("pf_chip_comm").className="chip "+(deals.length?"on":"off");$("pf_comminfo").textContent="AED "+fmt(totComm);
+      $("pf_chip_pay").className="chip "+(window.CoreVPayouts?"on":"off");$("pf_payinfo").textContent="marketing AED "+fmt(marketingTotal());
+      var reps=repAgg();
+      if(!reps.length){$("pf_mapbody").innerHTML='<tr><td colspan="5" style="color:var(--muted)">No deals in this period — records appear once the Costing tab / HubSpot sync has data.</td></tr>';return;}
+      $("pf_mapbody").innerHTML=reps.map(function(x){if(repMap[x.rep]===undefined)repMap[x.rep]=autoRegion(x.rep);
+        var opts=[["","— unassigned —"],["dubai","Dubai"],["abudhabi","Abu Dhabi"],["intl","International"]].map(function(o){return '<option value="'+o[0]+'"'+(repMap[x.rep]===o[0]?" selected":"")+'>'+o[1]+'</option>';}).join("");
+        return '<tr><td>'+x.rep+'</td><td><select data-rep="'+encodeURIComponent(x.rep)+'">'+opts+'</select></td><td class="r">'+fmt(x.won)+'</td><td class="r">'+fmt(x.pipe)+'</td><td class="r">'+fmt(x.comm)+'</td></tr>';}).join("");
+      $("pf_mapbody").querySelectorAll("select[data-rep]").forEach(function(sel){sel.addEventListener("change",function(){repMap[decodeURIComponent(sel.dataset.rep)]=sel.value;refresh();});});
+    }
+    var PULLED=["rev","cogs","com","mkt","won","pipeline"];
+    function setLocks(on){PULLED.forEach(function(f){["dubai","abudhabi","intl"].forEach(function(k){var e=$(k+"_"+f);if(e){e.readOnly=on;e.classList.toggle("lock",on);}});});}
+    function pull(){
+      var st=window.CoreVStore, cost=window.CoreVCosting||{}, live=$("pf_live").checked;
+      var has=st&&st.deals&&st.deals.length;
+      if(!has){setLocks(false);$("pf_syncmsg").textContent="No live deals yet — showing manual/sample values. Connect HubSpot or add deals in the Costing tab.";compute();return;}
+      var mR=cost.machineRatio||0, opR=cost.opRate||0;
+      var agg={dubai:{rev:0,comm:0,won:0,pipe:0},abudhabi:{rev:0,comm:0,won:0,pipe:0},intl:{rev:0,comm:0,won:0,pipe:0}};
+      st.deals.forEach(function(d){if(!inPeriod(d.month))return;var rg=repMap[d.rep];if(!agg[rg])return;if(d.future)agg[rg].pipe+=(+d.gross||0);else{agg[rg].rev+=(+d.gross||0);agg[rg].won+=(+d.gross||0);}agg[rg].comm+=(+d.comm||0);});
+      var mkTot=marketingTotal(), totRev=agg.dubai.rev+agg.abudhabi.rev+agg.intl.rev;
+      ["dubai","abudhabi","intl"].forEach(function(k){var a=agg[k];
+        setVal(k+"_rev",Math.round(a.rev));setVal(k+"_cogs",Math.round(a.rev*(mR+opR)));setVal(k+"_com",Math.round(a.comm));
+        setVal(k+"_mkt",Math.round(totRev>0?mkTot*a.rev/totRev:mkTot/3));setVal(k+"_won",Math.round(a.won));setVal(k+"_pipeline",Math.round(a.pipe));});
+      setLocks(live);
+      var n=st.deals.filter(function(d){return inPeriod(d.month);}).length;
+      $("pf_syncmsg").textContent="Pulled "+n+" deals for "+periodLabel()+" · cost of sales = machines+op "+((mR+opR)*100).toFixed(0)+"% of revenue · marketing from Payouts.";
+      compute();
+    }
+    function refresh(){buildPeriods();renderIntegration();if($("pf_live").checked)pull();else{setLocks(false);compute();}}
+
+    // ---- compute ----
+    function compute(){
+      var basis=$("pf_basis").value,pool=0;CENTRAL.forEach(function(c,i){pool+=val("pf_cen_"+i);});$("pf_cen_total").textContent=fmt(pool);
+      var R=REGIONS.map(function(r){var p=r.key;var rev=val(p+"_rev"),cogs=val(p+"_cogs");var ctrl=val(p+"_sal")+val(p+"_com")+val(p+"_trv")+val(p+"_mkt")+val(p+"_oth");return {r:r,p:p,rev:rev,gp:rev-cogs,ctrl:ctrl,cm:(rev-cogs)-ctrl,hc:val(p+"_hc"),mkt:val(p+"_mkt"),cap:val(p+"_cap"),tgt:val(p+"_tgt")};});
+      var drv=R.map(function(x){return basis==="revenue"?x.rev:basis==="headcount"?x.hc:1;});var dt=drv.reduce(function(a,b){return a+b;},0)||1;
+      R.forEach(function(x,i){x.alloc=pool*drv[i]/dt;x.net=x.cm-x.alloc;});
+      R.forEach(function(x){var p=x.p;$(p+"_net").textContent=fmt(x.net);$(p+"_gm").textContent=x.rev?pctf(x.gp/x.rev):"—";$(p+"_cm").textContent=fmt(x.cm);$(p+"_nm").textContent=x.rev?pctf(x.net/x.rev):"—";$(p+"_alloc").textContent=fmt(x.alloc);var v=x.net-x.tgt;$(p+"_var").innerHTML='<span class="bdg '+(v>=0?"ok":"bad")+'">'+(v>=0?"+":"")+fmt(v)+'</span>';$(p+"_capst").innerHTML=x.mkt<=x.cap?'<span class="bdg ok">Within cap</span>':'<span class="bdg bad">Over cap</span>';});
+      var rev=R.reduce(function(a,x){return a+x.rev;},0),gp=R.reduce(function(a,x){return a+x.gp;},0),ctrl=R.reduce(function(a,x){return a+x.ctrl;},0),cm=R.reduce(function(a,x){return a+x.cm;},0),op=cm-pool;
+      $("pf_c_rev").textContent=fmt(rev);$("pf_c_gp").textContent=fmt(gp);$("pf_c_ctrl").textContent=fmt(ctrl);$("pf_c_cm").textContent=fmt(cm);$("pf_c_central").textContent=fmt(pool);$("pf_c_op").textContent=fmt(op);
+      var resPct=val("pf_reservePct")/100,ownPct=val("pf_ownPct")/100,reserve=op*resPct,distr=op-reserve,ownPool=distr*ownPct,conPool=distr-ownPool;
+      $("pf_f_profit").textContent=fmt(op);$("pf_f_reserve").textContent=fmt(reserve);$("pf_f_distamt").textContent=fmt(distr);$("pf_f_respct").textContent=(resPct*100).toFixed(0)+"%";$("pf_f_distpct").textContent=((1-resPct)*100).toFixed(0)+"%";
+      var netByP=PARTNERS.map(function(pn){return R[PMAP[pn]].net;}),netPos=netByP.map(function(n){return Math.max(n,0);}),netTot=netPos.reduce(function(a,b){return a+b;},0);
+      var salesShare=netTot>0?netPos.map(function(n){return n/netTot;}):[1/3,1/3,1/3];
+      var fShares=FACTORS.map(function(f){var pts=[0,1,2].map(function(j){return val("pf_fp_"+f.key+"_"+j);});var t=pts.reduce(function(a,b){return a+b;},0)||1;return pts.map(function(x){return x/t;});});
+      var score=PARTNERS.map(function(pn,i){var s=SW*salesShare[i];FACTORS.forEach(function(f,k){s+=f.w*fShares[k][i];});return s;});
+      var stt=score.reduce(function(a,b){return a+b;},0)||1,conShare=score.map(function(s){return s/stt;});
+      ["A","K","S"].forEach(function(s,i){$("pf_fs_"+s).textContent=pctf(salesShare[i]);$("pf_cs_"+s).textContent=pctf(conShare[i]);});
+      var own=ownPool/3,pb="",bars="",totals=[];
+      PARTNERS.forEach(function(pn,i){var con=conPool*conShare[i],tot=own+con;totals.push({pn:pn,own:own,con:con,tot:tot});pb+='<tr><td class="l">'+pn+'</td><td>'+fmt(own)+'</td><td>'+fmt(con)+'</td><td><b>'+fmt(tot)+'</b></td><td>'+(distr?pctf(tot/distr):"—")+'</td></tr>';});
+      $("pf_partnerBody").innerHTML=pb;var mx=Math.max.apply(null,totals.map(function(t){return t.tot;}).concat([1]));
+      totals.forEach(function(t){var w=(t.tot/mx)*100,ow=t.tot?(t.own/t.tot)*w:0,cw=w-ow;bars+='<div class="barrow"><div class="bl"><b>'+t.pn+'</b><span>'+fmt(t.tot)+' · '+(distr?pctf(t.tot/distr):"—")+'</span></div><div class="bar"><div class="own" style="width:'+ow+'%"></div><div class="con" style="width:'+cw+'%"></div></div></div>';});
+      $("pf_bars").innerHTML=bars;$("pf_p_own").textContent=fmt(ownPool);$("pf_p_con").textContent=fmt(conPool);$("pf_p_tot").textContent=fmt(distr);
+      $("pf_s_rev").textContent=fmt(rev);$("pf_s_op").textContent=fmt(op);$("pf_s_dist").textContent=fmt(distr);$("pf_s_distpct").textContent=((1-resPct)*100).toFixed(0)+"% of profit";$("pf_s_period").textContent=periodLabel();$("pf_s_ann").textContent=fmt(reserve*12-val("pf_annExp"));
+      var lead=totals.slice().sort(function(a,b){return b.tot-a.tot;})[0];
+      $("pf_narr").innerHTML='<b>How contribution flows ('+periodLabel()+'):</b> of AED '+fmt(op)+' operating profit, '+(resPct*100).toFixed(0)+'% (AED '+fmt(reserve)+') is reserved for CoreV and '+((1-resPct)*100).toFixed(0)+'% (AED '+fmt(distr)+') shared. Each partner takes an equal ownership slice of AED '+fmt(own)+'; the contribution pool of AED '+fmt(conPool)+' follows performance — the sales factor is driven by each region’s <b>net operating profit</b>, so discounts, event spend and cost overruns directly move a partner’s share. On current data, <b>'+lead.pn+'</b> earns the largest total (AED '+fmt(lead.tot)+').';
+    }
+
+    // ---- sync (push to shared drive) ----
+    function collect(){var o={v:{},map:repMap};root.querySelectorAll("input[id],select[id]").forEach(function(e){o.v[e.id]=e.value;});return o;}
+    function apply(s){if(!s)return;if(s.map)repMap=s.map;if(s.v)Object.keys(s.v).forEach(function(id){var e=$(id);if(e&&e.type!=="checkbox")e.value=s.v[id];});buildPeriods();renderIntegration();compute();}
+    function registerSync(){try{if(window.CoreVSync&&window.CoreVSync.register)window.CoreVSync.register("performance",collect,apply);}catch(e){}}
+    function pushSync(){try{if(window.CoreVSync){window.CoreVSync.changed();$("pf_syncmsg").textContent="Saved to the shared drive — synced with the rest of the suite.";}else $("pf_syncmsg").textContent="Sync not available (sign in to enable shared drive).";}catch(e){$("pf_syncmsg").textContent="Sync error: "+e.message;}}
+
+    // ---- wire up ----
+    root.addEventListener("input",function(e){compute();try{if(window.CoreVSync)window.CoreVSync.changed();}catch(_){}} );
+    $("pf_gran").addEventListener("change",function(){buildPeriods();refresh();});
+    $("pf_period").addEventListener("change",refresh);
+    $("pf_live").addEventListener("change",function(){if($("pf_live").checked)pull();else{setLocks(false);}});
+    $("pf_pull").addEventListener("click",pull);
+    $("pf_push").addEventListener("click",pushSync);
+    window.addEventListener("corev:store",refresh);
+    window.addEventListener("corev:products",refresh);
+    window.addEventListener("corev:costing",refresh);
+    window.addEventListener("corev:payouts",refresh);
+    try{window.CoreVPayoutsPublish&&window.CoreVPayoutsPublish();}catch(e){}
+    registerSync();
+    buildPeriods();renderIntegration();
+    if($("pf_live").checked)pull();else compute();
+  })();</script>
+
 </body>
 </html>
