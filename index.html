@@ -1385,9 +1385,9 @@
         <span class="syncmsg" id="pf_syncmsg"></span>
       </div>
       <div id="pf_mapwrap" style="margin-top:16px">
-        <div class="why" style="margin-bottom:6px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><span><b>Sales reps — mapping &amp; performance</b> — assign each rep to a region; annual target = 15× salary, tracked <b>quarterly</b>. Rule vs the quarterly target: &lt;30% exit · 30–50% coaching quarter (then 70% or leave) · 50%+ on track. Pick a quarter in the period filter.</span><span id="pf_mapstat" style="font-family:'JetBrains Mono';font-size:11.5px"></span></div>
+        <div class="why" style="margin-bottom:6px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><span><b>Sales reps — mapping &amp; performance</b> — assign each rep to a region; monthly target = 15× salary, so <b>quarterly = ×3</b>. Rule vs the quarterly target: &lt;30% exit · 30–50% coaching quarter (then 70% or leave) · 50%+ on track. Pick a quarter in the period filter.</span><span id="pf_mapstat" style="font-family:'JetBrains Mono';font-size:11.5px"></span></div>
         <div class="toolrow" style="margin:0 0 8px"><button class="btn ghost" id="pf_assign_dubai" style="padding:5px 11px;font-size:11.5px">Assign unmapped → Dubai</button><button class="btn ghost" id="pf_assign_abudhabi" style="padding:5px 11px;font-size:11.5px">→ Abu Dhabi</button><button class="btn ghost" id="pf_assign_intl" style="padding:5px 11px;font-size:11.5px">→ International</button></div>
-        <table class="maptbl"><thead><tr><th>Rep</th><th>Region</th><th style="text-align:right">Salary/mo</th><th style="text-align:right">Annual (15x)</th><th style="text-align:right">Qtr target</th><th style="text-align:right">Closed won</th><th style="text-align:right">Attain</th><th>Status</th></tr></thead>
+        <table class="maptbl"><thead><tr><th>Rep</th><th>Region</th><th style="text-align:right">Salary/mo</th><th style="text-align:right">Monthly (15x)</th><th style="text-align:right">Qtr target</th><th style="text-align:right">Closed won</th><th style="text-align:right">Attain</th><th>Status</th></tr></thead>
         <tbody id="pf_mapbody"><tr><td colspan="8" style="color:var(--muted)">No deals loaded — records appear once the Costing tab / HubSpot sync has data.</td></tr></tbody></table>
       </div>
     </div>
@@ -3893,7 +3893,7 @@ render();
       $("pf_mapbody").innerHTML=reps.map(function(x){
         if(repMap[x.rep]===undefined)repMap[x.rep]=autoRegion(x.rep);
         if(repSalary[x.rep]===undefined)repSalary[x.rep]=15000;
-        var enc=encodeURIComponent(x.rep), sal=repSalary[x.rep], tgt=sal*15, qt=tgt/4, att=qt>0?x.won/qt:0;
+        var enc=encodeURIComponent(x.rep), sal=repSalary[x.rep], tgt=sal*15, qt=tgt*3, att=qt>0?x.won/qt:0;
         var st=att<0.30?["Exit","bad"]:att<0.50?["Coaching","warn"]:["On track","ok"];
         var opts=[["","— unassigned —"],["dubai","Dubai"],["abudhabi","Abu Dhabi"],["intl","International"]].map(function(o){return '<option value="'+o[0]+'"'+(repMap[x.rep]===o[0]?" selected":"")+'>'+o[1]+'</option>';}).join("");
         return '<tr><td>'+x.rep+'</td><td><select data-rep="'+enc+'">'+opts+'</select></td>'+
