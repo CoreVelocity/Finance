@@ -1365,7 +1365,7 @@
       <div class="kpi"><div class="lbl">Company revenue</div><div class="val" id="pf_s_rev">—</div><div class="meta" id="pf_s_period">all periods</div></div>
       <div class="kpi"><div class="lbl">Operating profit</div><div class="val" id="pf_s_op">—</div><div class="meta">after central costs</div></div>
       <div class="kpi"><div class="lbl">Distributed to partners</div><div class="val gold" id="pf_s_dist">—</div><div class="meta" id="pf_s_distpct">60% of profit</div></div>
-      <div class="kpi"><div class="lbl">Retained annual profit</div><div class="val pos" id="pf_s_ann">—</div><div class="meta">leftover of the reserve</div></div>
+      <div class="kpi"><div class="lbl">Reserved for CoreV (40%)</div><div class="val pos" id="pf_s_ann">—</div><div class="meta">retained each month</div></div>
     </div>
 
     <div class="sec">
@@ -1373,27 +1373,28 @@
       <div class="agrid">
         <div class="field"><label>Reserve % (CoreV)</label><input type="number" id="pf_reservePct" value="40"></div>
         <div class="field"><label>Consumer mix % (rest = commercial)</label><input type="number" id="pf_consumerMix" value="40"></div>
-        <div class="field"><label>Allocation basis</label><select id="pf_basis"><option value="revenue">Revenue</option><option value="headcount">Headcount</option><option value="equal">Equal</option></select></div>
-        <div class="field"><label>Annual future expenses</label><input type="number" id="pf_annExp" value="2400000"></div>
         <div class="field"><label>View by</label><select id="pf_gran"><option value="all">All time</option><option value="month">Month</option><option value="quarter">Quarter</option><option value="half">Half-year</option><option value="year">Year</option></select></div>
         <div class="field"><label>Period</label><select id="pf_period"><option value="">All</option></select></div>
       </div>
       <div class="toolrow">
-        <label class="lt"><input type="checkbox" id="pf_live" checked> Live from data (auto-pull)</label>
-        <button class="btn ghost" id="pf_pull">↻ Pull now</button>
+        <span class="syncmsg" style="color:var(--muted)">All figures auto-calculate live from HubSpot, Costing, Commission &amp; Payouts, and from the sales-rep table below.</span>
         <button class="btn" id="pf_push">☁ Push to shared drive</button>
         <span class="syncmsg" id="pf_syncmsg"></span>
       </div>
       <div id="pf_mapwrap" style="margin-top:16px">
         <div class="why" style="margin-bottom:6px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap"><span><b>Sales reps — mapping &amp; performance</b> — assign each rep to a region; monthly target = 15× salary, so <b>quarterly = ×3</b>. Rule vs the quarterly target: &lt;30% exit · 30–50% coaching quarter (then 70% or leave) · 50%+ on track. Pick a quarter in the period filter.</span><span id="pf_mapstat" style="font-family:'JetBrains Mono';font-size:11.5px"></span></div>
-        <div class="toolrow" style="margin:0 0 8px"><button class="btn ghost" id="pf_assign_dubai" style="padding:5px 11px;font-size:11.5px">Assign unmapped → Dubai</button><button class="btn ghost" id="pf_assign_abudhabi" style="padding:5px 11px;font-size:11.5px">→ Abu Dhabi</button><button class="btn ghost" id="pf_assign_intl" style="padding:5px 11px;font-size:11.5px">→ International</button></div>
+        <div class="toolrow" style="margin:0 0 8px">
+          <input id="pf_newrep" placeholder="New sales rep name" style="border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-family:inherit;font-size:12.5px;min-width:180px">
+          <button class="btn" id="pf_addrep" style="padding:7px 13px;font-size:12.5px">+ Add sales rep</button>
+          <span style="color:var(--muted);font-size:11.5px">Add reps manually and map them — targets, salaries &amp; status calculate automatically.</span>
+        </div>
         <table class="maptbl"><thead><tr><th>Rep</th><th>Region</th><th style="text-align:right">Salary/mo</th><th style="text-align:right">Monthly (15x)</th><th style="text-align:right">Qtr target</th><th style="text-align:right">Closed won</th><th style="text-align:right">Attain</th><th>Status</th></tr></thead>
         <tbody id="pf_mapbody"><tr><td colspan="8" style="color:var(--muted)">No deals loaded — records appear once the Costing tab / HubSpot sync has data.</td></tr></tbody></table>
       </div>
     </div>
 
     <div class="sec">
-      <div class="sechead"><div><h2 class="blk">Profit centres</h2><span class="why">Live P&amp;L per region · reward basis = <b>net operating profit</b></span></div></div>
+      <div class="sechead"><div><h2 class="blk">Profit centres</h2><span class="why">Auto-calculated per region. Revenue = closed-won (HubSpot). Cost of sales = machines (catalog cost ÷ MSRP) + operational %, from Costing. Commissions from Commission tab. Marketing from Payouts (shared by revenue). Sales salaries = sum of the region's reps. Reward basis = <b>net operating profit</b>.</span></div></div>
       <div class="regions" id="pf_regions"></div>
     </div>
 
@@ -3824,62 +3825,68 @@ render();
     "use strict";
     var MONO=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
     var REGIONS=[
-      {key:"dubai",name:"Dubai",tag:"Profit centre",partner:"Sami",rev:3000000,cogs:1800000,sal:300000,com:120000,trv:60000,mkt:90000,oth:30000,cap:100000,hc:8,tgt:150000,pipeline:1200000,won:620000,win:28},
-      {key:"abudhabi",name:"Abu Dhabi",tag:"Profit centre",partner:"Kamal",rev:5000000,cogs:3050000,sal:420000,com:200000,trv:90000,mkt:110000,oth:40000,cap:120000,hc:12,tgt:350000,pipeline:2100000,won:980000,win:33},
-      {key:"intl",name:"International",tag:"Profit centre · MD",partner:"Ahmed",rev:2000000,cogs:1300000,sal:150000,com:80000,trv:70000,mkt:60000,oth:40000,cap:60000,hc:4,tgt:25000,pipeline:900000,won:410000,win:22}
+      {key:"dubai",name:"Dubai",tag:"Profit centre",partner:"Sami"},
+      {key:"abudhabi",name:"Abu Dhabi",tag:"Profit centre",partner:"Kamal"},
+      {key:"intl",name:"International",tag:"Profit centre · MD",partner:"Ahmed"}
     ];
+    var INTL_DEFAULT_TARGET=50000;
     var CENTRAL=[["Operations",260000],["Finance & administration",180000],["IT & systems",140000],["Logistics & warehousing",220000],["Rent & facilities",200000],["Management / MD office",300000],["Other central",100000]];
-    var FACTORS=[{key:"op",name:"Operational scope & load",w:0.30,pts:[9,4,3]},{key:"comp",name:"Company managing",w:0.15,pts:[9,2,1]},{key:"dist",name:"Distribution & partnership",w:0.15,pts:[7,5,4]}];
-    var SW=0.40, PARTNERS=["Ahmed","Kamal","Sami"], PMAP={Ahmed:2,Kamal:1,Sami:0};
+    var PARTNERS=["Ahmed","Kamal","Sami"];
     var root=document.getElementById("tab-performance");
     var $=function(id){return document.getElementById(id);};
     var fmt=function(n){n=Math.round(n||0);return (n<0?"(":"")+Math.abs(n).toLocaleString("en-US")+(n<0?")":"");};
     var pctf=function(n){return (n*100).toFixed(1)+"%";};
     var val=function(id){var e=$(id);return e?(parseFloat(e.value)||0):0;};
-    var setVal=function(id,v){var e=$(id);if(e)e.value=v;};
-    var repMap={};try{repMap=JSON.parse(localStorage.getItem("corev_perf_map")||"{}")||{};}catch(e){repMap={};}
-    function saveMap(){try{localStorage.setItem("corev_perf_map",JSON.stringify(repMap));}catch(e){}}
-    var repSalary={};try{repSalary=JSON.parse(localStorage.getItem("corev_perf_sal")||"{}")||{};}catch(e){repSalary={};}
-    function saveSal(){try{localStorage.setItem("corev_perf_sal",JSON.stringify(repSalary));}catch(e){}}
+    var setVal=function(id,v){var e=$(id);if(e&&document.activeElement!==e)e.value=v;};
+    function load(k){try{return JSON.parse(localStorage.getItem(k)||"null");}catch(e){return null;}}
+    var repMap=load("corev_perf_map")||{}; function saveMap(){try{localStorage.setItem("corev_perf_map",JSON.stringify(repMap));}catch(e){}}
+    var repSalary=load("corev_perf_sal")||{}; function saveSal(){try{localStorage.setItem("corev_perf_sal",JSON.stringify(repSalary));}catch(e){}}
+    var manualReps=load("corev_perf_reps")||[]; function saveReps(){try{localStorage.setItem("corev_perf_reps",JSON.stringify(manualReps));}catch(e){}}
 
-    // ---- build region cards ----
-    function pr(label,id,v,cls,tag){return '<div class="plrow"><span class="pll">'+label+'</span><span class="src '+cls+'">'+tag+'</span><input type="number" id="'+id+'" value="'+v+'"></div>';}
+    // ---- region cards (mostly auto-calculated / read-only) ----
+    function pr(label,id,cls,tag,ro){return '<div class="plrow"><span class="pll">'+label+'</span><span class="src '+cls+'">'+tag+'</span><input type="number" id="'+id+'"'+(ro?' readonly class="lock"':'')+'></div>';}
     function card(r){var p=r.key;return '<div class="rcard"><div class="rhead"><div><div class="tag">'+r.tag+'</div><h3>'+r.name+'</h3></div><div class="lead"><div class="tag">Lead</div><b>'+r.partner+'</b></div></div><div class="rbody">'+
-      pr("Revenue",p+"_rev",r.rev,"hs","HubSpot")+
-      pr("Cost of sales",p+"_cogs",r.cogs,"cost","Costing")+
-      pr("Commissions",p+"_com",r.com,"comm","Commission")+
-      pr("Marketing & events",p+"_mkt",r.mkt,"pay","Payouts")+
-      pr("Sales salaries",p+"_sal",r.sal,"man","HR / manual")+
-      pr("Travel & ent.",p+"_trv",r.trv,"man","manual")+
-      pr("Other costs",p+"_oth",r.oth,"man","manual")+
-      pr("Events cap",p+"_cap",r.cap,"man","manual")+
-      pr("Headcount",p+"_hc",r.hc,"man","manual")+
-      pr("Net profit target",p+"_tgt",r.tgt,"man","manual")+
-      '<div class="kg"><div class="k big"><div class="kl">Net operating profit</div><div class="kv" id="'+p+'_net">—</div></div>'+
-      '<div class="k"><div class="kl">Gross margin</div><div class="kv" id="'+p+'_gm">—</div></div>'+
-      '<div class="k"><div class="kl">Contribution margin</div><div class="kv" id="'+p+'_cm">—</div></div>'+
-      '<div class="k"><div class="kl">Net margin</div><div class="kv" id="'+p+'_nm">—</div></div>'+
-      '<div class="k"><div class="kl">Allocated central</div><div class="kv" id="'+p+'_alloc">—</div></div>'+
-      '<div class="k"><div class="kl">vs target</div><div class="kv" id="'+p+'_var">—</div></div>'+
-      '<div class="k"><div class="kl">Events cap</div><div class="kv" id="'+p+'_capst">—</div></div></div>'+
-      '<div class="subg" style="margin-top:10px">'+pr("Pipeline",p+"_pipeline",r.pipeline,"hs","HubSpot")+pr("Closed won",p+"_won",r.won,"hs","HubSpot")+pr("Win rate %",p+"_win",r.win,"man","CRM")+'</div>'+
+      pr("Revenue","p_"+p+"_rev","hs","HubSpot",true)+
+      pr("Cost of sales","p_"+p+"_cogs","cost","Costing",true)+
+      pr("Commissions","p_"+p+"_com","comm","Commission",true)+
+      pr("Marketing & events","p_"+p+"_mkt","pay","Payouts",true)+
+      pr("Sales salaries","p_"+p+"_sal","man","From reps",true)+
+      pr("Other costs","p_"+p+"_oth","man","manual",false)+
+      pr("Events cap","p_"+p+"_cap","man","manual",false)+
+      pr("Net profit target","p_"+p+"_tgt","man",(p==="intl"?"manual":"30% of target"),(p!=="intl"))+
+      '<div class="kg"><div class="k big"><div class="kl">Net operating profit</div><div class="kv" id="p_'+p+'_net">—</div></div>'+
+      '<div class="k"><div class="kl">Gross margin</div><div class="kv" id="p_'+p+'_gm">—</div></div>'+
+      '<div class="k"><div class="kl">Contribution margin</div><div class="kv" id="p_'+p+'_cm">—</div></div>'+
+      '<div class="k"><div class="kl">Net margin</div><div class="kv" id="p_'+p+'_nm">—</div></div>'+
+      '<div class="k"><div class="kl">Allocated central</div><div class="kv" id="p_'+p+'_alloc">—</div></div>'+
+      '<div class="k"><div class="kl">vs target</div><div class="kv" id="p_'+p+'_var">—</div></div>'+
+      '<div class="k"><div class="kl">Events cap</div><div class="kv" id="p_'+p+'_capst">—</div></div></div>'+
+      '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:10px">'+
+      '<div class="k"><div class="kl">Pipeline · HubSpot</div><div class="kv" id="p_'+p+'_pipe">—</div></div>'+
+      '<div class="k"><div class="kl">Closed won</div><div class="kv" id="p_'+p+'_won">—</div></div>'+
+      '<div class="k"><div class="kl">Win rate (vs target)</div><div class="kv" id="p_'+p+'_win">—</div></div></div>'+
       '</div></div>';}
     $("pf_regions").innerHTML=REGIONS.map(card).join("");
+    // set manual defaults
+    if($("p_intl_tgt")&&!$("p_intl_tgt").value)$("p_intl_tgt").value=INTL_DEFAULT_TARGET;
+    ["dubai","abudhabi","intl"].forEach(function(k){if($("p_"+k+"_oth")&&!$("p_"+k+"_oth").value)$("p_"+k+"_oth").value=0;if($("p_"+k+"_cap")&&!$("p_"+k+"_cap").value)$("p_"+k+"_cap").value=100000;});
     $("pf_cenBody").innerHTML=CENTRAL.map(function(c,i){return '<tr><td class="l">'+c[0]+'</td><td><input class="mini" type="number" id="pf_cen_'+i+'" value="'+c[1]+'"></td></tr>';}).join("")+'<tr class="tot"><td class="l">Total central cost pool</td><td id="pf_cen_total">—</td></tr>';
 
     // ---- period filter ----
     function mkey(label){if(!label||label==="—")return null;var m=String(label).match(/^([A-Za-z]{3})\/(\d{2,4})$/);if(m){var mi=MONO.indexOf(m[1][0].toUpperCase()+m[1].slice(1,3).toLowerCase());var y=m[2];if(y.length===2)y="20"+y;return {y:+y,m:(mi<0?0:mi)+1};}var iso=String(label).match(/^(\d{4})-(\d{2})/);if(iso)return {y:+iso[1],m:+iso[2]};return null;}
     function labelKey(label,gran){var k=mkey(label);if(!k)return null;if(gran==="month")return k.y+"-"+String(k.m).padStart(2,"0");if(gran==="quarter")return k.y+"-Q"+Math.ceil(k.m/3);if(gran==="half")return k.y+"-H"+(k.m<=6?1:2);if(gran==="year")return ""+k.y;return null;}
-    function granLabel(key,gran){if(gran==="month"){var p=key.split("-");return MONO[(+p[1])-1]+"/"+p[0].slice(2);}if(gran==="quarter")return key.replace("-"," ");if(gran==="half")return key.replace("-"," ");return key;}
+    function granLabel(key,gran){if(gran==="month"){var p=key.split("-");return MONO[(+p[1])-1]+"/"+p[0].slice(2);}return key.replace("-"," ");}
     function allLabels(){var s={};var st=window.CoreVStore;if(st&&st.deals)st.deals.forEach(function(d){if(d.month)s[d.month]=1;});var py=window.CoreVPayouts;if(py&&py.items)py.items.forEach(function(it){if(it.month)s[it.month]=1;});return Object.keys(s);}
-    function buildPeriods(){var gran=$("pf_gran").value,sel=$("pf_period").value;var opts='<option value="">All</option>';if(gran!=="all"){var keys={};allLabels().forEach(function(l){var k=labelKey(l,gran);if(k)keys[k]=1;});var arr=Object.keys(keys).sort().reverse();arr.forEach(function(k){opts+='<option value="'+k+'">'+granLabel(k,gran)+'</option>';});}$("pf_period").innerHTML=opts;if(sel&&$("pf_period").querySelector('option[value="'+sel+'"]'))$("pf_period").value=sel;}
+    function buildPeriods(){var gran=$("pf_gran").value,sel=$("pf_period").value;var opts='<option value="">All</option>';if(gran!=="all"){var keys={};allLabels().forEach(function(l){var k=labelKey(l,gran);if(k)keys[k]=1;});Object.keys(keys).sort().reverse().forEach(function(k){opts+='<option value="'+k+'">'+granLabel(k,gran)+'</option>';});}$("pf_period").innerHTML=opts;if(sel&&$("pf_period").querySelector('option[value="'+sel+'"]'))$("pf_period").value=sel;}
     function inPeriod(label){var gran=$("pf_gran").value,per=$("pf_period").value;if(gran==="all"||!per)return true;return labelKey(label,gran)===per;}
     function periodLabel(){var gran=$("pf_gran").value,per=$("pf_period").value;if(gran==="all"||!per)return "all periods";var o=$("pf_period").querySelector('option[value="'+per+'"]');return o?o.textContent:per;}
 
-    // ---- integration ----
-    function repAgg(){var m={};var st=window.CoreVStore;if(st&&st.deals)st.deals.forEach(function(d){if(!inPeriod(d.month))return;var k=d.rep||"(unassigned)";if(!m[k])m[k]={rep:k,won:0,pipe:0,comm:0};if(d.future)m[k].pipe+=(+d.gross||0);else m[k].won+=(+d.gross||0);m[k].comm+=(+d.comm||0);});return Object.keys(m).map(function(k){return m[k];});}
-    function autoRegion(n){n=(n||"").toLowerCase();if(n.indexOf("dubai")>=0)return"dubai";if(n.indexOf("abu")>=0)return"abudhabi";if(n.indexOf("intl")>=0||n.indexOf("international")>=0||n.indexOf("export")>=0||n.indexOf("global")>=0)return"intl";return"";}
+    // ---- data ----
+    function repAgg(){var m={};var st=window.CoreVStore;if(st&&st.deals)st.deals.forEach(function(d){if(!inPeriod(d.month))return;var k=d.rep||"(unassigned)";if(!m[k])m[k]={rep:k,won:0,pipe:0,comm:0};if(d.future)m[k].pipe+=(+d.gross||0);else m[k].won+=(+d.gross||0);m[k].comm+=(+d.comm||0);});return m;}
+    function allReps(){var m=repAgg();manualReps.forEach(function(nm){if(!m[nm])m[nm]={rep:nm,won:0,pipe:0,comm:0};});return Object.keys(m).map(function(k){return m[k];});}
+    function autoRegion(n){n=(n||"").toLowerCase();if(n.indexOf("dubai")>=0)return"dubai";if(n.indexOf("abu")>=0)return"abudhabi";if(n.indexOf("intl")>=0||n.indexOf("international")>=0||n.indexOf("global")>=0)return"intl";return"";}
     function marketingTotal(){var t=0,py=window.CoreVPayouts;if(py&&py.items)py.items.forEach(function(it){if(!inPeriod(it.month))return;if(/market|event|advert|campaign|expo|exhibit|brand|sponsor|promo/i.test((it.payee||"")+" "+(it.desc||"")))t+=(+it.amount||0);});return t;}
+
     function renderIntegration(){
       var st=window.CoreVStore, cost=window.CoreVCosting||{}, tok="";try{tok=localStorage.getItem("corev_hs_token")||"";}catch(e){}
       var deals=(st&&st.deals)?st.deals.filter(function(d){return inPeriod(d.month);}):[];
@@ -3888,25 +3895,29 @@ render();
       $("pf_chip_cost").className="chip "+(window.CoreVCosting?"on":"off");$("pf_costinfo").textContent=window.CoreVCosting?("machines "+((cost.machineRatio||0)*100).toFixed(0)+"% + op "+((cost.opRate||0)*100).toFixed(0)+"%"):"—";
       $("pf_chip_comm").className="chip "+(deals.length?"on":"off");$("pf_comminfo").textContent="AED "+fmt(totComm);
       $("pf_chip_pay").className="chip "+(window.CoreVPayouts?"on":"off");$("pf_payinfo").textContent="marketing AED "+fmt(marketingTotal());
-      var reps=repAgg();
-      if(!reps.length){$("pf_mapbody").innerHTML='<tr><td colspan="5" style="color:var(--muted)">No deals in this period — records appear once the Costing tab / HubSpot sync has data.</td></tr>';$("pf_mapstat").textContent="";$("pf_warn").style.display="none";return;}
+      var reps=allReps();
+      if(!reps.length){$("pf_mapbody").innerHTML='<tr><td colspan="8" style="color:var(--muted)">No sales reps yet — add one above, or connect HubSpot / add deals in Costing.</td></tr>';$("pf_mapstat").textContent="";$("pf_warn").style.display="none";return;}
+      var store=repAgg();
       $("pf_mapbody").innerHTML=reps.map(function(x){
         if(repMap[x.rep]===undefined)repMap[x.rep]=autoRegion(x.rep);
         if(repSalary[x.rep]===undefined)repSalary[x.rep]=15000;
         var enc=encodeURIComponent(x.rep), sal=repSalary[x.rep], tgt=sal*15, qt=tgt*3, att=qt>0?x.won/qt:0;
-        var st=att<0.30?["Exit","bad"]:att<0.50?["Coaching","warn"]:["On track","ok"];
+        var st2=att<0.30?["Exit","bad"]:att<0.50?["Coaching","warn"]:["On track","ok"];
+        var isManual=manualReps.indexOf(x.rep)>=0 && !store[x.rep];
         var opts=[["","— unassigned —"],["dubai","Dubai"],["abudhabi","Abu Dhabi"],["intl","International"]].map(function(o){return '<option value="'+o[0]+'"'+(repMap[x.rep]===o[0]?" selected":"")+'>'+o[1]+'</option>';}).join("");
-        return '<tr><td>'+x.rep+'</td><td><select data-rep="'+enc+'">'+opts+'</select></td>'+
+        return '<tr><td>'+x.rep+(isManual?' <span data-del="'+enc+'" title="Remove rep" style="color:var(--warn);cursor:pointer;font-weight:700">×</span>':'')+'</td>'+
+          '<td><select data-rep="'+enc+'">'+opts+'</select></td>'+
           '<td class="r"><input class="mini" style="width:76px;padding:4px 6px" type="number" data-sal="'+enc+'" value="'+sal+'"></td>'+
           '<td class="r">'+fmt(tgt)+'</td><td class="r">'+fmt(qt)+'</td><td class="r">'+fmt(x.won)+'</td>'+
           '<td class="r">'+(qt>0?(att*100).toFixed(0)+"%":"—")+'</td>'+
-          '<td><span class="bdg '+st[1]+'">'+st[0]+'</span></td></tr>';}).join("");
-      $("pf_mapbody").querySelectorAll("select[data-rep]").forEach(function(sel){sel.addEventListener("change",function(){repMap[decodeURIComponent(sel.dataset.rep)]=sel.value;saveMap();updateMapStats();if($("pf_live").checked)pull();else compute();try{window.CoreVSync&&window.CoreVSync.changed();}catch(_){}});});
-      $("pf_mapbody").querySelectorAll("input[data-sal]").forEach(function(inp){inp.addEventListener("change",function(){repSalary[decodeURIComponent(inp.dataset.sal)]=parseFloat(inp.value)||0;saveSal();renderIntegration();if($("pf_live").checked)pull();else compute();try{window.CoreVSync&&window.CoreVSync.changed();}catch(_){}});});
+          '<td><span class="bdg '+st2[1]+'">'+st2[0]+'</span></td></tr>';}).join("");
+      $("pf_mapbody").querySelectorAll("select[data-rep]").forEach(function(sel){sel.addEventListener("change",function(){repMap[decodeURIComponent(sel.dataset.rep)]=sel.value;saveMap();refresh();sync();});});
+      $("pf_mapbody").querySelectorAll("input[data-sal]").forEach(function(inp){inp.addEventListener("change",function(){repSalary[decodeURIComponent(inp.dataset.sal)]=parseFloat(inp.value)||0;saveSal();refresh();sync();});});
+      $("pf_mapbody").querySelectorAll("[data-del]").forEach(function(d){d.addEventListener("click",function(){var nm=decodeURIComponent(d.dataset.del);manualReps=manualReps.filter(function(n){return n!==nm;});saveReps();refresh();sync();});});
       updateMapStats();
     }
     function updateMapStats(){
-      var reps=repAgg(), VALID=["dubai","abudhabi","intl"];
+      var reps=allReps(), VALID=["dubai","abudhabi","intl"];
       if(!reps.length){$("pf_mapstat").textContent="";$("pf_warn").style.display="none";return;}
       var closedTot=reps.reduce(function(a,x){return a+x.won;},0);
       var assigned=reps.reduce(function(a,x){return a+(VALID.indexOf(repMap[x.rep])>=0?x.won:0);},0);
@@ -3916,41 +3927,59 @@ render();
       if(closedTot>0&&unassigned>0.5){wn.style.display="block";wn.innerHTML="⚠ AED "+fmt(unassigned)+" of closed deals across "+nUn+" rep"+(nUn===1?"":"s")+" aren’t attributed to a region yet — pick a region for each rep below so it counts as revenue.";}
       else wn.style.display="none";
     }
-    var PULLED=["rev","cogs","com","mkt","won","pipeline"];
-    function setLocks(on){PULLED.forEach(function(f){["dubai","abudhabi","intl"].forEach(function(k){var e=$(k+"_"+f);if(e){e.readOnly=on;e.classList.toggle("lock",on);}});});}
-    function pull(){
-      var st=window.CoreVStore, cost=window.CoreVCosting||{}, live=$("pf_live").checked;
-      var has=st&&st.deals&&st.deals.length;
-      if(!has){setLocks(false);$("pf_syncmsg").textContent="No live deals yet — showing manual/sample values. Connect HubSpot or add deals in the Costing tab.";compute();return;}
-      var mR=cost.machineRatio||0, opR=cost.opRate||0;
-      var agg={dubai:{rev:0,comm:0,won:0,pipe:0},abudhabi:{rev:0,comm:0,won:0,pipe:0},intl:{rev:0,comm:0,won:0,pipe:0}};
-      st.deals.forEach(function(d){if(!inPeriod(d.month))return;var rg=repMap[d.rep];if(!agg[rg])return;if(d.future)agg[rg].pipe+=(+d.gross||0);else{agg[rg].rev+=(+d.gross||0);agg[rg].won+=(+d.gross||0);}agg[rg].comm+=(+d.comm||0);});
-      var mkTot=marketingTotal(), totRev=agg.dubai.rev+agg.abudhabi.rev+agg.intl.rev;
-      ["dubai","abudhabi","intl"].forEach(function(k){var a=agg[k];
-        setVal(k+"_rev",Math.round(a.rev));setVal(k+"_cogs",Math.round(a.rev*(mR+opR)));setVal(k+"_com",Math.round(a.comm));
-        setVal(k+"_mkt",Math.round(totRev>0?mkTot*a.rev/totRev:mkTot/3));setVal(k+"_won",Math.round(a.won));setVal(k+"_pipeline",Math.round(a.pipe));});
-      setLocks(live);
-      var n=st.deals.filter(function(d){return inPeriod(d.month);}).length;
-      $("pf_syncmsg").textContent="Pulled "+n+" deals for "+periodLabel()+" · cost of sales = machines+op "+((mR+opR)*100).toFixed(0)+"% of revenue · marketing from Payouts.";
-      compute();
-    }
-    function refresh(){buildPeriods();renderIntegration();if($("pf_live").checked)pull();else{setLocks(false);compute();}}
 
     // ---- compute ----
     function compute(){
-      var basis=$("pf_basis").value,pool=0;CENTRAL.forEach(function(c,i){pool+=val("pf_cen_"+i);});$("pf_cen_total").textContent=fmt(pool);
-      var R=REGIONS.map(function(r){var p=r.key;var rev=val(p+"_rev"),cogs=val(p+"_cogs");var ctrl=val(p+"_sal")+val(p+"_com")+val(p+"_trv")+val(p+"_mkt")+val(p+"_oth");return {r:r,p:p,rev:rev,gp:rev-cogs,ctrl:ctrl,cm:(rev-cogs)-ctrl,hc:val(p+"_hc"),mkt:val(p+"_mkt"),cap:val(p+"_cap"),tgt:val(p+"_tgt")};});
-      var drv=R.map(function(x){return basis==="revenue"?x.rev:basis==="headcount"?x.hc:1;});var dt=drv.reduce(function(a,b){return a+b;},0)||1;
-      R.forEach(function(x,i){x.alloc=pool*drv[i]/dt;x.net=x.cm-x.alloc;});
-      R.forEach(function(x){var p=x.p;$(p+"_net").textContent=fmt(x.net);$(p+"_gm").textContent=x.rev?pctf(x.gp/x.rev):"—";$(p+"_cm").textContent=fmt(x.cm);$(p+"_nm").textContent=x.rev?pctf(x.net/x.rev):"—";$(p+"_alloc").textContent=fmt(x.alloc);var v=x.net-x.tgt;$(p+"_var").innerHTML='<span class="bdg '+(v>=0?"ok":"bad")+'">'+(v>=0?"+":"")+fmt(v)+'</span>';$(p+"_capst").innerHTML=x.mkt<=x.cap?'<span class="bdg ok">Within cap</span>':'<span class="bdg bad">Over cap</span>';});
-      var rev=R.reduce(function(a,x){return a+x.rev;},0),gp=R.reduce(function(a,x){return a+x.gp;},0),ctrl=R.reduce(function(a,x){return a+x.ctrl;},0),cm=R.reduce(function(a,x){return a+x.cm;},0),op=cm-pool;
+      var pool=0;CENTRAL.forEach(function(c,i){pool+=val("pf_cen_"+i);});$("pf_cen_total").textContent=fmt(pool);
+      var cost=window.CoreVCosting||{}, mR=cost.machineRatio||0.6, opR=cost.opRate||0.12;
+      var reps=allReps(), mkTot=marketingTotal();
+      var RG=REGIONS.map(function(r){
+        var mine=reps.filter(function(x){return repMap[x.rep]===r.key;});
+        return {r:r,key:r.key,
+          salaries:mine.reduce(function(a,x){return a+(repSalary[x.rep]||0);},0),
+          monthlyTgt:mine.reduce(function(a,x){return a+15*(repSalary[x.rep]||0);},0),
+          closedWon:mine.reduce(function(a,x){return a+x.won;},0),
+          pipeline:mine.reduce(function(a,x){return a+x.pipe;},0),
+          comm:mine.reduce(function(a,x){return a+x.comm;},0),hc:mine.length};
+      });
+      var totRev=RG.reduce(function(a,g){return a+g.closedWon;},0);
+      RG.forEach(function(g){
+        g.rev=g.closedWon; g.cogs=g.rev*(mR+opR);
+        g.mkt= totRev>0? mkTot*g.rev/totRev : 0;
+        g.other=val("p_"+g.key+"_oth");
+        g.ctrl=g.salaries+g.comm+g.mkt+g.other;
+        g.gp=g.rev-g.cogs; g.cm=g.gp-g.ctrl;
+        g.netTarget = g.key==="intl"? val("p_intl_tgt") : 0.30*g.monthlyTgt;
+        // write auto fields
+        setVal("p_"+g.key+"_rev",Math.round(g.rev));setVal("p_"+g.key+"_cogs",Math.round(g.cogs));
+        setVal("p_"+g.key+"_com",Math.round(g.comm));setVal("p_"+g.key+"_mkt",Math.round(g.mkt));
+        setVal("p_"+g.key+"_sal",Math.round(g.salaries));
+        if(g.key!=="intl")setVal("p_"+g.key+"_tgt",Math.round(g.netTarget));
+      });
+      RG.forEach(function(g){ g.alloc= totRev>0? pool*g.rev/totRev : pool/3; g.net=g.cm-g.alloc; });
+      RG.forEach(function(g){var p=g.key;
+        $("p_"+p+"_net").textContent=fmt(g.net);
+        $("p_"+p+"_gm").textContent=g.rev?pctf(g.gp/g.rev):"—";
+        $("p_"+p+"_cm").textContent=fmt(g.cm);
+        $("p_"+p+"_nm").textContent=g.rev?pctf(g.net/g.rev):"—";
+        $("p_"+p+"_alloc").textContent=fmt(g.alloc);
+        var v=g.net-g.netTarget;$("p_"+p+"_var").innerHTML='<span class="bdg '+(v>=0?"ok":"bad")+'">'+(v>=0?"+":"")+fmt(v)+'</span>';
+        var mk=val("p_"+p+"_mkt"),cap=val("p_"+p+"_cap");
+        $("p_"+p+"_capst").innerHTML=mk<=cap?'<span class="bdg ok">Within cap</span>':'<span class="bdg bad">Over cap</span>';
+        $("p_"+p+"_pipe").textContent=fmt(g.pipeline);
+        $("p_"+p+"_won").textContent=fmt(g.closedWon);
+        $("p_"+p+"_win").textContent=g.monthlyTgt>0?(g.closedWon/g.monthlyTgt*100).toFixed(0)+"%":"—";
+      });
+      var rev=RG.reduce(function(a,g){return a+g.rev;},0),gp=RG.reduce(function(a,g){return a+g.gp;},0),
+          ctrl=RG.reduce(function(a,g){return a+g.ctrl;},0),cm=RG.reduce(function(a,g){return a+g.cm;},0),op=cm-pool;
       $("pf_c_rev").textContent=fmt(rev);$("pf_c_gp").textContent=fmt(gp);$("pf_c_ctrl").textContent=fmt(ctrl);$("pf_c_cm").textContent=fmt(cm);$("pf_c_central").textContent=fmt(pool);$("pf_c_op").textContent=fmt(op);
+      // distribution 35/35/30
       var resPct=val("pf_reservePct")/100,reserve=op*resPct,distr=op-reserve;
       var eqv=val("pf_eq"),rgv=val("pf_reg"),mdv=val("pf_md"),t3=(eqv+rgv+mdv)||1;
       var eqPool=distr*eqv/t3,regPool=distr*rgv/t3,mdPool=distr*mdv/t3;
       var cmix=Math.max(0,Math.min(1,val("pf_consumerMix")/100));
       $("pf_f_profit").textContent=fmt(op);$("pf_f_reserve").textContent=fmt(reserve);$("pf_f_distamt").textContent=fmt(distr);$("pf_f_respct").textContent=(resPct*100).toFixed(0)+"%";$("pf_f_distpct").textContent=((1-resPct)*100).toFixed(0)+"%";
-      var pos=R.map(function(x){return Math.max(x.net,0);}),sp=pos[0]+pos[1]+pos[2];
+      var pos=RG.map(function(g){return Math.max(g.net,0);}),sp=pos[0]+pos[1]+pos[2];
       var share=sp>0?[pos[0]/sp,pos[1]/sp,pos[2]/sp]:[1/3,1/3,1/3];
       var regConsumer=regPool*cmix,regB2B=regPool-regConsumer,toOwners=regB2B+regConsumer*0.6,mdConsumer=regConsumer*0.4,equalEach=eqPool/3;
       var ownerAlloc=[toOwners*share[0],toOwners*share[1],toOwners*share[2]];
@@ -3960,33 +3989,34 @@ render();
       $("pf_partnerBody").innerHTML=pb;var mx=Math.max.apply(null,totals.map(function(t){return t.tot;}).concat([1]));
       totals.forEach(function(t){var w=(t.tot/mx)*100,ow=t.tot?(t.own/t.tot)*w:0,cw=w-ow;bars+='<div class="barrow"><div class="bl"><b>'+t.pn+'</b><span>'+fmt(t.tot)+' · '+(distr?pctf(t.tot/distr):"—")+'</span></div><div class="bar"><div class="own" style="width:'+ow+'%"></div><div class="con" style="width:'+cw+'%"></div></div></div>';});
       $("pf_bars").innerHTML=bars;$("pf_p_own").textContent=fmt(eqPool);$("pf_p_con").textContent=fmt(distr-eqPool);$("pf_p_tot").textContent=fmt(distr);
-      $("pf_s_rev").textContent=fmt(rev);$("pf_s_op").textContent=fmt(op);$("pf_s_dist").textContent=fmt(distr);$("pf_s_distpct").textContent=((1-resPct)*100).toFixed(0)+"% of profit";$("pf_s_period").textContent=periodLabel();$("pf_s_ann").textContent=fmt(reserve*12-val("pf_annExp"));
+      $("pf_s_rev").textContent=fmt(rev);$("pf_s_op").textContent=fmt(op);$("pf_s_dist").textContent=fmt(distr);$("pf_s_distpct").textContent=((1-resPct)*100).toFixed(0)+"% of profit";$("pf_s_period").textContent=periodLabel();$("pf_s_ann").textContent=fmt(reserve);
       var lead=totals.slice().sort(function(a,b){return b.tot-a.tot;})[0];
-      $("pf_narr").innerHTML='<b>How the 60% is shared ('+periodLabel()+'):</b> of AED '+fmt(op)+' operating profit, '+(resPct*100).toFixed(0)+'% (AED '+fmt(reserve)+') is reserved and AED '+fmt(distr)+' distributed — AED '+fmt(eqPool)+' equal across partners, AED '+fmt(regPool)+' to the regions that sold (by net-profit share), AED '+fmt(mdPool)+' to the MD. Commercial deals keep 100% of the region 35% with the region; consumer deals ('+(cmix*100).toFixed(0)+'% mix) move AED '+fmt(mdConsumer)+' of it to the MD; cross-region deals count 50|50. <b>'+lead.pn+'</b> earns the largest total (AED '+fmt(lead.tot)+').';
+      $("pf_narr").innerHTML='<b>How the 60% is shared ('+periodLabel()+'):</b> of AED '+fmt(op)+' operating profit, '+(resPct*100).toFixed(0)+'% (AED '+fmt(reserve)+') is reserved and AED '+fmt(distr)+' distributed — AED '+fmt(eqPool)+' equal, AED '+fmt(regPool)+' to the regions that sold, AED '+fmt(mdPool)+' to the MD. Commercial deals keep 100% of the region 35% with the region; consumer deals ('+(cmix*100).toFixed(0)+'% mix) move AED '+fmt(mdConsumer)+' of it to the MD; cross-region deals count 50|50. <b>'+lead.pn+'</b> earns the largest total (AED '+fmt(lead.tot)+').';
     }
+    function refresh(){buildPeriods();renderIntegration();compute();}
 
-    // ---- sync (push to shared drive) ----
-    function collect(){var o={v:{},map:repMap,sal:repSalary};root.querySelectorAll("input[id],select[id]").forEach(function(e){o.v[e.id]=e.value;});return o;}
-    function apply(s){if(!s)return;if(s.map){repMap=s.map;saveMap();}if(s.sal){repSalary=s.sal;saveSal();}if(s.v)Object.keys(s.v).forEach(function(id){var e=$(id);if(e&&e.type!=="checkbox")e.value=s.v[id];});buildPeriods();renderIntegration();compute();}
+    // ---- sync ----
+    function collect(){var o={v:{},map:repMap,sal:repSalary,reps:manualReps};root.querySelectorAll("input[id],select[id]").forEach(function(e){if(!e.readOnly)o.v[e.id]=e.value;});return o;}
+    function apply(s){if(!s)return;if(s.map){repMap=s.map;saveMap();}if(s.sal){repSalary=s.sal;saveSal();}if(s.reps){manualReps=s.reps;saveReps();}if(s.v)Object.keys(s.v).forEach(function(id){var e=$(id);if(e&&e.type!=="checkbox"&&!e.readOnly)e.value=s.v[id];});refresh();}
     function registerSync(){try{if(window.CoreVSync&&window.CoreVSync.register)window.CoreVSync.register("performance",collect,apply);}catch(e){}}
+    function sync(){try{if(window.CoreVSync)window.CoreVSync.changed();}catch(e){}}
     function pushSync(){try{if(window.CoreVSync){window.CoreVSync.changed();$("pf_syncmsg").textContent="Saved to the shared drive — synced with the rest of the suite.";}else $("pf_syncmsg").textContent="Sync not available (sign in to enable shared drive).";}catch(e){$("pf_syncmsg").textContent="Sync error: "+e.message;}}
 
     // ---- wire up ----
-    root.addEventListener("input",function(e){compute();try{if(window.CoreVSync)window.CoreVSync.changed();}catch(_){}} );
-    $("pf_gran").addEventListener("change",function(){buildPeriods();refresh();});
+    root.addEventListener("input",function(e){compute();sync();});
+    $("pf_gran").addEventListener("change",refresh);
     $("pf_period").addEventListener("change",refresh);
-    $("pf_live").addEventListener("change",function(){if($("pf_live").checked)pull();else{setLocks(false);}});
-    $("pf_pull").addEventListener("click",pull);
     $("pf_push").addEventListener("click",pushSync);
-    ["dubai","abudhabi","intl"].forEach(function(rg){var b=$("pf_assign_"+rg);if(b)b.addEventListener("click",function(){repAgg().forEach(function(x){if(["dubai","abudhabi","intl"].indexOf(repMap[x.rep])<0)repMap[x.rep]=rg;});saveMap();refresh();try{window.CoreVSync&&window.CoreVSync.changed();}catch(_){}});});
+    $("pf_addrep").addEventListener("click",function(){var nm=($("pf_newrep").value||"").trim();if(!nm)return;if(manualReps.indexOf(nm)<0&&!repAgg()[nm]){manualReps.push(nm);saveReps();}$("pf_newrep").value="";refresh();sync();});
+    $("pf_newrep").addEventListener("keydown",function(e){if(e.key==="Enter"){e.preventDefault();$("pf_addrep").click();}});
+    ["dubai","abudhabi","intl"].forEach(function(rg){var b=$("pf_assign_"+rg);if(b)b.addEventListener("click",function(){allReps().forEach(function(x){if(["dubai","abudhabi","intl"].indexOf(repMap[x.rep])<0)repMap[x.rep]=rg;});saveMap();refresh();sync();});});
     window.addEventListener("corev:store",refresh);
     window.addEventListener("corev:products",refresh);
     window.addEventListener("corev:costing",refresh);
     window.addEventListener("corev:payouts",refresh);
     try{window.CoreVPayoutsPublish&&window.CoreVPayoutsPublish();}catch(e){}
     registerSync();
-    buildPeriods();renderIntegration();
-    if($("pf_live").checked)pull();else compute();
+    refresh();
   })();</script>
 
 </body>
