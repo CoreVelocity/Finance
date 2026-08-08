@@ -2352,8 +2352,8 @@ function renderRefs(){
 
 function publishStore(){
   const deals=[];
-  REPS.forEach(r=>r.deals.forEach(d=>deals.push({rep:r.name,customer:d.cust,gross:d.gross,collected:effColl(d),month:d.month||"",future:!!d.future,hsId:d.hsId||null})));
-  window.CoreVStore={deals,ts:Date.now()}; window.dispatchEvent(new CustomEvent('corev:store'));
+  REPS.forEach(r=>r.deals.forEach(d=>{var _c=dealCalc(d);deals.push({rep:r.name,customer:d.cust,gross:d.gross,collected:effColl(d),comm:_c.comm,commElig:_c.elig,month:d.month||"",future:!!d.future,hsId:d.hsId||null});}));
+  window.CoreVStore={deals,pipeline:(window._hsPipeline||[]),ts:Date.now()}; window.dispatchEvent(new CustomEvent('corev:store'));
   if(window.CoreVSync) window.CoreVSync.changed();
 }
 let execMonth="";
@@ -2491,6 +2491,7 @@ async function hsFetchClosedWon(silent){
   const id2name={}; (HS.owners||[]).forEach(o=>{ id2name[o.id]=o.name; });
   const nameOf=id=>id2name[id]||id2rep[id]||("owner "+id);
   try{
+    window._hsPipeline=[];
     for(const rep of mapped){
       const ownerId=HS.ownerMap[rep.name]; let after,guard=0;
       do{
@@ -2499,7 +2500,7 @@ async function hsFetchClosedWon(silent){
         if(after)body.after=after;
         const data=await hsApi("/crm/v3/objects/deals/search",{method:"POST",body:JSON.stringify(body)});
         (data.results||[]).forEach(d=>{ const p=d.properties||{}; const rs=(p.dealstage||"").toLowerCase();
-          const won=p.hs_is_closed_won==="true"||rs==="closedwon"||rs.includes("closed won"); if(!won)return; total++;
+          const won=p.hs_is_closed_won==="true"||rs==="closedwon"||rs.includes("closed won"); if(!won){ if(p.hs_is_closed!=="true"){ (window._hsPipeline=window._hsPipeline||[]).push({rep:rep.name,gross:parseFloat(p.amount)||0,month:monthFromISO(p.closedate),hsId:d.id}); } return; } total++;
           const collabIds=(p.hs_all_collaborator_owner_ids||"").split(/[;,]/).map(s=>s.trim()).filter(s=>s&&s!==ownerId);
           const collabNames=collabIds.map(nameOf);
           const month=monthFromISO(p.closedate), amount=parseFloat(p.amount)||0;
@@ -3712,6 +3713,9 @@ render();
     #tab-performance table.data tr.hl td{background:#FBF6E9;font-weight:700}
     #tab-performance .mini{width:120px;border:1px solid var(--line);border-radius:6px;background:var(--input-soft);padding:5px 8px;font-family:"JetBrains Mono";font-size:12.5px;text-align:right;color:var(--input);font-weight:600;outline:none}
     #tab-performance .two{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+    #tab-performance .two>*{min-width:0}
+    #tab-performance table.data{width:100%;min-width:0;font-variant-numeric:tabular-nums}
+    #tab-performance table.data td.l,#tab-performance table.data th.l{word-break:break-word}
     #tab-performance .flow{display:flex;flex-direction:column;gap:8px}
     #tab-performance .fbox{border-radius:10px;padding:12px 16px;color:#fff}
     #tab-performance .fbox .p{font-size:11.5px;opacity:.92}#tab-performance .fbox .n{font-family:"Space Grotesk";font-size:20px;font-weight:600}
@@ -3827,6 +3831,7 @@ render();
     var INTL_DEFAULT_TARGET=50000;
     var CENTRAL=[["Rent, warehouse, utilities & repairs",66858],["Legal, accounting & professional",12613],["IT, telecom & subscriptions",4686],["Office & general admin",8074],["Insurance",1220],["Bank, card & FX charges",1758],["Travel (admin + selling)",3454],["Logistics & customs (shipping + duty)",4942]];
     var MKT_MONTHLY_TOTAL=32000; // fixed monthly marketing budget, split equally across Dubai & Abu Dhabi
+    var EVENTCAP_M=2500; // events cap per region per month (scales with period)
     var PARTNERS=["Ahmed","Kamal","Sami"];
     var root=document.getElementById("tab-performance");
     var $=function(id){return document.getElementById(id);};
@@ -3848,7 +3853,7 @@ render();
       pr("Marketing & events","p_"+p+"_mkt","pay","Fixed 50|50",true)+
       pr("Sales salaries","p_"+p+"_sal","man","From reps",true)+
       pr("Other costs","p_"+p+"_oth","man","manual",false)+
-      pr("Events cap","p_"+p+"_cap","man","manual",false)+
+      pr("Events cap","p_"+p+"_cap","man","2,500/mo",true)+
       pr("Net profit target","p_"+p+"_tgt","man",(p==="intl"?"manual":"30% of target"),(p!=="intl"))+
       '<div class="kg"><div class="k big"><div class="kl">Net operating profit</div><div class="kv" id="p_'+p+'_net">—</div></div>'+
       '<div class="k"><div class="kl">Gross margin</div><div class="kv" id="p_'+p+'_gm">—</div></div>'+
@@ -3865,8 +3870,8 @@ render();
     $("pf_regions").innerHTML=REGIONS.map(card).join("");
     // set manual defaults
     if($("p_intl_tgt")&&!$("p_intl_tgt").value)$("p_intl_tgt").value=INTL_DEFAULT_TARGET;
-    ["dubai","abudhabi","intl"].forEach(function(k){if($("p_"+k+"_oth")&&!$("p_"+k+"_oth").value)$("p_"+k+"_oth").value=0;if($("p_"+k+"_cap")&&!$("p_"+k+"_cap").value)$("p_"+k+"_cap").value=100000;});
-    $("pf_cenBody").innerHTML=CENTRAL.map(function(c,i){return '<tr><td class="l">'+c[0]+'</td><td><input class="mini" type="number" id="pf_cen_'+i+'" value="'+c[1]+'"></td></tr>';}).join("")+'<tr class="tot"><td class="l">Total central cost pool</td><td id="pf_cen_total">—</td></tr>';
+    ["dubai","abudhabi","intl"].forEach(function(k){if($("p_"+k+"_oth")&&!$("p_"+k+"_oth").value)$("p_"+k+"_oth").value=0;});
+    $("pf_cenBody").innerHTML=CENTRAL.map(function(c,i){return '<tr><td class="l">'+c[0]+'</td><td><input class="mini" type="number" id="pf_cenb_'+i+'" value="'+c[1]+'"></td></tr>';}).join("")+'<tr class="tot"><td class="l">Total · per month</td><td id="pf_cen_total">—</td></tr><tr class="tot"><td class="l" id="pf_cen_perlbl">Total · selected period</td><td id="pf_cen_period">—</td></tr>';
 
     // ---- period filter ----
     function mkey(label){if(!label||label==="—")return null;var m=String(label).match(/^([A-Za-z]{3})\/(\d{2,4})$/);if(m){var mi=MONO.indexOf(m[1][0].toUpperCase()+m[1].slice(1,3).toLowerCase());var y=m[2];if(y.length===2)y="20"+y;return {y:+y,m:(mi<0?0:mi)+1};}var iso=String(label).match(/^(\d{4})-(\d{2})/);if(iso)return {y:+iso[1],m:+iso[2]};return null;}
@@ -3878,9 +3883,14 @@ render();
     function periodLabel(){var gran=$("pf_gran").value,per=$("pf_period").value;if(gran==="all"||!per)return "all periods";var o=$("pf_period").querySelector('option[value="'+per+'"]');return o?o.textContent:per;}
 
     // ---- data ----
-    function repAgg(){var m={};var st=window.CoreVStore;if(st&&st.deals)st.deals.forEach(function(d){if(!inPeriod(d.month))return;var k=d.rep||"(unassigned)";if(!m[k])m[k]={rep:k,won:0,pipe:0,comm:0};if(d.future)m[k].pipe+=(+d.gross||0);else m[k].won+=(+d.gross||0);m[k].comm+=(+d.comm||0);});return m;}
+    function repAgg(){var m={};var st=window.CoreVStore;function slot(k){if(!m[k])m[k]={rep:k,won:0,pipe:0,comm:0};return m[k];}
+      if(st&&st.deals)st.deals.forEach(function(d){if(!inPeriod(d.month))return;var s=slot(d.rep||"(unassigned)");if(d.future)s.pipe+=(+d.gross||0);else s.won+=(+d.gross||0);s.comm+=(+d.comm||0);});
+      if(st&&st.pipeline)st.pipeline.forEach(function(d){if(!inPeriod(d.month))return;slot(d.rep||"(unassigned)").pipe+=(+d.gross||0);});
+      return m;}
     function allReps(){var m=repAgg();manualReps.forEach(function(nm){if(!m[nm])m[nm]={rep:nm,won:0,pipe:0,comm:0};});return Object.keys(m).map(function(k){return m[k];});}
-    function autoRegion(n){n=(n||"").toLowerCase();if(n.indexOf("dubai")>=0)return"dubai";if(n.indexOf("abu")>=0)return"abudhabi";if(n.indexOf("intl")>=0||n.indexOf("international")>=0||n.indexOf("global")>=0)return"intl";return"";}
+    var PARTNER_REGION={sami:"dubai",kamal:"abudhabi",ahmed:"intl"};
+    function partnerKey(n){n=(n||"").toLowerCase();if(n.indexOf("sami")>=0)return"sami";if(n.indexOf("kamal")>=0)return"kamal";if(n.indexOf("ahmed")>=0)return"ahmed";return null;}
+    function autoRegion(n){var pk=partnerKey(n);if(pk)return PARTNER_REGION[pk];n=(n||"").toLowerCase();if(n.indexOf("dubai")>=0)return"dubai";if(n.indexOf("abu")>=0)return"abudhabi";if(n.indexOf("intl")>=0||n.indexOf("international")>=0||n.indexOf("global")>=0)return"intl";return"";}
     function marketingTotal(){var t=0,py=window.CoreVPayouts;if(py&&py.items)py.items.forEach(function(it){if(!inPeriod(it.month))return;if(/market|event|advert|campaign|expo|exhibit|brand|sponsor|promo/i.test((it.payee||"")+" "+(it.desc||"")))t+=(+it.amount||0);});return t;}
 
     function renderIntegration(){
@@ -3895,9 +3905,11 @@ render();
       var reps=allReps();
       if(!reps.length){$("pf_mapbody").innerHTML='<tr><td colspan="8" style="color:var(--muted)">No sales reps yet — add one above, or connect HubSpot / add deals in Costing.</td></tr>';$("pf_mapstat").textContent="";$("pf_warn").style.display="none";return;}
       var store=repAgg();
+      var pforce=false;
       $("pf_mapbody").innerHTML=reps.map(function(x){
-        if(repMap[x.rep]===undefined)repMap[x.rep]=autoRegion(x.rep);
-        if(repSalary[x.rep]===undefined)repSalary[x.rep]=15000;
+        var pk=partnerKey(x.rep);
+        if(pk){ if(repMap[x.rep]!==PARTNER_REGION[pk]){repMap[x.rep]=PARTNER_REGION[pk];pforce=true;} if(repSalary[x.rep]!==0){repSalary[x.rep]=0;pforce=true;} }
+        else { if(repMap[x.rep]===undefined)repMap[x.rep]=autoRegion(x.rep); if(repSalary[x.rep]===undefined)repSalary[x.rep]=15000; }
         var enc=encodeURIComponent(x.rep), sal=repSalary[x.rep], tgt=sal*15, qt=tgt*mult, att=qt>0?x.won/qt:0;
         var st2=att<0.30?["Exit","bad"]:att<0.50?["Coaching","warn"]:["On track","ok"];
         var isManual=manualReps.indexOf(x.rep)>=0 && !store[x.rep];
@@ -3908,6 +3920,7 @@ render();
           '<td class="r">'+fmt(tgt)+'</td><td class="r">'+fmt(qt)+'</td><td class="r">'+fmt(x.won)+'</td>'+
           '<td class="r">'+(qt>0?(att*100).toFixed(0)+"%":"—")+'</td>'+
           '<td><span class="bdg '+st2[1]+'">'+st2[0]+'</span></td></tr>';}).join("");
+      if(pforce){saveMap();saveSal();}
       $("pf_mapbody").querySelectorAll("select[data-rep]").forEach(function(sel){sel.addEventListener("change",function(){repMap[decodeURIComponent(sel.dataset.rep)]=sel.value;saveMap();refresh();sync();});});
       $("pf_mapbody").querySelectorAll("input[data-sal]").forEach(function(inp){inp.addEventListener("change",function(){repSalary[decodeURIComponent(inp.dataset.sal)]=parseFloat(inp.value)||0;saveSal();refresh();sync();});});
       $("pf_mapbody").querySelectorAll("[data-del]").forEach(function(d){d.addEventListener("click",function(){var nm=decodeURIComponent(d.dataset.del);manualReps=manualReps.filter(function(n){return n!==nm;});saveReps();refresh();sync();});});
@@ -3928,7 +3941,9 @@ render();
     // ---- compute ----
     function compute(){
       var g_=$("pf_gran").value,mult=g_==="month"?1:g_==="quarter"?3:g_==="half"?6:g_==="year"?12:12;
-      var poolMonthly=0;CENTRAL.forEach(function(c,i){poolMonthly+=val("pf_cen_"+i);});$("pf_cen_total").textContent=fmt(poolMonthly);var poolPeriod=poolMonthly*mult;
+      var poolMonthly=0;CENTRAL.forEach(function(c,i){poolMonthly+=val("pf_cenb_"+i);});var poolPeriod=poolMonthly*mult;
+      $("pf_cen_total").textContent=fmt(poolMonthly);$("pf_cen_period").textContent=fmt(poolPeriod);
+      if($("pf_cen_perlbl"))$("pf_cen_perlbl").textContent="Total · "+periodLabel()+(mult>1?" (×"+mult+")":"");
       var cost=window.CoreVCosting||{}, mR=cost.machineRatio||0.6, opR=cost.opRate||0.12;
       var reps=allReps(), mkTot=marketingTotal();
       var RG=REGIONS.map(function(r){
@@ -3954,7 +3969,8 @@ render();
         setVal("p_"+g.key+"_rev",Math.round(g.rev));setVal("p_"+g.key+"_cogs",Math.round(g.cogs));
         setVal("p_"+g.key+"_com",Math.round(g.comm));setVal("p_"+g.key+"_mkt",Math.round(g.mkt));
         setVal("p_"+g.key+"_sal",Math.round(g.salariesP));
-        if(g.key!=="intl")setVal("p_"+g.key+"_tgt",Math.round(g.netTargetM));
+        g.cap=EVENTCAP_M*mult; setVal("p_"+g.key+"_cap",Math.round(g.cap));
+        if(g.key!=="intl")setVal("p_"+g.key+"_tgt",Math.round(g.netTarget)); // show the period target
       });
       RG.forEach(function(g){ g.alloc= totRev>0? poolPeriod*g.rev/totRev : poolPeriod/3; g.net=g.cm-g.alloc; });
       RG.forEach(function(g){var p=g.key;
@@ -3964,7 +3980,7 @@ render();
         $("p_"+p+"_nm").textContent=g.rev?pctf(g.net/g.rev):"—";
         $("p_"+p+"_alloc").textContent=fmt(g.alloc);
         var v=g.net-g.netTarget;$("p_"+p+"_var").innerHTML='<span class="bdg '+(v>=0?"ok":"bad")+'">'+(v>=0?"+":"")+fmt(v)+'</span>';
-        var mk=val("p_"+p+"_mkt"),cap=val("p_"+p+"_cap");
+        var mk=g.mkt,cap=g.cap;
         $("p_"+p+"_capst").innerHTML=mk<=cap?'<span class="bdg ok">Within cap</span>':'<span class="bdg bad">Over cap</span>';
         $("p_"+p+"_pipe").textContent=fmt(g.pipeline);
         $("p_"+p+"_won").textContent=fmt(g.closedWon);
