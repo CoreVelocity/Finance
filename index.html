@@ -2352,7 +2352,7 @@ function renderRefs(){
 
 function publishStore(){
   const deals=[];
-  REPS.forEach(r=>r.deals.forEach(d=>{var _c=dealCalc(d);deals.push({rep:r.name,customer:d.cust,gross:d.gross,collected:effColl(d),comm:_c.comm,commElig:_c.elig,month:d.month||"",future:!!d.future,hsId:d.hsId||null});}));
+  REPS.forEach(r=>r.deals.forEach(d=>{var _c=dealCalc(d);deals.push({rep:r.name,customer:d.cust,gross:d.gross,collected:effColl(d),comm:_c.comm,commElig:_c.elig,segment:d.segment||"",month:d.month||"",future:!!d.future,hsId:d.hsId||null});}));
   window.CoreVStore={deals,pipeline:(window._hsPipeline||[]),ts:Date.now()}; window.dispatchEvent(new CustomEvent('corev:store'));
   if(window.CoreVSync) window.CoreVSync.changed();
 }
@@ -2379,20 +2379,20 @@ function renderAll(){ renderExec(); renderMatrix(); renderSummary(); renderTabs(
 /* ---------- HubSpot ---------- */
 function monthFromISO(s){ if(!s)return""; const d=new Date(s); if(isNaN(d))return""; return MON[d.getMonth()]+"/"+String(d.getFullYear()).slice(2); }
 function findRep(name){ if(!name)return null; return REPS.find(r=>r.name.toLowerCase()===name.toLowerCase()); }
-function pushHubDeal(rep,{hsId,cust,amount,month,tag,collab}){
+function pushHubDeal(rep,{hsId,cust,amount,month,tag,collab,segment}){
   if(hsId){
     let ex=rep.deals.find(d=>d.hsId===hsId);
     // adopt a matching manual/seed deal (same customer + month, no hsId yet) instead of duplicating
     if(!ex) ex=rep.deals.find(d=>!d.hsId && (d.cust||"").trim().toLowerCase()===(cust||"").trim().toLowerCase() && (d.month||"")===(month||""));
-    if(ex){ ex.hsId=hsId; ex.gross=amount||0; ex.cust=cust||ex.cust; ex.month=month||ex.month; if(collab!==undefined)ex.collab=collab; return false; }
+    if(ex){ ex.hsId=hsId; ex.gross=amount||0; ex.cust=cust||ex.cust; ex.month=month||ex.month; if(collab!==undefined)ex.collab=collab; if(segment!==undefined&&segment!=="")ex.segment=segment; return false; }
   }
-  rep.deals.push({type:"B2B",cust:cust||"HubSpot deal",gross:amount||0,tag:tag||"FULL",coll:0,month:month||"",future:false,plan:[],hsId:hsId||null,collab:collab||[]}); return true;
+  rep.deals.push({type:"B2B",cust:cust||"HubSpot deal",gross:amount||0,tag:tag||"FULL",coll:0,month:month||"",future:false,plan:[],hsId:hsId||null,collab:collab||[],segment:segment||""}); return true;
 }
-function addHubDeal(cust,amount,owner,month,assign){
+function addHubDeal(cust,amount,owner,month,assign,segment){
   let rep;
   if(assign==="__owner"&&owner){ rep=findRep(owner); if(!rep){ rep={name:owner,target:270000,deals:[]}; REPS.push(rep);} }
   else { rep=REPS[sel]||REPS[0]; }
-  pushHubDeal(rep,{cust,amount,month});
+  pushHubDeal(rep,{cust,amount,month,segment});
 }
 
 /* ---- HubSpot — Private App token via Cloudflare Worker proxy (browser-token, modal connect) ---- */
@@ -2496,7 +2496,7 @@ async function hsFetchClosedWon(silent){
       const ownerId=HS.ownerMap[rep.name]; let after,guard=0;
       do{
         const body={filterGroups:[{filters:[{propertyName:"hubspot_owner_id",operator:"EQ",value:ownerId},{propertyName:"dealstage",operator:"NEQ",value:"closedlost"}]}],
-          properties:["dealname","amount","closedate","dealstage","hs_is_closed_won","hs_is_closed","hs_all_collaborator_owner_ids"],sorts:[{propertyName:"closedate",direction:"DESCENDING"}],limit:100};
+          properties:["dealname","amount","closedate","dealstage","hs_is_closed_won","hs_is_closed","hs_all_collaborator_owner_ids","dealtype"],sorts:[{propertyName:"closedate",direction:"DESCENDING"}],limit:100};
         if(after)body.after=after;
         const data=await hsApi("/crm/v3/objects/deals/search",{method:"POST",body:JSON.stringify(body)});
         (data.results||[]).forEach(d=>{ const p=d.properties||{}; const rs=(p.dealstage||"").toLowerCase();
@@ -2504,12 +2504,13 @@ async function hsFetchClosedWon(silent){
           const collabIds=(p.hs_all_collaborator_owner_ids||"").split(/[;,]/).map(s=>s.trim()).filter(s=>s&&s!==ownerId);
           const collabNames=collabIds.map(nameOf);
           const month=monthFromISO(p.closedate), amount=parseFloat(p.amount)||0;
+          const _sv=String(p.dealtype||"").toLowerCase(); const _seg=(_sv.indexOf("consum")>=0||_sv.indexOf("b2c")>=0)?"consumer":(_sv.indexOf("intern")>=0?"international":((_sv.indexOf("commerc")>=0||_sv.indexOf("b2b")>=0)?"commercial":""));
           // owner — lead share (TEAMING+ when collaborated, else FULL)
-          if(pushHubDeal(rep,{hsId:d.id,cust:p.dealname,amount,month,tag:collabIds.length?"TEAMING+":"FULL",collab:collabNames})) added++;
+          if(pushHubDeal(rep,{hsId:d.id,cust:p.dealname,amount,month,tag:collabIds.length?"TEAMING+":"FULL",collab:collabNames,segment:_seg})) added++;
           // collaborators that map to our reps — supporting share (TEAMING)
           collabIds.forEach(cid=>{ const crepName=id2rep[cid]; if(!crepName||crepName===rep.name)return;
             const crep=REPS.find(x=>x.name===crepName); if(!crep)return;
-            if(pushHubDeal(crep,{hsId:d.id,cust:p.dealname,amount,month,tag:"TEAMING",collab:[rep.name].concat(collabNames.filter(n=>n!==crepName))})) added++;
+            if(pushHubDeal(crep,{hsId:d.id,cust:p.dealname,amount,month,tag:"TEAMING",collab:[rep.name].concat(collabNames.filter(n=>n!==crepName)),segment:_seg})) added++;
           });
         });
         after=data.paging&&data.paging.next&&data.paging.next.after; guard++;
@@ -2544,6 +2545,7 @@ function importCSVText(text){
   const H=rows[0]; const ci={
     name:colIdx(H,["deal name","dealname","deal"]), amt:colIdx(H,["amount","deal amount","close amount","value"]),
     owner:colIdx(H,["deal owner","owner","hubspot owner"]), date:colIdx(H,["close date","closedate"]), stage:colIdx(H,["deal stage","dealstage","stage"]),
+    seg:colIdx(H,["deal type","dealtype","segment","customer type","business type","type"]),
   };
   const assign="__owner"; let n=0;
   for(let r=1;r<rows.length;r++){
@@ -2552,7 +2554,8 @@ function importCSVText(text){
     if(ci.stage>=0 && stage && !(stage.includes("won")||stage.includes("closed won")||stage.includes("closedwon"))) continue;
     const amt=parseFloat(String(ci.amt>=0?row[ci.amt]:"0").replace(/[^0-9.\-]/g,""))||0;
     if(!amt)continue;
-    addHubDeal(ci.name>=0?row[ci.name]:"", amt, ci.owner>=0?row[ci.owner]:"", ci.date>=0?monthFromISO(row[ci.date]):"", assign);
+    var _csv=String(ci.seg>=0?row[ci.seg]:"").toLowerCase(); var _cseg=(_csv.indexOf("consum")>=0||_csv.indexOf("b2c")>=0)?"consumer":(_csv.indexOf("intern")>=0?"international":((_csv.indexOf("commerc")>=0||_csv.indexOf("b2b")>=0)?"commercial":""));
+    addHubDeal(ci.name>=0?row[ci.name]:"", amt, ci.owner>=0?row[ci.owner]:"", ci.date>=0?monthFromISO(row[ci.date]):"", assign, _cseg);
     n++;
   }
   $("hs_status").className="hub-status ok"; $("hs_status").textContent=`Imported ${n} closed deal${n===1?"":"s"} from CSV.`;
@@ -3724,6 +3727,7 @@ render();
     #tab-performance .barrow{margin-bottom:13px}#tab-performance .barrow .bl{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:4px}#tab-performance .barrow .bl b{font-family:"Space Grotesk"}
     #tab-performance .legend{display:flex;gap:16px;font-size:12px;color:var(--muted)}#tab-performance .legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:middle}
     #tab-performance .narr{background:var(--surface);border-left:4px solid var(--corev);padding:14px 18px;border-radius:0 10px 10px 0;font-size:13px;color:var(--ink);margin-top:14px}
+    #tab-performance .segline{margin-top:9px;padding:7px 10px;background:var(--surface);border:1px solid var(--line-2);border-radius:8px;font-size:11px;color:var(--text)}
     @media(max-width:1000px){#tab-performance .kpis{grid-template-columns:repeat(2,1fr)}#tab-performance .agrid{grid-template-columns:repeat(3,1fr)}#tab-performance .regions{grid-template-columns:1fr}#tab-performance .two{grid-template-columns:1fr}}
   </style>
   <div class="wrap">
@@ -3748,7 +3752,7 @@ render();
       <div class="sechead"><div><h2 class="blk">Settings, period filter &amp; data sync</h2><span class="why">Pulls Revenue from HubSpot, Cost of sales from Costing, Commission from the Commission tab. Marketing is a fixed AED 32,000/mo carried in the central pool and allocated across all regions.</span></div></div>
       <div class="agrid">
         <div class="field"><label>Reserve % (CoreV)</label><input type="number" id="pf_reservePct" value="40"></div>
-        <div class="field"><label>Consumer mix % (rest = commercial)</label><input type="number" id="pf_consumerMix" value="40"></div>
+        <div class="field"><label>Consumer mix % — fallback (no HubSpot dealtype)</label><input type="number" id="pf_consumerMix" value="40"></div>
         <div class="field"><label>View by</label><select id="pf_gran"><option value="all">All time</option><option value="month">Month</option><option value="quarter">Quarter</option><option value="half">Half-year</option><option value="year">Year</option></select></div>
         <div class="field"><label>Period</label><select id="pf_period"><option value="">All</option></select></div>
       </div>
@@ -3803,7 +3807,7 @@ render();
             <tr><td class="l">Region sales — the deal's region owner</td><td><input class="mini" style="width:66px" type="number" id="pf_reg" value="35"> %</td></tr>
             <tr><td class="l">Operational &amp; managing (MD)</td><td><input class="mini" style="width:66px" type="number" id="pf_md" value="30"> %</td></tr>
           </tbody></table>
-          <div class="why" style="margin-top:8px;font-style:italic">Commercial deals: the region 35% goes 100% to the region. Consumer deals: 60|40 region/MD (set the consumer mix above). Cross-region deals: 50|50 across the two regions. Allocated to regions by net-profit share.</div>
+          <div class="why" style="margin-top:8px;font-style:italic">Each deal is flagged by HubSpot <b>dealtype</b> (Consumer / Commercial / International). Commercial &amp; International: the region 35% goes 100% to the region. Consumer: 60|40 region/MD. Cross-region deals: 50|50 across the two regions. Allocated to regions by net-profit share; the mix % above is used only for deals with no dealtype.</div>
         </div>
         <div>
           <div id="pf_bars"></div>
@@ -3867,6 +3871,7 @@ render();
       '<div class="k"><div class="kl">Pipeline · HubSpot</div><div class="kv" id="p_'+p+'_pipe">—</div></div>'+
       '<div class="k"><div class="kl">Closed won</div><div class="kv" id="p_'+p+'_won">—</div></div>'+
       '<div class="k"><div class="kl">Win rate (vs target)</div><div class="kv" id="p_'+p+'_win">—</div></div></div>'+
+      '<div class="segline" id="p_'+p+'_seg">—</div>'+
       '</div></div>';}
     $("pf_regions").innerHTML=REGIONS.map(card).join("");
     // set manual defaults
@@ -3884,8 +3889,8 @@ render();
     function periodLabel(){var gran=$("pf_gran").value,per=$("pf_period").value;if(gran==="all"||!per)return "all periods";var o=$("pf_period").querySelector('option[value="'+per+'"]');return o?o.textContent:per;}
 
     // ---- data ----
-    function repAgg(){var m={};var st=window.CoreVStore;function slot(k){if(!m[k])m[k]={rep:k,won:0,pipe:0,comm:0};return m[k];}
-      if(st&&st.deals)st.deals.forEach(function(d){if(!inPeriod(d.month))return;var s=slot(d.rep||"(unassigned)");if(d.future)s.pipe+=(+d.gross||0);else s.won+=(+d.gross||0);s.comm+=(+d.comm||0);});
+    function repAgg(){var m={};var st=window.CoreVStore;function slot(k){if(!m[k])m[k]={rep:k,won:0,pipe:0,comm:0,wonC:0,wonB:0,wonI:0};return m[k];}
+      if(st&&st.deals)st.deals.forEach(function(d){if(!inPeriod(d.month))return;var s=slot(d.rep||"(unassigned)");if(d.future){s.pipe+=(+d.gross||0);}else{var g=(+d.gross||0);s.won+=g;if(d.segment==="consumer")s.wonC+=g;else if(d.segment==="commercial")s.wonB+=g;else if(d.segment==="international")s.wonI+=g;}s.comm+=(+d.comm||0);});
       if(st&&st.pipeline)st.pipeline.forEach(function(d){if(!inPeriod(d.month))return;slot(d.rep||"(unassigned)").pipe+=(+d.gross||0);});
       return m;}
     function allReps(){var m=repAgg();manualReps.forEach(function(nm){if(!m[nm])m[nm]={rep:nm,won:0,pipe:0,comm:0};});return Object.keys(m).map(function(k){return m[k];});}
@@ -3953,6 +3958,9 @@ render();
           salaries:mine.reduce(function(a,x){return a+(repSalary[x.rep]||0);},0),
           monthlyTgt:mine.reduce(function(a,x){return a+15*(repSalary[x.rep]||0);},0),
           closedWon:mine.reduce(function(a,x){return a+x.won;},0),
+          consumerRev:mine.reduce(function(a,x){return a+(x.wonC||0);},0),
+          commercialRev:mine.reduce(function(a,x){return a+(x.wonB||0);},0),
+          internationalRev:mine.reduce(function(a,x){return a+(x.wonI||0);},0),
           pipeline:mine.reduce(function(a,x){return a+x.pipe;},0),
           comm:mine.reduce(function(a,x){return a+x.comm;},0),hc:mine.length};
       });
@@ -3965,6 +3973,10 @@ render();
         g.gp=g.rev-g.cogs; g.cm=g.gp-g.ctrl;
         g.netTargetM = g.key==="intl"? val("p_intl_tgt") : 0.30*g.monthlyTgt;
         g.netTarget = g.netTargetM*mult;
+        // per-region mix from flagged deals (dealtype); only the CONSUMER share triggers the 40% MD carve-out.
+        // fall back to the mix slider when a region has no segmented deals
+        var _fb=Math.max(0,Math.min(1,val("pf_consumerMix")/100)), _segRev=g.consumerRev+g.commercialRev+g.internationalRev;
+        g.cmix = _segRev>0 ? g.consumerRev/_segRev : _fb; g.segRev=_segRev;
         // write auto fields (cost of sales & commission are period actuals; salaries scale to the period)
         setVal("p_"+g.key+"_rev",Math.round(g.rev));setVal("p_"+g.key+"_cogs",Math.round(g.cogs));
         setVal("p_"+g.key+"_com",Math.round(g.comm));
@@ -3985,6 +3997,9 @@ render();
         $("p_"+p+"_pipe").textContent=fmt(g.pipeline);
         $("p_"+p+"_won").textContent=fmt(g.closedWon);
         var wt=g.monthlyTgt*mult;$("p_"+p+"_win").textContent=wt>0?(g.closedWon/wt*100).toFixed(0)+"%":"—";
+        if(g.segRev>0){var cc=Math.round(g.consumerRev/g.segRev*100),bb=Math.round(g.commercialRev/g.segRev*100),ii=Math.round(g.internationalRev/g.segRev*100);
+          $("p_"+p+"_seg").innerHTML='Deal type · <b>Consumer '+cc+'%</b> · Commercial '+bb+'% · International '+ii+'% <span style="color:var(--muted)">(from HubSpot)</span>';}
+        else{$("p_"+p+"_seg").innerHTML='Deal type · <span style="color:var(--muted)">no HubSpot dealtype — using '+Math.round(g.cmix*100)+'% consumer fallback</span>';}
       });
       var rev=RG.reduce(function(a,g){return a+g.rev;},0),gp=RG.reduce(function(a,g){return a+g.gp;},0),
           ctrl=RG.reduce(function(a,g){return a+g.ctrl;},0),cm=RG.reduce(function(a,g){return a+g.cm;},0),op=cm-poolPeriod;
@@ -3999,8 +4014,11 @@ render();
       $("pf_f_profit").textContent=fmt(opM);$("pf_f_reserve").textContent=fmt(reserveM);$("pf_f_distamt").textContent=fmt(distrM);$("pf_f_respct").textContent=(resPct*100).toFixed(0)+"%";$("pf_f_distpct").textContent=((1-resPct)*100).toFixed(0)+"%";
       var pos=RG.map(function(g){return Math.max(g.net,0);}),sp=pos[0]+pos[1]+pos[2];
       var share=sp>0?[pos[0]/sp,pos[1]/sp,pos[2]/sp]:[1/3,1/3,1/3];
-      var regConsumer=regPool*cmix,regB2B=regPool-regConsumer,toOwners=regB2B+regConsumer*0.6,mdConsumer=regConsumer*0.4,equalEach=eqPool/3;
-      var ownerAlloc=[toOwners*share[0],toOwners*share[1],toOwners*share[2]];
+      var equalEach=eqPool/3;
+      // region 35% split PER REGION by its own consumer/commercial mix: commercial 100% to region, consumer 60|40 region/MD
+      var ownerAlloc=[0,0,0],mdConsumer=0,regConsumer=0;
+      for(var _i=0;_i<3;_i++){var _rp=regPool*share[_i],_cm=RG[_i].cmix;ownerAlloc[_i]=_rp*(1-0.4*_cm);mdConsumer+=_rp*_cm*0.4;regConsumer+=_rp*_cm;}
+      var segCount=RG.reduce(function(a,g){return a+(g.segRev>0?1:0);},0);
       var pt={Sami:equalEach+ownerAlloc[0],Kamal:equalEach+ownerAlloc[1],Ahmed:equalEach+ownerAlloc[2]+mdPool+mdConsumer};
       var pb="",bars="",totals=[];
       PARTNERS.forEach(function(pn){var tot=pt[pn],con=tot-equalEach;totals.push({pn:pn,own:equalEach,con:con,tot:tot});pb+='<tr><td class="l">'+pn+'</td><td>'+fmt(equalEach)+'</td><td>'+fmt(con)+'</td><td><b>'+fmt(tot)+'</b></td><td>'+(distrM?pctf(tot/distrM):"—")+'</td></tr>';});
@@ -4009,7 +4027,8 @@ render();
       $("pf_bars").innerHTML=bars;$("pf_p_own").textContent=fmt(eqPool);$("pf_p_con").textContent=fmt(distrM-eqPool);$("pf_p_tot").textContent=fmt(distrM);
       $("pf_s_rev").textContent=fmt(rev);$("pf_s_op").textContent=fmt(op);$("pf_s_dist").textContent=fmt(distr);$("pf_s_distpct").textContent=((1-resPct)*100).toFixed(0)+"% · "+periodLabel();$("pf_s_period").textContent=periodLabel();$("pf_s_ann").textContent=fmt(reserve);
       var lead=totals.slice().sort(function(a,b){return b.tot-a.tot;})[0];
-      $("pf_narr").innerHTML='<b>Partner distribution — per month</b> ('+periodLabel()+' basis): monthly operating profit AED '+fmt(opM)+', '+(resPct*100).toFixed(0)+'% (AED '+fmt(reserveM)+') reserved, AED '+fmt(distrM)+' distributed — AED '+fmt(eqPool)+' equal, AED '+fmt(regPool)+' to the regions that sold, AED '+fmt(mdPool)+' to the MD. Commercial deals keep 100% of the region 35%; consumer deals ('+(cmix*100).toFixed(0)+'% mix) move AED '+fmt(mdConsumer)+' to the MD; cross-region 50|50. <b>'+lead.pn+'</b> earns the most (AED '+fmt(lead.tot)+'/mo).';
+      var segNote=segCount>0?('flagged per deal from HubSpot ('+segCount+' of 3 regions segmented)'):('using the '+(cmix*100).toFixed(0)+'% fallback mix — no deals carry a HubSpot segment yet');
+      $("pf_narr").innerHTML='<b>Partner distribution — per month</b> ('+periodLabel()+' basis): monthly operating profit AED '+fmt(opM)+', '+(resPct*100).toFixed(0)+'% (AED '+fmt(reserveM)+') reserved, AED '+fmt(distrM)+' distributed — AED '+fmt(eqPool)+' equal, AED '+fmt(regPool)+' to the regions that sold, AED '+fmt(mdPool)+' to the MD. Commercial deals keep 100% of the region 35%; consumer deals ('+segNote+') move AED '+fmt(mdConsumer)+' to the MD; cross-region 50|50. <b>'+lead.pn+'</b> earns the most (AED '+fmt(lead.tot)+'/mo).';
     }
     function refresh(){buildPeriods();renderIntegration();compute();}
 
