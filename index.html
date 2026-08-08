@@ -3728,7 +3728,7 @@ render();
       <div class="chip" id="pf_chip_hs"><span class="dot"></span><b>HubSpot</b> <span class="mono" id="pf_hsinfo">—</span></div>
       <div class="chip" id="pf_chip_cost"><span class="dot"></span><b>Costing</b> <span class="mono" id="pf_costinfo">—</span></div>
       <div class="chip" id="pf_chip_comm"><span class="dot"></span><b>Commission</b> <span class="mono" id="pf_comminfo">—</span></div>
-      <div class="chip" id="pf_chip_pay"><span class="dot"></span><b>Payouts</b> <span class="mono" id="pf_payinfo">—</span></div>
+      <div class="chip" id="pf_chip_pay"><span class="dot"></span><b>Marketing</b> <span class="mono" id="pf_payinfo">—</span></div>
     </div>
 
     <div id="pf_warn" style="display:none;background:var(--warn-soft);border:1px solid #E7B8AC;color:var(--warn);border-radius:10px;padding:11px 15px;margin-bottom:16px;font-size:13px;font-weight:600"></div>
@@ -3741,7 +3741,7 @@ render();
     </div>
 
     <div class="sec">
-      <div class="sechead"><div><h2 class="blk">Settings, period filter &amp; data sync</h2><span class="why">Pulls Revenue from HubSpot, Cost of sales from Costing, Commission from the Commission tab, Marketing from Payouts</span></div></div>
+      <div class="sechead"><div><h2 class="blk">Settings, period filter &amp; data sync</h2><span class="why">Pulls Revenue from HubSpot, Cost of sales from Costing, Commission from the Commission tab. Marketing is a fixed AED 32,000/mo split equally across Dubai &amp; Abu Dhabi.</span></div></div>
       <div class="agrid">
         <div class="field"><label>Reserve % (CoreV)</label><input type="number" id="pf_reservePct" value="40"></div>
         <div class="field"><label>Consumer mix % (rest = commercial)</label><input type="number" id="pf_consumerMix" value="40"></div>
@@ -3749,7 +3749,7 @@ render();
         <div class="field"><label>Period</label><select id="pf_period"><option value="">All</option></select></div>
       </div>
       <div class="toolrow">
-        <span class="syncmsg" style="color:var(--muted)">All figures auto-calculate live from HubSpot, Costing, Commission &amp; Payouts, and from the sales-rep table below.</span>
+        <span class="syncmsg" style="color:var(--muted)">All figures auto-calculate live from HubSpot, Costing &amp; Commission, from the sales-rep table below, and a fixed AED 32,000/mo marketing budget.</span>
         <button class="btn" id="pf_push">☁ Push to shared drive</button>
         <span class="syncmsg" id="pf_syncmsg"></span>
       </div>
@@ -3766,12 +3766,12 @@ render();
     </div>
 
     <div class="sec">
-      <div class="sechead"><div><h2 class="blk">Profit centres</h2><span class="why">Auto-calculated per region. Revenue = closed-won (HubSpot). Cost of sales = machines (catalog cost ÷ MSRP) + operational %, from Costing. Commissions from Commission tab. Marketing from Payouts (shared by revenue). Sales salaries = sum of the region's reps. Reward basis = <b>net operating profit</b>.</span></div></div>
+      <div class="sechead"><div><h2 class="blk">Profit centres</h2><span class="why">Auto-calculated per region. Revenue = closed-won (HubSpot). Cost of sales = machines (catalog cost ÷ MSRP) + operational %, from Costing. Commissions from Commission tab. Marketing = fixed AED 32,000/mo split 50|50 across Dubai &amp; Abu Dhabi (International none). Sales salaries = sum of the region's reps. Reward basis = <b>net operating profit</b>.</span></div></div>
       <div class="regions" id="pf_regions"></div>
     </div>
 
     <div class="sec">
-      <div class="sechead"><div><h2 class="blk">Central cost centre &amp; company P&amp;L</h2><span class="why">Costs are a <b>monthly run-rate</b>; the pool and company P&amp;L scale with the selected period (month · quarter · half · year).</span></div></div>
+      <div class="sechead"><div><h2 class="blk">Central cost centre &amp; company P&amp;L</h2><span class="why">Defaults are the <b>monthly run-rate</b> from the CoreV P&amp;L (Jan 2025 – Jul 2026 ÷ 19 months); the pool and company P&amp;L scale with the selected period (month · quarter · half · year). Cost of sales, commissions, sales salaries and marketing are excluded here — cost of sales from Costing, commissions from Commission, salaries from the rep table, marketing a fixed AED 32,000/mo.</span></div></div>
       <div class="two">
         <table class="data"><thead><tr><th class="l">Central shared services (cost centre)</th><th>AED</th></tr></thead><tbody id="pf_cenBody"></tbody></table>
         <table class="data"><thead><tr><th class="l">Company consolidated P&amp;L</th><th>AED</th></tr></thead><tbody>
@@ -3825,7 +3825,8 @@ render();
       {key:"intl",name:"International",tag:"Profit centre · MD",partner:"Ahmed"}
     ];
     var INTL_DEFAULT_TARGET=50000;
-    var CENTRAL=[["Operations",260000],["Finance & administration",180000],["IT & systems",140000],["Logistics & warehousing",220000],["Rent & facilities",200000],["Management / MD office",300000],["Other central",100000]];
+    var CENTRAL=[["Rent, warehouse, utilities & repairs",66858],["Legal, accounting & professional",12613],["IT, telecom & subscriptions",4686],["Office & general admin",8074],["Insurance",1220],["Bank, card & FX charges",1758],["Travel (admin + selling)",3454],["Logistics & customs (shipping + duty)",4942]];
+    var MKT_MONTHLY_TOTAL=32000; // fixed monthly marketing budget, split equally across Dubai & Abu Dhabi
     var PARTNERS=["Ahmed","Kamal","Sami"];
     var root=document.getElementById("tab-performance");
     var $=function(id){return document.getElementById(id);};
@@ -3844,7 +3845,7 @@ render();
       pr("Revenue","p_"+p+"_rev","hs","HubSpot",true)+
       pr("Cost of sales","p_"+p+"_cogs","cost","Costing",true)+
       pr("Commissions","p_"+p+"_com","comm","Commission",true)+
-      pr("Marketing & events","p_"+p+"_mkt","pay","Payouts",true)+
+      pr("Marketing & events","p_"+p+"_mkt","pay","Fixed 50|50",true)+
       pr("Sales salaries","p_"+p+"_sal","man","From reps",true)+
       pr("Other costs","p_"+p+"_oth","man","manual",false)+
       pr("Events cap","p_"+p+"_cap","man","manual",false)+
@@ -3890,7 +3891,7 @@ render();
       $("pf_chip_hs").className="chip "+(tok?"on":"off");$("pf_hsinfo").textContent=(tok?"connected":"not connected")+" · "+hsCount+" synced";
       $("pf_chip_cost").className="chip "+(window.CoreVCosting?"on":"off");$("pf_costinfo").textContent=window.CoreVCosting?("machines "+((cost.machineRatio||0)*100).toFixed(0)+"% + op "+((cost.opRate||0)*100).toFixed(0)+"%"):"—";
       $("pf_chip_comm").className="chip "+(deals.length?"on":"off");$("pf_comminfo").textContent="AED "+fmt(totComm);
-      $("pf_chip_pay").className="chip "+(window.CoreVPayouts?"on":"off");$("pf_payinfo").textContent="marketing AED "+fmt(marketingTotal());
+      $("pf_chip_pay").className="chip on";$("pf_payinfo").textContent="fixed AED "+fmt(MKT_MONTHLY_TOTAL)+"/mo · split 50|50";
       var reps=allReps();
       if(!reps.length){$("pf_mapbody").innerHTML='<tr><td colspan="8" style="color:var(--muted)">No sales reps yet — add one above, or connect HubSpot / add deals in Costing.</td></tr>';$("pf_mapstat").textContent="";$("pf_warn").style.display="none";return;}
       var store=repAgg();
@@ -3942,7 +3943,7 @@ render();
       var totRev=RG.reduce(function(a,g){return a+g.closedWon;},0);
       RG.forEach(function(g){
         g.rev=g.closedWon; g.cogs=g.rev*(mR+opR);
-        g.mkt= totRev>0? mkTot*g.rev/totRev : 0;
+        g.mkt= (g.key==="intl"?0:MKT_MONTHLY_TOTAL/2)*mult;
         g.salariesP=g.salaries*mult;
         g.other=val("p_"+g.key+"_oth");
         g.ctrl=g.salariesP+g.comm+g.mkt+g.other;
