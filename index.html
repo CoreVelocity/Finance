@@ -3772,6 +3772,7 @@ render();
       <div class="agrid">
         <div class="field"><label>Reserve % (CoreV)</label><input type="number" id="pf_reservePct" value="40"></div>
         <div class="field"><label>Monthly target factor (× salary)</label><input type="number" id="pf_tgtFactor" value="15" step="0.5" min="0"></div>
+        <div class="field"><label>Consumer → MD share % (region keeps rest)</label><input type="number" id="pf_consMdShare" value="40" step="5" min="0" max="100"></div>
         <div class="field"><label>View by</label><select id="pf_gran"><option value="all">All time</option><option value="month">Month</option><option value="quarter">Quarter</option><option value="half">Half-year</option><option value="year">Year</option></select></div>
         <div class="field"><label>Period</label><select id="pf_period"><option value="">All</option></select></div>
       </div>
@@ -3828,7 +3829,7 @@ render();
     </div>
 
     <div class="sec">
-      <div class="sechead"><div><h2 class="blk">Distribution &amp; partner contribution</h2><span class="why">40% reserved · 60% shared · region 35% by revenue &amp; deal type · <b>shown per month</b></span></div>
+      <div class="sechead"><div><h2 class="blk">Distribution &amp; partner contribution</h2><span class="why"><span class="reslbl">40</span>% reserved · <span class="shrlbl">60</span>% shared · region <span class="reglbl">35</span>% by revenue &amp; deal type · <b>shown per month</b></span></div>
         <button class="btn ghost" id="pf_distpdf" type="button" style="align-self:center">⤓ Export PDF for partners</button></div>
       <div class="two">
         <div>
@@ -3845,16 +3846,16 @@ render();
         </div>
         <div>
           <div id="pf_bars"></div>
-          <div class="legend"><span><i style="background:var(--input)"></i>Equal (35%)</span><span><i style="background:var(--corev)"></i>Region + MD</span></div>
-          <table class="data" style="margin-top:14px"><thead><tr><th class="l">Partner</th><th>Equal 35%</th><th>Region + MD</th><th>Total</th><th>%</th></tr></thead>
+          <div class="legend"><span><i style="background:var(--input)"></i>Equal (<span class="eqlbl">35</span>%)</span><span><i style="background:var(--corev)"></i>Region + MD</span></div>
+          <table class="data" style="margin-top:14px"><thead><tr><th class="l">Partner</th><th>Equal <span class="eqlbl">35</span>%</th><th>Region + MD</th><th>Total</th><th>%</th></tr></thead>
             <tbody id="pf_partnerBody"></tbody>
             <tfoot><tr class="tot"><td class="l">Total distributed</td><td id="pf_p_own">—</td><td id="pf_p_con">—</td><td id="pf_p_tot">—</td><td>100%</td></tr></tfoot>
           </table>
         </div>
       </div>
       <div style="margin-top:16px">
-        <div class="why" style="margin-bottom:6px"><b>Region 35% — how it breaks down</b> (revenue-weighted; consumer 60/40 region/MD, commercial &amp; international 100% region)</div>
-        <table class="data"><thead><tr><th class="l">Region · owner</th><th>Revenue</th><th>Rev %</th><th>Consumer %</th><th>35% slice</th><th>→ Owner</th><th>→ MD (Ahmed)</th></tr></thead><tbody id="pf_regsplit"></tbody></table>
+        <div class="why" style="margin-bottom:6px"><b>Region <span class="reglbl">35</span>% — how it breaks down</b> (revenue-weighted; consumer <span class="cslbl-reg">60</span>/<span class="cslbl-md">40</span> region/MD, commercial &amp; international 100% region)</div>
+        <table class="data"><thead><tr><th class="l">Region · owner</th><th>Revenue</th><th>Rev %</th><th>Consumer %</th><th><span class="reglbl">35</span>% slice</th><th>→ Owner</th><th>→ MD (Ahmed)</th></tr></thead><tbody id="pf_regsplit"></tbody></table>
       </div>
     </div>
 
@@ -4078,23 +4079,31 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
       // distribution 35/35/30
       var resPct=val("pf_reservePct")/100,reserve=op*resPct,distr=op-reserve;
       var eqv=val("pf_eq"),rgv=val("pf_reg"),mdv=val("pf_md"),t3=(eqv+rgv+mdv)||1;
+      // reflect the editable split factors in every label (region %, equal %, reserved/shared %)
+      root.querySelectorAll(".eqlbl").forEach(function(el){el.textContent=Math.round(eqv);});
+      root.querySelectorAll(".reglbl").forEach(function(el){el.textContent=Math.round(rgv);});
+      root.querySelectorAll(".reslbl").forEach(function(el){el.textContent=Math.round(resPct*100);});
+      root.querySelectorAll(".shrlbl").forEach(function(el){el.textContent=Math.round((1-resPct)*100);});
       // ---- distribution shown PER MONTH ----
       var opM=op/mult,reserveM=reserve/mult,distrM=distr/mult;
       var eqPool=distrM*eqv/t3,regPool=distrM*rgv/t3,mdPool=distrM*mdv/t3;
       $("pf_f_profit").textContent=fmt(opM);$("pf_f_reserve").textContent=fmt(reserveM);$("pf_f_distamt").textContent=fmt(distrM);$("pf_f_respct").textContent=(resPct*100).toFixed(0)+"%";$("pf_f_distpct").textContent=((1-resPct)*100).toFixed(0)+"%";
       var equalEach=eqPool/3;
       // (2) Region 35% pool distributed by REVENUE generated per region (not net profit — that zeroed out loss-making regions).
-      //     Within each region: consumer revenue → 60% region owner / 40% MD (Ahmed); commercial & international → 100% owner.
-      //     Revenue with no HubSpot dealtype defaults to CONSUMER (60/40). g.cmix = consumer share of the region's revenue.
+      //     Within each region: consumer revenue → (region keeps 1−mdShare) / mdShare to MD (Ahmed); commercial & international → 100% owner.
+      //     Revenue with no HubSpot dealtype defaults to CONSUMER. g.cmix = consumer share of the region's revenue.
+      var _mdPct=val("pf_consMdShare");if(!(_mdPct>=0))_mdPct=40;if(_mdPct>100)_mdPct=100;var mdShare=_mdPct/100;
+      root.querySelectorAll(".cslbl-md").forEach(function(el){el.textContent=Math.round(_mdPct);});
+      root.querySelectorAll(".cslbl-reg").forEach(function(el){el.textContent=Math.round(100-_mdPct);});
       var ownerAlloc=[0,0,0],mdConsumer=0,regBreak=[];
       for(var _i=0;_i<3;_i++){var _g=RG[_i];var _rs=totRev>0?_g.rev/totRev:1/3;var _rp=regPool*_rs;var _cmv=_g.cmix;
-        var _own=_rp*(1-0.4*_cmv),_md=_rp*_cmv*0.4;ownerAlloc[_i]=_own;mdConsumer+=_md;
+        var _own=_rp*(1-mdShare*_cmv),_md=_rp*_cmv*mdShare;ownerAlloc[_i]=_own;mdConsumer+=_md;
         regBreak.push({partner:_g.r.partner,region:_g.r.name,rev:_g.rev,rs:_rs,cmix:_cmv,flagged:_g.segRev>0,pool:_rp,owner:_own,md:_md});}
       var segCount=RG.reduce(function(a,g){return a+(g.segRev>0?1:0);},0);
       var pt={Sami:equalEach+ownerAlloc[0],Kamal:equalEach+ownerAlloc[1],Ahmed:equalEach+ownerAlloc[2]+mdPool+mdConsumer};
       // demonstration — exactly how the region 35% breaks down by revenue & deal type
       var _rsHTML=regBreak.map(function(x){return '<tr><td class="l">'+x.region+' · '+x.partner+'</td><td>'+fmt(x.rev)+'</td><td>'+(totRev>0?(x.rs*100).toFixed(0):"—")+'%</td><td>'+(x.cmix*100).toFixed(0)+'%'+(x.flagged?'':' <span style="color:#8a6a1f" title="no HubSpot dealtype — defaulted to consumer">(default)</span>')+'</td><td>'+fmt(x.pool)+'</td><td>'+fmt(x.owner)+'</td><td>'+fmt(x.md)+'</td></tr>';}).join("");
-      if($("pf_regsplit"))$("pf_regsplit").innerHTML=_rsHTML+'<tr class="tot"><td class="l">Region 35% pool</td><td>'+fmt(totRev)+'</td><td>100%</td><td></td><td>'+fmt(regPool)+'</td><td>'+fmt(ownerAlloc[0]+ownerAlloc[1]+ownerAlloc[2])+'</td><td>'+fmt(mdConsumer)+'</td></tr>';
+      if($("pf_regsplit"))$("pf_regsplit").innerHTML=_rsHTML+'<tr class="tot"><td class="l">Region '+Math.round(rgv)+'% pool</td><td>'+fmt(totRev)+'</td><td>100%</td><td></td><td>'+fmt(regPool)+'</td><td>'+fmt(ownerAlloc[0]+ownerAlloc[1]+ownerAlloc[2])+'</td><td>'+fmt(mdConsumer)+'</td></tr>';
       var pb="",bars="",totals=[];
       PARTNERS.forEach(function(pn){var tot=pt[pn],con=tot-equalEach;totals.push({pn:pn,own:equalEach,con:con,tot:tot});pb+='<tr><td class="l">'+pn+'</td><td>'+fmt(equalEach)+'</td><td>'+fmt(con)+'</td><td><b>'+fmt(tot)+'</b></td><td>'+(distrM?pctf(tot/distrM):"—")+'</td></tr>';});
       $("pf_partnerBody").innerHTML=pb;
@@ -4167,6 +4176,7 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
       if(!(window.jspdf&&window.jspdf.jsPDF)){ if($("pf_syncmsg"))$("pf_syncmsg").textContent="PDF library still loading — try again in a moment."; return; }
       var jsPDF=window.jspdf.jsPDF, doc=new jsPDF({unit:"pt",format:"a4"});
       var M=40, y=48, period=periodLabel();
+      var eqP=Math.round(val("pf_eq")),regP=Math.round(val("pf_reg")),mdP=Math.round(val("pf_md")),resP=Math.round(val("pf_reservePct")),mdc=Math.round(val("pf_consMdShare")),regc=100-mdc;
       var gtxt=function(id){var e=$(id);if(!e)return "—";var v=(e.tagName==="INPUT")?e.value:e.textContent;return (v||"").trim()||"—";};
       doc.setFont("helvetica","bold");doc.setFontSize(16);doc.setTextColor(15,23,42);
       doc.text("CoreV — Partner Distribution Report",M,y);
@@ -4188,14 +4198,14 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
         body:[["Company operating profit",gtxt("pf_f_profit")],["Reserved for CoreV ("+gtxt("pf_f_respct")+")",gtxt("pf_f_reserve")],["Distributed to partners ("+gtxt("pf_f_distpct")+")",gtxt("pf_f_distamt")]]});
       // Partner split
       var prows=[].slice.call(root.querySelectorAll("#pf_partnerBody tr")).map(function(tr){return [].slice.call(tr.children).map(function(td){return (td.textContent||"").trim();});});
-      tbl({startY:y+16,head:[["Partner","Equal 35%","Region + MD","Total / month","% of dist."]],body:prows,foot:[["Total distributed",gtxt("pf_p_own"),gtxt("pf_p_con"),gtxt("pf_p_tot"),"100%"]],theme:"grid",
+      tbl({startY:y+16,head:[["Partner","Equal "+eqP+"%","Region + MD","Total / month","% of dist."]],body:prows,foot:[["Total distributed",gtxt("pf_p_own"),gtxt("pf_p_con"),gtxt("pf_p_tot"),"100%"]],theme:"grid",
         footStyles:{fillColor:[236,239,246],textColor:20,fontStyle:"bold"},columnStyles:{0:{halign:"left"},1:{halign:"right"},2:{halign:"right"},3:{halign:"right"},4:{halign:"right"}}});
-      // Region 35% breakdown
+      // Region breakdown
       var rrows=[].slice.call(root.querySelectorAll("#pf_regsplit tr")).map(function(tr){return [].slice.call(tr.children).map(function(td){return (td.textContent||"").trim();});});
-      tbl({startY:y+16,head:[["Region · owner","Revenue","Rev %","Consumer %","35% slice","Owner","MD (Ahmed)"]],body:rrows,theme:"grid",
+      tbl({startY:y+16,head:[["Region · owner","Revenue","Rev %","Consumer %",regP+"% slice","Owner","MD (Ahmed)"]],body:rrows,theme:"grid",
         styles:{fontSize:8.5,cellPadding:3},columnStyles:{0:{halign:"left"},1:{halign:"right"},2:{halign:"right"},3:{halign:"right"},4:{halign:"right"},5:{halign:"right"},6:{halign:"right"}}});
       doc.setFontSize(8);doc.setTextColor(120,126,140);
-      var note="Method: 40% reserved for CoreV, 60% distributed. The 60% splits equal (35%, 3 ways), region-sales (35%, weighted by each region's revenue), and MD operational (30%). Within the region 35%: consumer revenue splits 60/40 region/MD; commercial & international stays 100% with the region; revenue with no HubSpot deal type is treated as consumer. Company P&L is for the selected period; distribution figures are per month.";
+      var note="Method: "+resP+"% reserved for CoreV, "+(100-resP)+"% distributed. The "+(100-resP)+"% splits equal ("+eqP+"%, 3 ways), region-sales ("+regP+"%, weighted by each region's revenue), and MD operational ("+mdP+"%). Within the region "+regP+"%: consumer revenue splits "+regc+"/"+mdc+" region/MD; commercial & international stays 100% with the region; revenue with no HubSpot deal type is treated as consumer. Company P&L is for the selected period; distribution figures are per month.";
       var lines=doc.splitTextToSize(note,doc.internal.pageSize.getWidth()-2*M);
       if(y+lines.length*11>doc.internal.pageSize.getHeight()-40){doc.addPage();y=48;}
       doc.text(lines,M,y+18);
@@ -4212,6 +4222,7 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
     $("pf_push").addEventListener("click",pushSync);
     if($("pf_tgtFactor"))$("pf_tgtFactor").addEventListener("change",function(){try{localStorage.setItem("corev_perf_tgtfactor",JSON.stringify(val("pf_tgtFactor")||15));}catch(e){}refresh();sync();});
     if($("pf_tgtFactorNote"))$("pf_tgtFactorNote").addEventListener("change",function(){try{localStorage.setItem("corev_perf_tgtnote",JSON.stringify($("pf_tgtFactorNote").value||""));}catch(e){}sync();});
+    if($("pf_consMdShare"))$("pf_consMdShare").addEventListener("change",function(){try{localStorage.setItem("corev_perf_consmd",JSON.stringify(val("pf_consMdShare")));}catch(e){}refresh();sync();});
     if($("pf_distpdf"))$("pf_distpdf").addEventListener("click",distPDF);
     $("pf_pnl_import").addEventListener("click",importPnL);
     function ensureXLSX(cb){if(window.XLSX)return cb();$("pf_pnl_msg").textContent="Excel reader unavailable — save the P&L as CSV and try again, or paste the text.";}
@@ -4230,7 +4241,8 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
     try{window.CoreVPayoutsPublish&&window.CoreVPayoutsPublish();}catch(e){}
     // restore the saved target factor & note (persist across reloads, for our records)
     (function(){var _tf=load("corev_perf_tgtfactor");if($("pf_tgtFactor")&&_tf!=null&&+_tf>0)$("pf_tgtFactor").value=_tf;
-      var _tn=load("corev_perf_tgtnote");if($("pf_tgtFactorNote")&&typeof _tn==="string")$("pf_tgtFactorNote").value=_tn;})();
+      var _tn=load("corev_perf_tgtnote");if($("pf_tgtFactorNote")&&typeof _tn==="string")$("pf_tgtFactorNote").value=_tn;
+      var _cm=load("corev_perf_consmd");if($("pf_consMdShare")&&_cm!=null&&+_cm>=0)$("pf_consMdShare").value=_cm;})();
     registerSync();
     refresh();
   })();</script>
