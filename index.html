@@ -3842,7 +3842,6 @@ render();
             <tr><td class="l">Region sales — the deal's region owner</td><td><input class="mini" style="width:66px" type="number" id="pf_reg" value="35"> %</td></tr>
             <tr><td class="l">Operational &amp; managing (MD)</td><td><input class="mini" style="width:66px" type="number" id="pf_md" value="30"> %</td></tr>
           </tbody></table>
-          <div class="why" style="margin-top:8px;font-style:italic">The region 35% is split by each region's <b>revenue</b>. Within a region: <b>Consumer</b> revenue → 60% region owner / 40% MD (Ahmed); <b>Commercial &amp; International</b> → 100% region owner. Revenue with no HubSpot dealtype defaults to <b>Consumer (60/40)</b>. See the breakdown below.</div>
         </div>
         <div>
           <div id="pf_bars"></div>
@@ -3857,7 +3856,6 @@ render();
         <div class="why" style="margin-bottom:6px"><b>Region 35% — how it breaks down</b> (revenue-weighted; consumer 60/40 region/MD, commercial &amp; international 100% region)</div>
         <table class="data"><thead><tr><th class="l">Region · owner</th><th>Revenue</th><th>Rev %</th><th>Consumer %</th><th>35% slice</th><th>→ Owner</th><th>→ MD (Ahmed)</th></tr></thead><tbody id="pf_regsplit"></tbody></table>
       </div>
-      <div class="narr" id="pf_narr"></div>
     </div>
 
   </div>
@@ -4110,9 +4108,6 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
       }
       $("pf_p_own").textContent=fmt(eqPool);$("pf_p_con").textContent=fmt(distrM-eqPool);$("pf_p_tot").textContent=fmt(distrM);
       $("pf_s_rev").textContent=fmt(rev);$("pf_s_op").textContent=fmt(op);$("pf_s_dist").textContent=fmt(distr);$("pf_s_distpct").textContent=((1-resPct)*100).toFixed(0)+"% · "+periodLabel();$("pf_s_period").textContent=periodLabel();$("pf_s_ann").textContent=fmt(reserve);
-      var lead=totals.slice().sort(function(a,b){return b.tot-a.tot;})[0];
-      var segNote=segCount>0?('deal types from HubSpot in '+segCount+' of 3 regions; unflagged revenue treated as consumer'):('no HubSpot deal types yet — all revenue treated as consumer (60/40)');
-      $("pf_narr").innerHTML='<b>Partner distribution — per month</b> ('+periodLabel()+' basis): operating profit AED '+fmt(opM)+', '+(resPct*100).toFixed(0)+'% (AED '+fmt(reserveM)+') reserved, AED '+fmt(distrM)+' distributed — AED '+fmt(eqPool)+' equal (split 3 ways), AED '+fmt(regPool)+' region-sales (weighted by <b>revenue</b>), AED '+fmt(mdPool)+' MD. Within the region 35%: consumer revenue splits 60|40 region/MD, commercial &amp; international stays 100% with the region ('+segNote+'). The MD (Ahmed) also receives AED '+fmt(mdConsumer)+' as the 40% consumer share. <b>'+lead.pn+'</b> earns the most (AED '+fmt(lead.tot)+'/mo).';
     }
     function refresh(){buildPeriods();renderIntegration();compute();}
 
