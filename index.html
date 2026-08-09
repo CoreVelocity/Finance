@@ -2496,14 +2496,14 @@ async function hsFetchClosedWon(silent){
       const ownerId=HS.ownerMap[rep.name]; let after,guard=0;
       do{
         const body={filterGroups:[{filters:[{propertyName:"hubspot_owner_id",operator:"EQ",value:ownerId},{propertyName:"dealstage",operator:"NEQ",value:"closedlost"}]}],
-          properties:["dealname","amount","closedate","dealstage","hs_is_closed_won","hs_is_closed","hs_all_collaborator_owner_ids","dealtype"],sorts:[{propertyName:"closedate",direction:"DESCENDING"}],limit:100};
+          properties:["dealname","amount","closedate","dealstage","hs_is_closed_won","hs_is_closed","hs_all_collaborator_owner_ids","dealtype","hs_closed_won_date"],sorts:[{propertyName:"closedate",direction:"DESCENDING"}],limit:100};
         if(after)body.after=after;
         const data=await hsApi("/crm/v3/objects/deals/search",{method:"POST",body:JSON.stringify(body)});
         (data.results||[]).forEach(d=>{ const p=d.properties||{}; const rs=(p.dealstage||"").toLowerCase();
           const won=p.hs_is_closed_won==="true"||rs==="closedwon"||rs.includes("closed won"); if(!won){ if(p.hs_is_closed!=="true"){ (window._hsPipeline=window._hsPipeline||[]).push({rep:rep.name,gross:parseFloat(p.amount)||0,month:monthFromISO(p.closedate),hsId:d.id}); } return; } total++;
           const collabIds=(p.hs_all_collaborator_owner_ids||"").split(/[;,]/).map(s=>s.trim()).filter(s=>s&&s!==ownerId);
           const collabNames=collabIds.map(nameOf);
-          const month=monthFromISO(p.closedate), amount=parseFloat(p.amount)||0;
+          const month=monthFromISO(p.closedate||p.hs_closed_won_date), amount=parseFloat(p.amount)||0;
           const _sv=String(p.dealtype||"").toLowerCase(); const _seg=(_sv.indexOf("consum")>=0||_sv.indexOf("b2c")>=0)?"consumer":(_sv.indexOf("intern")>=0?"international":((_sv.indexOf("commerc")>=0||_sv.indexOf("b2b")>=0)?"commercial":""));
           // owner — lead share (TEAMING+ when collaborated, else FULL)
           if(pushHubDeal(rep,{hsId:d.id,cust:p.dealname,amount,month,tag:collabIds.length?"TEAMING+":"FULL",collab:collabNames,segment:_seg})) added++;
@@ -3704,6 +3704,8 @@ render();
     #tab-performance .k.big{grid-column:1/3;background:#FBF6E9;border-color:#EBD9A8}
     #tab-performance .k .kl{font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:600}
     #tab-performance .k .kv{font-family:"Space Grotesk";font-size:15px;font-weight:600;color:var(--text);margin-top:1px}
+    #tab-performance .k .kh{font-size:9.5px;line-height:1.32;color:var(--muted);margin-top:5px;font-weight:500}
+    #tab-performance .k.big .kh{font-size:10.5px}
     #tab-performance .k.big .kv{font-size:21px;color:#8a6a1f}
     #tab-performance .bdg{display:inline-block;font-family:"Inter";font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px}
     #tab-performance .bdg.ok{background:var(--pos-soft);color:var(--pos)}#tab-performance .bdg.bad{background:var(--warn-soft);color:var(--warn)}#tab-performance .bdg.warn{background:#FBF3E2;color:#8a6a1f}
@@ -3753,7 +3755,7 @@ render();
     </div>
 
     <div class="sec">
-      <div class="sechead"><div><h2 class="blk">Settings, period filter &amp; data sync</h2><span class="why">Pulls Revenue from HubSpot, Cost of sales from Costing, Commission from the Commission tab. Marketing is a fixed AED 32,000/mo carried in the central pool and allocated across all regions.</span></div></div>
+      <div class="sechead"><div><h2 class="blk">Settings, period filter &amp; data sync</h2><span class="why">Pulls Revenue from HubSpot, Product cost (OxeFit) from Costing, Commission from the Commission tab. Marketing (AED 32,000/mo) and Events (AED 2,500/mo) are carried in the central pool and allocated across all regions.</span></div></div>
       <div class="agrid">
         <div class="field"><label>Reserve % (CoreV)</label><input type="number" id="pf_reservePct" value="40"></div>
         <div class="field"><label>Consumer mix % — fallback (no HubSpot dealtype)</label><input type="number" id="pf_consumerMix" value="40"></div>
@@ -3778,12 +3780,12 @@ render();
     </div>
 
     <div class="sec">
-      <div class="sechead"><div><h2 class="blk">Profit centres</h2><span class="why">Auto-calculated per region. Revenue = closed-won (HubSpot). Cost of sales = machines (catalog cost ÷ MSRP) + operational %, from Costing. Commissions from Commission tab. Sales salaries = sum of the region's reps. Marketing is not charged per region — it sits in the central pool and is allocated by revenue share. Reward basis = <b>net operating profit</b>.</span></div></div>
+      <div class="sechead"><div><h2 class="blk">Profit centres</h2><span class="why">Auto-calculated per region. Revenue = closed-won (HubSpot). Product cost = OxeFit unit cost only (catalog cost ÷ MSRP), from Costing — operational % is no longer charged here (it now sits in the central pool) and commissions are shown separately. Commissions from Commission tab. Sales salaries = sum of the region's reps. Marketing &amp; events are not charged per region — they sit in the central pool and are allocated by revenue share. Reward basis = <b>net operating profit</b>.</span></div></div>
       <div class="regions" id="pf_regions"></div>
     </div>
 
     <div class="sec">
-      <div class="sechead"><div><h2 class="blk">Central cost centre &amp; company P&amp;L</h2><span class="why">Defaults are the <b>monthly run-rate</b> from the CoreV P&amp;L (Jan 2025 – Jul 2026 ÷ 19 months); the pool and company P&amp;L scale with the selected period (month · quarter · half · year). Cost of sales, commissions and sales salaries are excluded here (cost of sales from Costing, commissions from Commission, salaries from the rep table). Marketing (fixed AED 32,000/mo) is included as a central line and allocated across regions by revenue share.</span></div></div>
+      <div class="sechead"><div><h2 class="blk">Central cost centre &amp; company P&amp;L</h2><span class="why">Defaults are the <b>monthly run-rate</b> from the CoreV P&amp;L (Jan 2025 – Jul 2026 ÷ 19 months); the pool and company P&amp;L scale with the selected period (month · quarter · half · year). Product cost, commissions and sales salaries are excluded here (product cost from Costing, commissions from Commission, salaries from the rep table). Marketing (fixed AED 32,000/mo) and Events (fixed AED 2,500/mo) are included as central lines and allocated across regions by revenue share.</span></div></div>
       <div class="pnlbox">
         <div class="pnlhead"><b>Import P&amp;L</b> <span class="why">Upload your QuickBooks <b>Export to Excel</b> (.xlsx), or a CSV, or paste the text — the Expenses section is auto-mapped into the central lines below. Set how many months the report covers to get the monthly run-rate.</span></div>
         <div class="toolrow">
@@ -3859,9 +3861,9 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
       {key:"intl",name:"International",tag:"Profit centre · MD",partner:"Ahmed"}
     ];
     var INTL_DEFAULT_TARGET=50000;
-    var CENTRAL=[["Rent, warehouse, utilities & repairs",66858],["Legal, accounting & professional",12613],["IT, telecom & subscriptions",4686],["Office & general admin",8074],["Insurance",1220],["Bank, card & FX charges",1758],["Travel (admin + selling)",3454],["Logistics & customs (shipping + duty)",4942],["Marketing (fixed · all regions)",32000]];
+    var CENTRAL=[["Rent, warehouse, utilities & repairs",66858],["Legal, accounting & professional",12613],["IT, telecom & subscriptions",4686],["Office & general admin",8074],["Insurance",1220],["Bank, card & FX charges",1758],["Travel (admin + selling)",3454],["Logistics & customs (shipping + duty)",4942],["Marketing (fixed · all regions)",32000],["Events (fixed · all regions)",2500]];
     var MKT_MONTHLY_TOTAL=32000; // fixed monthly marketing budget, split equally across Dubai & Abu Dhabi
-    var EVENTCAP_M=2500; // events cap per region per month (scales with period)
+    var EVENTS_CENTRAL_M=2500; // events are now a fixed central line (see CENTRAL, idx 9), allocated across regions by revenue share
     var PARTNERS=["Ahmed","Kamal","Sami"];
     var root=document.getElementById("tab-performance");
     var $=function(id){return document.getElementById(id);};
@@ -3880,19 +3882,17 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
     function pr(label,id,cls,tag,ro){return '<div class="plrow"><span class="pll">'+label+'</span><span class="src '+cls+'">'+tag+'</span><input type="text" inputmode="numeric" id="'+id+'" class="money'+(ro?' lock':'')+'"'+(ro?' readonly':'')+'></div>';}
     function card(r){var p=r.key;return '<div class="rcard"><div class="rhead"><div><div class="tag">'+r.tag+'</div><h3>'+r.name+'</h3></div><div class="lead"><div class="tag">Lead</div><b>'+r.partner+'</b></div></div><div class="rbody">'+
       pr("Revenue","p_"+p+"_rev","hs","HubSpot",true)+
-      pr("Cost of sales","p_"+p+"_cogs","cost","Costing",true)+
+      pr("Product cost (OxeFit)","p_"+p+"_cogs","cost","OxeFit",true)+
       pr("Commissions","p_"+p+"_com","comm","Commission",true)+
       pr("Sales salaries","p_"+p+"_sal","man","From reps",true)+
       pr("Other costs","p_"+p+"_oth","man","manual",false)+
-      pr("Events cap","p_"+p+"_cap","man","2,500/mo",true)+
       pr("Net profit target","p_"+p+"_tgt","man",(p==="intl"?"manual":"30% of target"),(p!=="intl"))+
-      '<div class="kg"><div class="k big"><div class="kl">Net operating profit</div><div class="kv" id="p_'+p+'_net">—</div></div>'+
-      '<div class="k"><div class="kl">Gross margin</div><div class="kv" id="p_'+p+'_gm">—</div></div>'+
-      '<div class="k"><div class="kl">Contribution margin</div><div class="kv" id="p_'+p+'_cm">—</div></div>'+
-      '<div class="k"><div class="kl">Net margin</div><div class="kv" id="p_'+p+'_nm">—</div></div>'+
-      '<div class="k"><div class="kl">Allocated central</div><div class="kv" id="p_'+p+'_alloc">—</div></div>'+
-      '<div class="k"><div class="kl">vs target</div><div class="kv" id="p_'+p+'_var">—</div></div>'+
-      '<div class="k"><div class="kl">Events cap</div><div class="kv" id="p_'+p+'_capst">—</div></div></div>'+
+      '<div class="kg"><div class="k big"><div class="kl">Net operating profit</div><div class="kv" id="p_'+p+'_net">—</div><div class="kh">Contribution margin − allocated central. The reward basis. = Revenue − OxeFit product cost − commissions − sales salaries − other − this region\'s share of the central pool.</div></div>'+
+      '<div class="k"><div class="kl">Gross margin</div><div class="kv" id="p_'+p+'_gm">—</div><div class="kh">Gross profit ÷ revenue, where gross profit = revenue − OxeFit product cost.</div></div>'+
+      '<div class="k"><div class="kl">Contribution margin</div><div class="kv" id="p_'+p+'_cm">—</div><div class="kh">Gross profit − the region\'s own controllable costs (commissions + sales salaries + other). Before central costs.</div></div>'+
+      '<div class="k"><div class="kl">Net margin</div><div class="kv" id="p_'+p+'_nm">—</div><div class="kh">Net operating profit ÷ revenue — the % left after this region\'s share of central costs.</div></div>'+
+      '<div class="k"><div class="kl">Allocated central</div><div class="kv" id="p_'+p+'_alloc">—</div><div class="kh">This region\'s share of the central pool (incl. marketing &amp; events), split by its share of company revenue.</div></div>'+
+      '<div class="k"><div class="kl">vs target</div><div class="kv" id="p_'+p+'_var">—</div><div class="kh">Net operating profit − the net profit target for the selected period.</div></div></div>'+
       '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:10px">'+
       '<div class="k"><div class="kl">Pipeline · HubSpot</div><div class="kv" id="p_'+p+'_pipe">—</div></div>'+
       '<div class="k"><div class="kl">Closed won</div><div class="kv" id="p_'+p+'_won">—</div></div>'+
@@ -3910,7 +3910,13 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
     function labelKey(label,gran){var k=mkey(label);if(!k)return null;if(gran==="month")return k.y+"-"+String(k.m).padStart(2,"0");if(gran==="quarter")return k.y+"-Q"+Math.ceil(k.m/3);if(gran==="half")return k.y+"-H"+(k.m<=6?1:2);if(gran==="year")return ""+k.y;return null;}
     function granLabel(key,gran){if(gran==="month"){var p=key.split("-");return MONO[(+p[1])-1]+"/"+p[0].slice(2);}return key.replace("-"," ");}
     function allLabels(){var s={};var st=window.CoreVStore;if(st&&st.deals)st.deals.forEach(function(d){if(d.month)s[d.month]=1;});var py=window.CoreVPayouts;if(py&&py.items)py.items.forEach(function(it){if(it.month)s[it.month]=1;});return Object.keys(s);}
-    function buildPeriods(){var gran=$("pf_gran").value,sel=$("pf_period").value;var opts='<option value="">All</option>';if(gran!=="all"){var keys={};allLabels().forEach(function(l){var k=labelKey(l,gran);if(k)keys[k]=1;});Object.keys(keys).sort().reverse().forEach(function(k){opts+='<option value="'+k+'">'+granLabel(k,gran)+'</option>';});}$("pf_period").innerHTML=opts;if(sel&&$("pf_period").querySelector('option[value="'+sel+'"]'))$("pf_period").value=sel;}
+    function buildPeriods(){var gran=$("pf_gran").value,sel=$("pf_period").value,pe=$("pf_period");
+      if(gran==="all"){pe.innerHTML='<option value="">All time</option>';pe.value="";pe.disabled=true;return;}
+      pe.disabled=false;var keys={};allLabels().forEach(function(l){var k=labelKey(l,gran);if(k)keys[k]=1;});
+      var sorted=Object.keys(keys).sort().reverse(); // latest first
+      pe.innerHTML=sorted.length?sorted.map(function(k){return '<option value="'+k+'">'+granLabel(k,gran)+'</option>';}).join(""):'<option value="">— no data —</option>';
+      // default to the latest period (no "All" option once a granularity is chosen)
+      if(sel&&pe.querySelector('option[value="'+sel+'"]'))pe.value=sel;else pe.value=sorted.length?sorted[0]:"";}
     function inPeriod(label){var gran=$("pf_gran").value,per=$("pf_period").value;if(gran==="all"||!per)return true;return labelKey(label,gran)===per;}
     function periodLabel(){var gran=$("pf_gran").value,per=$("pf_period").value;if(gran==="all"||!per)return "all periods";var o=$("pf_period").querySelector('option[value="'+per+'"]');return o?o.textContent:per;}
 
@@ -3931,7 +3937,7 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
       var deals=(st&&st.deals)?st.deals.filter(function(d){return inPeriod(d.month);}):[];
       var hsCount=deals.filter(function(d){return d.hsId;}).length, totComm=deals.reduce(function(a,d){return a+(+d.comm||0);},0);
       $("pf_chip_hs").className="chip "+(tok?"on":"off");$("pf_hsinfo").textContent=(tok?"connected":"not connected")+" · "+hsCount+" synced";
-      $("pf_chip_cost").className="chip "+(window.CoreVCosting?"on":"off");$("pf_costinfo").textContent=window.CoreVCosting?("machines "+((cost.machineRatio||0)*100).toFixed(0)+"% + op "+((cost.opRate||0)*100).toFixed(0)+"%"):"—";
+      $("pf_chip_cost").className="chip "+(window.CoreVCosting?"on":"off");$("pf_costinfo").textContent=window.CoreVCosting?("OxeFit "+((cost.machineRatio||0)*100).toFixed(0)+"% of MSRP · op "+((cost.opRate||0)*100).toFixed(0)+"% → central"):"—";
       $("pf_chip_comm").className="chip "+(deals.length?"on":"off");$("pf_comminfo").textContent="AED "+fmt(totComm);
       $("pf_chip_pay").className="chip on";$("pf_payinfo").textContent="AED "+fmt(MKT_MONTHLY_TOTAL)+"/mo · in central pool";
       var reps=allReps();
@@ -3992,7 +3998,7 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
       });
       var totRev=RG.reduce(function(a,g){return a+g.closedWon;},0);
       RG.forEach(function(g){
-        g.rev=g.closedWon; g.cogs=g.rev*(mR+opR);
+        g.rev=g.closedWon; g.cogs=g.rev*mR; // Product cost = OxeFit unit cost only (machineRatio). Operational % now sits in the central pool.
         g.salariesP=g.salaries*mult;
         g.other=val("p_"+g.key+"_oth");
         g.ctrl=g.salariesP+g.comm+g.other; // marketing now sits in the central pool, not per region
@@ -4007,7 +4013,6 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
         setVal("p_"+g.key+"_rev",Math.round(g.rev));setVal("p_"+g.key+"_cogs",Math.round(g.cogs));
         setVal("p_"+g.key+"_com",Math.round(g.comm));
         setVal("p_"+g.key+"_sal",Math.round(g.salariesP));
-        g.cap=EVENTCAP_M*mult; setVal("p_"+g.key+"_cap",Math.round(g.cap));
         if(g.key!=="intl")setVal("p_"+g.key+"_tgt",Math.round(g.netTarget)); // show the period target
       });
       RG.forEach(function(g){ g.alloc= totRev>0? poolPeriod*g.rev/totRev : poolPeriod/3; g.net=g.cm-g.alloc; });
@@ -4018,9 +4023,9 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
         $("p_"+p+"_nm").textContent=g.rev?pctf(g.net/g.rev):"—";
         $("p_"+p+"_alloc").textContent=fmt(g.alloc);
         var v=g.net-g.netTarget;$("p_"+p+"_var").innerHTML='<span class="bdg '+(v>=0?"ok":"bad")+'">'+(v>=0?"+":"")+fmt(v)+'</span>';
-        var mk=g.other,cap=g.cap;
-        $("p_"+p+"_capst").innerHTML=mk<=cap?'<span class="bdg ok">Within cap</span>':'<span class="bdg bad">Over cap</span>';
-        $("p_"+p+"_pipe").textContent=fmt(g.pipeline);
+        // (e) Pipeline coverage vs net-profit target — flag RED when pipeline is below 4× the target
+        var _cov=g.netTarget>0?g.pipeline/g.netTarget:null, _lowCov=g.netTarget>0&&g.pipeline<4*g.netTarget;
+        $("p_"+p+"_pipe").innerHTML=fmt(g.pipeline)+(_cov!==null?' <span class="bdg '+(_lowCov?"bad":"ok")+'" title="Healthy coverage is at least 4× the net-profit target">'+_cov.toFixed(1)+'× tgt</span>':'');
         $("p_"+p+"_won").textContent=fmt(g.closedWon);
         var wt=g.monthlyTgt*mult;$("p_"+p+"_win").textContent=wt>0?(g.closedWon/wt*100).toFixed(0)+"%":"—";
         if(g.segRev>0){var cc=Math.round(g.consumerRev/g.segRev*100),bb=Math.round(g.commercialRev/g.segRev*100),ii=Math.round(g.internationalRev/g.segRev*100);
@@ -4096,7 +4101,7 @@ break;case"<bookViews":;case"<bookViews>":;case"</bookViews>":break;case"<workbo
       if(!rows.length){$("pf_pnl_msg").textContent="No expense rows detected — paste the P&L (account + amount per line) or upload a CSV export.";return;}
       var sums={},excl={cogs:0,comm:0,mkt:0,salary:0,skip:0},mapped=0;
       rows.forEach(function(r){var idx=pnlCat(r.label);if(typeof idx==="string"){excl[idx]=(excl[idx]||0)+r.amount;return;}sums[idx]=(sums[idx]||0)+r.amount;mapped++;});
-      CENTRAL.forEach(function(c,i){if(i===8)return;var e=$("pf_cenb_"+i);if(e)e.value=gnum(Math.round((sums[i]||0)/months));}); // idx 8 = fixed marketing, left as-is
+      CENTRAL.forEach(function(c,i){if(i===8||i===9)return;var e=$("pf_cenb_"+i);if(e)e.value=gnum(Math.round((sums[i]||0)/months));}); // idx 8 = fixed marketing, idx 9 = fixed events — both left as-is
       refresh();sync();
       $("pf_pnl_msg").innerHTML="✓ Mapped "+mapped+" expense line"+(mapped===1?"":"s")+" over "+months+" month"+(months===1?"":"s")+" into the central lines below. <span style=\"color:var(--muted)\">Excluded (handled elsewhere): cost of sales "+fmt(excl.cogs||0)+" · commissions "+fmt(excl.comm||0)+" · marketing "+fmt(excl.mkt||0)+" (fixed budget) · payroll "+fmt(excl.salary||0)+" (rep table).</span>";
     }
