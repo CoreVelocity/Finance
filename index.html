@@ -725,13 +725,13 @@
       <button id="altSignIn" class="gate-alt">Having trouble? Try popup sign-in</button>
       <div id="authErr" class="gate-err"></div>
       <div class="gate-foot">Management access only</div>
-      <div class="gate-ver">v1.33.0 · 2026-06-14</div>
+      <div class="gate-ver">v1.33.1 · 2026-06-14</div>
     </div>
   </div>
 
   <div id="appRoot" style="display:none">
   <header class="topbar">
-    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.33.0</span></div>
+    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.33.1</span></div>
     <nav class="tabnav">
       <button data-tab="tab-costing" class="active"><span class="n">01</span>Costing</button>
       <button data-tab="tab-commission"><span class="n">02</span>Commission</button>
@@ -2998,11 +2998,12 @@ function renderOxe(){
       : `<input class="rm-in oxe-cost" type="number" data-dk="${encodeURIComponent(g.key)}" value="${Math.round(v.totalCost)}" title="OxeFit cost for this deal">`;
     const devNote = (src==="devices" && items && items.length)
       ? `<div class="oxe-devnote">${items.map(it=>oxeName(it.sku)+" ×"+((+it.qty)||0)).join(" · ")}</div>` : "";
-    const fullyPaid = (v.total>0 && v.paidCount>=v.total);
-    const paidCell = `<label class="oxe-paid" title="Mark OxeFit as paid for this deal">
-        <input type="checkbox" class="oxe-paidchk" data-dk="${encodeURIComponent(g.key)}" ${fullyPaid?"checked":""}>
-        <span class="oxe-paidtxt ${fullyPaid?'done':''}">${fullyPaid?"Paid":v.paidCount+" / "+v.total}</span>
-      </label>`;
+    const ovMode = (g.paidOverride===true)?"paid":(g.paidOverride===false)?"unpaid":"auto";
+    const paidCell = `<select class="rm-sel oxe-paidsel" data-dk="${encodeURIComponent(g.key)}" title="OxeFit payment — Auto follows client collection (back-to-back); Paid / Unpaid force the whole deal">
+        <option value="auto" ${ovMode==="auto"?"selected":""}>Auto · ${v.paidCount}/${v.total}</option>
+        <option value="paid" ${ovMode==="paid"?"selected":""}>Paid</option>
+        <option value="unpaid" ${ovMode==="unpaid"?"selected":""}>Unpaid</option>
+      </select>`;
     body+=`<tr class="oxe-row" data-dk="${encodeURIComponent(g.key)}">
       <td class="l"><div class="dg-cust">${d.customer||"—"}</div><div class="dg-meta">${d.month||""}</div></td>
       <td class="l" style="color:var(--muted)">${d.rep||"—"}</td>
@@ -3034,8 +3035,11 @@ function renderOxe(){
   $("rm-oxeBody").querySelectorAll(".oxe-dev").forEach(b=>b.addEventListener("click",e=>{
     openOxeModal(decodeURIComponent(e.currentTarget.dataset.dk));
   }));
-  $("rm-oxeBody").querySelectorAll(".oxe-paidchk").forEach(c=>c.addEventListener("change",e=>{
-    const k=decodeURIComponent(e.target.dataset.dk); CTRL.oxePaid=CTRL.oxePaid||{}; CTRL.oxePaid[k]=e.target.checked; renderOxe(); renderDashboard(); rmChanged();
+  $("rm-oxeBody").querySelectorAll(".oxe-paidsel").forEach(s=>s.addEventListener("change",e=>{
+    const k=decodeURIComponent(e.target.dataset.dk); CTRL.oxePaid=CTRL.oxePaid||{};
+    const v=e.target.value;
+    if(v==="paid") CTRL.oxePaid[k]=true; else if(v==="unpaid") CTRL.oxePaid[k]=false; else delete CTRL.oxePaid[k];
+    renderOxe(); renderDashboard(); rmChanged();
   }));
   $("rm-oxeBody").querySelectorAll(".oxe-due").forEach(inp=>inp.addEventListener("change",e=>{
     const mk=decodeURIComponent(e.target.dataset.mk); CTRL.oxeDue=CTRL.oxeDue||{};
