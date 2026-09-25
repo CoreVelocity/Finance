@@ -673,6 +673,91 @@
   #tab-distributor .toggle input{width:16px;height:16px;accent-color:var(--warn)}
   @media (max-width:900px){#tab-distributor .agrid{grid-template-columns:1fr}#tab-distributor .dkpis{grid-template-columns:repeat(2,1fr)}}
 
+
+  :root{
+    --ink:#0E1626; --panel:#fff; --line:#E4E9F2; --line-2:#EEF2F8; --card:#F7F9FC;
+    --text:#1B2740; --muted:#6B7A93; --blue:#1C4ED8; --blue2:#3B5BDB;
+    --pos:#128A5B; --pos-soft:#E4F4EC; --neg:#C0392B; --neg-soft:#FBEBE9;
+    --gold:#B7791F; --gold-soft:#FBF3E4; --edit:#EEF3FF; --edit-line:#1C4ED8;
+  }
+  *{box-sizing:border-box}
+  #tab-costcenter .wrap{max-width:1340px;margin:0 auto;padding:22px 20px 60px;font-family:"Inter",system-ui,sans-serif;color:var(--text)}
+  #tab-costcenter .blkhead{display:flex;align-items:baseline;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+  #tab-costcenter .blkhead h2{font-family:"Space Grotesk",sans-serif;font-size:19px;margin:0;color:var(--ink);font-weight:600}
+  #tab-costcenter .blkhead h3{font-family:"Space Grotesk",sans-serif;font-size:15px;margin:0;color:var(--ink);font-weight:600}
+  #tab-costcenter .why{font-size:12.5px;color:var(--muted)}
+  #tab-costcenter .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px}
+  #tab-costcenter .panel.pad{padding:16px 18px}
+  #tab-costcenter .panel.scroll{overflow-x:auto}
+  #tab-costcenter .ccnav{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+  #tab-costcenter .ccnav button{cursor:pointer;border:1px solid var(--line);background:#fff;color:var(--muted);font-family:"Inter";font-size:13.5px;font-weight:600;padding:9px 18px;border-radius:10px}
+  #tab-costcenter .ccnav button:hover{color:var(--ink)}
+  #tab-costcenter .ccnav button.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+  #tab-costcenter .ctrls{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:6px}
+  #tab-costcenter .cfield{display:flex;flex-direction:column;gap:5px}
+  #tab-costcenter .cfield label{font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:700}
+  #tab-costcenter .ein,#tab-costcenter select.ein{width:100%;border:1.5px solid var(--edit-line);background:var(--edit);border-radius:8px;padding:8px 10px;font-family:"JetBrains Mono";font-size:14px;color:var(--blue);font-weight:600}
+  #tab-costcenter select.ein{font-family:"Inter";font-size:13px}
+  #tab-costcenter .ein.txt{font-family:"Inter";font-weight:500}
+  #tab-costcenter .ein:focus{outline:none;box-shadow:0 0 0 3px rgba(28,78,216,.18)}
+  #tab-costcenter .note{display:flex;gap:9px;align-items:flex-start;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 13px;font-size:12.5px;color:var(--muted);margin-top:12px}
+  #tab-costcenter .note .ic{flex:0 0 auto;width:17px;height:17px;border-radius:50%;background:var(--blue);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px}
+  #tab-costcenter table.data{width:100%;border-collapse:collapse;font-size:13px}
+  #tab-costcenter table.data th{font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:700;text-align:right;padding:11px 10px;border-bottom:1px solid var(--line);white-space:nowrap;background:#0E1626;color:#9FB0CC}
+  #tab-costcenter table.data th.l,#tab-costcenter table.data td.l{text-align:left}
+  #tab-costcenter table.data td{padding:9px 10px;border-bottom:1px solid var(--line-2);text-align:right;font-family:"JetBrains Mono";white-space:nowrap}
+  #tab-costcenter table.data td.l{font-family:"Inter"}
+  #tab-costcenter table.data tfoot td{font-weight:700;color:var(--ink);border-top:2px solid var(--line);border-bottom:none;background:#fff}
+  #tab-costcenter .pos{color:var(--pos)} #tab-costcenter .neg{color:var(--neg)}
+  #tab-costcenter .pill{display:inline-block;font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:999px}
+  #tab-costcenter .pill.on{background:var(--pos-soft);color:var(--pos)} #tab-costcenter .pill.coach{background:var(--gold-soft);color:var(--gold)} #tab-costcenter .pill.exit{background:var(--neg-soft);color:var(--neg)}
+  #tab-costcenter .rin{width:96px;border:1.5px solid var(--edit-line);background:var(--edit);border-radius:7px;padding:6px 8px;font-family:"JetBrains Mono";font-size:12.5px;color:var(--blue);font-weight:600;text-align:right}
+  #tab-costcenter select.rsel{border:1px solid var(--line);background:#fff;border-radius:7px;padding:6px 8px;font-family:"Inter";font-size:12.5px;color:var(--text)}
+  #tab-costcenter .totrow{display:flex;gap:18px;flex-wrap:wrap;margin:6px 0 12px;font-size:12.5px;color:var(--muted)}
+  #tab-costcenter .totrow b{color:var(--ink);font-family:"JetBrains Mono"}
+  #tab-costcenter .btn{cursor:pointer;border:1px solid var(--line);background:#fff;color:var(--text);font-family:"Inter";font-size:13px;font-weight:600;padding:9px 15px;border-radius:9px}
+  #tab-costcenter .btn:hover{border-color:var(--blue)}
+  #tab-costcenter .btn.dark{background:var(--ink);color:#fff;border-color:var(--ink)}
+  #tab-costcenter .btn.primary{background:var(--blue);color:#fff;border-color:var(--blue)}
+  #tab-costcenter .addbar{display:flex;gap:10px;align-items:center;margin:10px 0;flex-wrap:wrap}
+  /* profit-centre cards */
+  #tab-costcenter .pcgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  #tab-costcenter .pc{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  #tab-costcenter .pc-h{background:var(--ink);color:#fff;padding:14px 16px}
+  #tab-costcenter .pc-h .k{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:#9FB0CC;font-weight:700}
+  #tab-costcenter .pc-h .n{font-family:"Space Grotesk";font-size:20px;font-weight:600;margin-top:2px}
+  #tab-costcenter .pc-h .lead{float:right;font-size:12px;color:#C9D6FF;margin-top:4px}
+  #tab-costcenter .pc-h .lead b{color:#fff}
+  #tab-costcenter .pc-line{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 16px;border-bottom:1px solid var(--line-2)}
+  #tab-costcenter .pc-line .lbl{font-size:12.5px;color:var(--text)}
+  #tab-costcenter .pc-line .src{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:#5A6B86;background:#EEF2F8;border-radius:5px;padding:2px 6px;margin-left:6px}
+  #tab-costcenter .pc-line .val{font-family:"JetBrains Mono";font-size:13.5px;font-weight:600;color:var(--ink)}
+  #tab-costcenter .pc-line .cin{width:112px;border:1.5px solid var(--edit-line);background:var(--edit);border-radius:7px;padding:5px 8px;font-family:"JetBrains Mono";font-size:13px;color:var(--blue);font-weight:600;text-align:right}
+  #tab-costcenter .pc-nop{background:var(--gold-soft);border:1px solid #EAD9B0;border-radius:10px;margin:12px;padding:12px 14px}
+  #tab-costcenter .pc-nop .k{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--gold);font-weight:700}
+  #tab-costcenter .pc-nop .v{font-family:"Space Grotesk";font-size:26px;font-weight:700;color:var(--gold);margin-top:2px}
+  #tab-costcenter .pc-nop .d{font-size:11px;color:#6B551E;margin-top:4px}
+  #tab-costcenter .pc-mini{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line-2);margin:0 12px 12px;border:1px solid var(--line-2);border-radius:10px;overflow:hidden}
+  #tab-costcenter .pc-mini .m{background:#fff;padding:9px 12px}
+  #tab-costcenter .pc-mini .m .k{font-size:9.5px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);font-weight:700}
+  #tab-costcenter .pc-mini .m .v{font-family:"JetBrains Mono";font-size:15px;font-weight:700;color:var(--ink);margin-top:1px}
+  #tab-costcenter .pc-mini .m .s{font-size:10.5px;color:var(--muted);margin-top:2px}
+  /* distribution */
+  #tab-costcenter .dgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  #tab-costcenter .stack{display:flex;flex-direction:column;gap:10px}
+  #tab-costcenter .big{border-radius:12px;padding:14px 16px;color:#fff}
+  #tab-costcenter .big .k{font-size:11.5px;opacity:.85}
+  #tab-costcenter .big .v{font-family:"Space Grotesk";font-size:26px;font-weight:700;margin-top:2px}
+  #tab-costcenter .big.ink{background:var(--ink)} #tab-costcenter .big.slate{background:#2C3A52} #tab-costcenter .big.blue{background:linear-gradient(135deg,#1C4ED8,#3B5BDB)}
+  #tab-costcenter .split3{margin-top:12px}
+  #tab-costcenter .split3 .row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 4px;border-bottom:1px solid var(--line-2)}
+  #tab-costcenter .split3 .row .lbl{font-size:12.5px}
+  #tab-costcenter .pbar{height:14px;border-radius:7px;background:#EEF2F8;overflow:hidden;display:flex;margin-top:5px}
+  #tab-costcenter .pbar .eq{background:var(--blue)} #tab-costcenter .pbar .rg{background:var(--gold)}
+  #tab-costcenter .plegend{display:flex;gap:16px;font-size:11.5px;color:var(--muted);margin-top:8px}
+  #tab-costcenter .sw{display:inline-block;width:11px;height:11px;border-radius:3px;vertical-align:middle;margin-right:5px}
+  @media (max-width:1000px){#tab-costcenter .pcgrid{grid-template-columns:1fr}#tab-costcenter .ctrls{grid-template-columns:repeat(2,1fr)}#tab-costcenter .dgrid{grid-template-columns:1fr}}
+
 .tabpanel{display:none}.tabpanel.active{display:block}
 .tabnav{display:flex;gap:6px;margin-left:auto;flex-wrap:wrap}
 .tabnav button{cursor:pointer;border:1px solid #2C3A52;background:none;color:#9FB0CC;font-family:"Inter";font-size:13px;font-weight:600;padding:7px 16px;border-radius:999px}
@@ -725,18 +810,19 @@
       <button id="altSignIn" class="gate-alt">Having trouble? Try popup sign-in</button>
       <div id="authErr" class="gate-err"></div>
       <div class="gate-foot">Management access only</div>
-      <div class="gate-ver">v1.33.1 · 2026-06-14</div>
+      <div class="gate-ver">v1.34.0 · 2026-06-14</div>
     </div>
   </div>
 
   <div id="appRoot" style="display:none">
   <header class="topbar">
-    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.33.1</span></div>
+    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.34.0</span></div>
     <nav class="tabnav">
       <button data-tab="tab-costing" class="active"><span class="n">01</span>Costing</button>
       <button data-tab="tab-commission"><span class="n">02</span>Commission</button>
       <button data-tab="tab-reminders"><span class="n">03</span>Payouts &amp; OxeFit</button>
       <button data-tab="tab-distributor"><span class="n">04</span>Distributor</button>
+      <button data-tab="tab-costcenter"><span class="n">05</span>Cost centres</button>
     </nav>
     <button id="cloudChip" class="cloudchip" title="Shared drive — click to refresh"><span class="cc-dot"></span><span class="cc-t">Sync</span></button>
     <div id="userChip" class="userchip" style="display:none"><span class="uc-dot"></span><span id="userName"></span><button id="signOut" class="uc-out">Sign out</button></div>
@@ -1267,6 +1353,17 @@
 
     <div id="dist-body"></div>
 
+  </div>
+</div>
+
+</div>
+  <div id="tab-costcenter" class="tabpanel">
+
+<div id="tab-costcenter">
+  <div class="wrap">
+    <div class="blkhead"><h2>Contribution &amp; cost centres per region</h2><span class="why">— each sales stream a profit centre; central shared services allocated across them. Revenue &amp; commissions pull live from the suite.</span></div>
+    <div class="ccnav" id="cc-nav"></div>
+    <div id="cc-body"></div>
   </div>
 </div>
 
@@ -2349,9 +2446,10 @@ function renderRefs(){
 }
 
 function publishStore(){
-  const deals=[];
-  REPS.forEach(r=>r.deals.forEach(d=>deals.push({rep:r.name,customer:d.cust,gross:d.gross,collected:effColl(d),month:d.month||"",future:!!d.future,hsId:d.hsId||null})));
-  window.CoreVStore={deals,ts:Date.now()}; window.dispatchEvent(new CustomEvent('corev:store'));
+  const deals=[]; const commByRep={};
+  REPS.forEach(r=>{ r.deals.forEach(d=>deals.push({rep:r.name,customer:d.cust,gross:d.gross,collected:effColl(d),month:d.month||"",future:!!d.future,hsId:d.hsId||null,tag:d.tag||""}));
+    try{ commByRep[r.name]=(repRoll(r).earned)||0; }catch(_){ commByRep[r.name]=0; } });
+  window.CoreVStore={deals,commByRep,ts:Date.now()}; window.dispatchEvent(new CustomEvent('corev:store'));
   if(window.CoreVSync) window.CoreVSync.changed();
 }
 let execMonth="";
@@ -3643,6 +3741,343 @@ if(window.CoreVSync) window.CoreVSync.register('distributor',
     render();
   }catch(_){}}
 );
+
+renderNav();
+render();
+
+})();</script>
+<script>(function(){
+
+const ROOT = document.getElementById('tab-costcenter');
+  const $ = id => ROOT.querySelector('#'+id);
+const fmt = n => (n<0?"−":"")+"AED "+Math.abs(Math.round(n)).toLocaleString();
+const fmt0 = n => Math.round(n).toLocaleString();
+const pct = n => (n*100).toFixed(1)+"%";
+
+const REGIONS=[
+  {key:"Dubai", label:"Dubai", lead:"Sami", md:false},
+  {key:"AbuDhabi", label:"Abu Dhabi", lead:"Kamal", md:false},
+  {key:"International", label:"International", lead:"Ahmed", md:true}
+];
+const VIEWMULT={month:1, quarter:3, half:6, year:12};
+
+let CC_REPS=[
+  {name:"Fatima",region:"Dubai",salary:12000},
+  {name:"Wafiq",region:"AbuDhabi",salary:25000},
+  {name:"Kamal",region:"AbuDhabi",salary:0},
+  {name:"Sami",region:"Dubai",salary:0},
+  {name:"Ahmed",region:"International",salary:0},
+  {name:"Jawdat",region:"AbuDhabi",salary:18000},
+  {name:"Milena",region:"Dubai",salary:18000,del:true},
+  {name:"Katy",region:"Dubai",salary:18000,del:true},
+  {name:"Hasan",region:"Dubai",salary:20000,del:true},
+  {name:"Hussean",region:"AbuDhabi",salary:14000,del:true}
+];
+let CC_CFG={
+  reservePct:40, targetFactor:13.52, consumerMdShare:50, view:"quarter",
+  costPct:60, centralPool:null, oxeCoveredCentralPct:0, oxeCoversSalaries:true,
+  eqPct:40, regionPct:40, mdPct:20, netTargetPct:30,
+  otherByRegion:{Dubai:0,AbuDhabi:0,International:0},
+  consumerPctByRegion:{Dubai:0,AbuDhabi:0,International:0},
+  intlNetTargetManual:50000, factorNote:""
+};
+let CC_VIEW="targets";
+
+function store(){ return (window.CoreVStore) || {deals:[],commByRep:{}}; }
+function regionOf(rep){ const r=CC_REPS.find(x=>x.name===rep); return r?r.region:null; }
+function mult(){ return VIEWMULT[CC_CFG.view]||3; }
+
+// live revenue & commission per region (from the commission/HubSpot store)
+function revByRegion(){
+  const rev={Dubai:0,AbuDhabi:0,International:0,_un:0};
+  (store().deals||[]).forEach(d=>{ const rg=regionOf(d.rep); if(rg) rev[rg]+=(+d.gross||0); else rev._un+=(+d.gross||0); });
+  return rev;
+}
+function commByRegion(){
+  const c={Dubai:0,AbuDhabi:0,International:0}; const cm=store().commByRep||{};
+  CC_REPS.forEach(r=>{ if(c[r.region]!=null) c[r.region]+=(+cm[r.name]||0); });
+  return c;
+}
+function repsInRegion(rg){ return CC_REPS.filter(r=>r.region===rg); }
+function salariesByRegion(rg){ return repsInRegion(rg).reduce((a,r)=>a+(+r.salary||0),0)*mult(); }
+function periodTargetByRegion(rg){ return repsInRegion(rg).reduce((a,r)=>a+(+r.salary||0)*CC_CFG.targetFactor,0)*mult(); }
+function centralTotal(){ return (CC_CFG.centralPool!=null && CC_CFG.centralPool!=="") ? (+CC_CFG.centralPool||0) : 32000*mult(); }
+
+function regionModel(reg){
+  const rev=revByRegion()[reg.key]||0;
+  const productCost=rev*(CC_CFG.costPct/100);
+  const grossProfit=rev-productCost;
+  const grossMargin=rev?grossProfit/rev:0;
+  const commissions=commByRegion()[reg.key]||0;
+  const salaries=salariesByRegion(reg.key);
+  const other=+((CC_CFG.otherByRegion||{})[reg.key])||0;
+  const controllable=commissions+salaries+other;
+  const contribution=grossProfit-controllable;
+  const totalReps=CC_REPS.length||1;
+  const allocCentral=centralTotal()*(repsInRegion(reg.key).length/totalReps);
+  const oxeCoveredCentral=allocCentral*(CC_CFG.oxeCoveredCentralPct/100);
+  const netCentral=allocCentral-oxeCoveredCentral;
+  const salariesCovered=CC_CFG.oxeCoversSalaries?salaries:0;
+  const nop=contribution-netCentral+salariesCovered;   // OxeFit-covered salaries added back
+  const netMargin=rev?nop/rev:0;
+  const periodTarget=periodTargetByRegion(reg.key);
+  const netTarget=reg.md?(+CC_CFG.intlNetTargetManual||0):periodTarget*(CC_CFG.netTargetPct/100);
+  const vsTarget=nop-netTarget;
+  return {rev,productCost,grossProfit,grossMargin,commissions,salaries,other,controllable,contribution,allocCentral,netCentral,nop,netMargin,periodTarget,netTarget,vsTarget};
+}
+
+/* ---------- nav ---------- */
+function renderNav(){
+  const items=[["targets","Targets & status"],["centres","Profit centres"],["dist","Distribution & contribution"]];
+  $("cc-nav").innerHTML=items.map(([k,l])=>`<button data-k="${k}" class="${k===CC_VIEW?'active':''}">${l}</button>`).join("");
+  $("cc-nav").querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{ CC_VIEW=b.dataset.k; render(); }));
+}
+
+function ctrlsHTML(){
+  const opt=(v,cur,arr)=>arr.map(o=>`<option value="${o[0]}" ${o[0]===cur?"selected":""}>${o[1]}</option>`).join("");
+  return `<div class="ctrls">
+    <div class="cfield"><label>Reserve % (CoreV)</label><input class="ein" type="number" data-c="reservePct" value="${CC_CFG.reservePct}"></div>
+    <div class="cfield"><label>Monthly target factor (× salary)</label><input class="ein" type="number" step="0.01" data-c="targetFactor" value="${CC_CFG.targetFactor}"></div>
+    <div class="cfield"><label>Consumer → MD share % (region keeps rest)</label><input class="ein" type="number" data-c="consumerMdShare" value="${CC_CFG.consumerMdShare}"></div>
+    <div class="cfield"><label>View by</label><select class="ein" data-c="view">${opt("v",CC_CFG.view,[["month","Month"],["quarter","Quarter"],["half","Half-year"],["year","Year"]])}</select></div>
+    <div class="cfield"><label>OxeFit cost % of revenue</label><input class="ein" type="number" data-c="costPct" value="${CC_CFG.costPct}"></div>
+  </div>
+  <div class="cfield" style="margin-top:12px"><label>Target factor note (for your records)</label><input class="ein txt" type="text" data-c="factorNote" value="${(CC_CFG.factorNote||"").replace(/"/g,'&quot;')}" placeholder='e.g. Factor set to "4" XS1 PEAK with discount, based on the lowest salary'></div>`;
+}
+
+/* ---------- view 1: targets & status ---------- */
+function statusOf(att){ if(att>=0.5) return ["on","On track"]; if(att>=0.3) return ["coach","Coaching"]; return ["exit","Exit"]; }
+function renderTargets(){
+  const rev=revByRegion(); const deals=store().deals||[];
+  const cwByRep={}; deals.forEach(d=>{ cwByRep[d.rep]=(cwByRep[d.rep]||0)+(+d.gross||0); });
+  const assigned=CC_REPS.reduce((a,r)=>a+(cwByRep[r.name]||0),0);
+  const totalCW=deals.reduce((a,d)=>a+(+d.gross||0),0);
+  let rows="";
+  CC_REPS.forEach((r,i)=>{
+    const monthly=(+r.salary||0)*CC_CFG.targetFactor;
+    const ptar=monthly*mult();
+    const cw=cwByRep[r.name]||0;
+    const att=ptar>0?cw/ptar:0;
+    const [cls,lbl]=r.salary>0?statusOf(att):["exit","Exit"];
+    rows+=`<tr>
+      <td class="l">${r.name}${r.del?` <span style="color:var(--neg);cursor:pointer" class="cc-del" data-i="${i}">✕</span>`:""}</td>
+      <td class="l"><select class="rsel cc-region" data-i="${i}">${REGIONS.map(g=>`<option value="${g.key}" ${g.key===r.region?"selected":""}>${g.label}</option>`).join("")}</select></td>
+      <td><input class="rin cc-salary" type="number" data-i="${i}" value="${r.salary}"></td>
+      <td>${fmt0(monthly)}</td>
+      <td>${fmt0(ptar)}</td>
+      <td>${fmt0(cw)}</td>
+      <td>${ptar>0?Math.round(att*100)+"%":"—"}</td>
+      <td class="l"><span class="pill ${cls}">${lbl}</span></td>
+    </tr>`;
+  });
+  const html=`${ctrlsHTML()}
+  <div class="note"><span class="ic">i</span><span>All figures auto-calculate live from HubSpot, Costing &amp; Commission and the rep table below. Monthly target = ${CC_CFG.targetFactor}× salary; the period target scales to the view (month ×1 · quarter ×3 · half ×6 · year ×12). Rule vs the period target: &lt;30% exit · 30–50% coaching · 50%+ on track.</span></div>
+  <div class="totrow"><span>Closed-won <b>${fmt(totalCW)}</b></span><span>Assigned <b>${fmt(assigned)}</b></span><span>Unassigned <b>${fmt(totalCW-assigned)}</b></span></div>
+  <div class="addbar"><input class="ein txt" id="cc-newrep" type="text" placeholder="New sales rep name" style="max-width:220px"><button class="btn dark" id="cc-addrep">+ Add sales rep</button><span class="why">assign a region &amp; salary — targets &amp; status calculate automatically.</span></div>
+  <div class="panel scroll"><table class="data">
+    <thead><tr><th class="l">Rep</th><th class="l">Region</th><th>Salary/mo</th><th>Monthly (${CC_CFG.targetFactor}×)</th><th>Period target</th><th>Closed won</th><th>Attain</th><th class="l">Status</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table></div>`;
+  $("cc-body").innerHTML=html;
+  bindCtrls();
+  $("cc-body").querySelectorAll(".cc-region").forEach(s=>s.addEventListener("change",e=>{ CC_REPS[+e.target.dataset.i].region=e.target.value; render(); ccChanged(); }));
+  $("cc-body").querySelectorAll(".cc-salary").forEach(inp=>inp.addEventListener("change",e=>{ CC_REPS[+e.target.dataset.i].salary=parseFloat(e.target.value)||0; render(); ccChanged(); }));
+  $("cc-body").querySelectorAll(".cc-del").forEach(x=>x.addEventListener("click",e=>{ CC_REPS.splice(+e.target.dataset.i,1); render(); ccChanged(); }));
+  $("cc-addrep").addEventListener("click",()=>{ const n=($("cc-newrep").value||"").trim(); if(!n) return; CC_REPS.push({name:n,region:"Dubai",salary:0,del:true}); render(); ccChanged(); });
+}
+
+/* ---------- view 2: profit centres ---------- */
+function renderCentres(){
+  let cards="";
+  REGIONS.forEach(reg=>{
+    const m=regionModel(reg);
+    const otherVal=+((CC_CFG.otherByRegion||{})[reg.key])||0;
+    const netTargetCell = reg.md
+      ? `<input class="cin cc-intltarget" type="number" value="${Math.round(CC_CFG.intlNetTargetManual)}">`
+      : `<span class="val">${fmt0(m.netTarget)}</span>`;
+    cards+=`<div class="pc">
+      <div class="pc-h"><span class="lead">LEAD <b>${reg.lead}</b></span><div class="k">Profit centre${reg.md?" · MD":""}</div><div class="n">${reg.label}</div></div>
+      <div class="pc-line"><span class="lbl">Revenue <span class="src">HubSpot</span></span><span class="val">${fmt0(m.rev)}</span></div>
+      <div class="pc-line"><span class="lbl">Product cost (OxeFit) <span class="src">OxeFit</span></span><span class="val">${fmt0(m.productCost)}</span></div>
+      <div class="pc-line"><span class="lbl">Commissions <span class="src">Commission</span></span><span class="val">${fmt0(m.commissions)}</span></div>
+      <div class="pc-line"><span class="lbl">Sales salaries <span class="src">from reps</span></span><span class="val">${fmt0(m.salaries)}</span></div>
+      <div class="pc-line"><span class="lbl">Other costs <span class="src">manual</span></span><input class="cin cc-other" data-rg="${reg.key}" type="number" value="${Math.round(otherVal)}"></div>
+      <div class="pc-line"><span class="lbl">Period sales target <span class="src">${CC_CFG.targetFactor}× salary</span></span><span class="val">${fmt0(m.periodTarget)}</span></div>
+      <div class="pc-line"><span class="lbl">Net profit target <span class="src">${reg.md?"manual":CC_CFG.netTargetPct+"% of target"}</span></span>${netTargetCell}</div>
+      <div class="pc-nop"><div class="k">Net operating profit</div><div class="v">${fmt0(m.nop)}</div><div class="d">Contribution margin − net central cost${CC_CFG.oxeCoversSalaries?" (salaries OxeFit-covered)":""}. The reward basis.</div></div>
+      <div class="pc-mini">
+        <div class="m"><div class="k">Gross profit</div><div class="v">${fmt0(m.grossProfit)}</div><div class="s">Revenue − product cost</div></div>
+        <div class="m"><div class="k">Gross margin</div><div class="v">${pct(m.grossMargin)}</div><div class="s">Gross profit ÷ revenue</div></div>
+        <div class="m"><div class="k">Controllable costs</div><div class="v">${fmt0(m.controllable)}</div><div class="s">Commissions + salaries + other</div></div>
+        <div class="m"><div class="k">Contribution margin</div><div class="v">${fmt0(m.contribution)}</div><div class="s">Gross profit − controllable</div></div>
+        <div class="m"><div class="k">Net margin</div><div class="v">${pct(m.netMargin)}</div><div class="s">Net operating profit ÷ revenue</div></div>
+        <div class="m"><div class="k">Allocated central</div><div class="v">${fmt0(m.allocCentral)}</div><div class="s">Share of central pool by rep count</div></div>
+        <div class="m"><div class="k">Net central cost</div><div class="v">${fmt0(m.netCentral)}</div><div class="s">After OxeFit-covered portion</div></div>
+        <div class="m"><div class="k">Vs target</div><div class="v ${m.vsTarget>=0?'pos':'neg'}">${(m.vsTarget>=0?"+":"")+fmt0(m.vsTarget)}</div><div class="s">Net operating profit − target</div></div>
+      </div>
+    </div>`;
+  });
+  const html=`${ctrlsHTML()}
+  <div class="ctrls" style="grid-template-columns:repeat(4,1fr);margin-top:12px">
+    <div class="cfield"><label>Central pool (this period)</label><input class="ein" type="number" data-c="centralPool" value="${CC_CFG.centralPool!=null?CC_CFG.centralPool:''}" placeholder="${fmt0(32000*mult())} (marketing default)"></div>
+    <div class="cfield"><label>OxeFit-covered central %</label><input class="ein" type="number" data-c="oxeCoveredCentralPct" value="${CC_CFG.oxeCoveredCentralPct}"></div>
+    <div class="cfield"><label>Net profit target % (region)</label><input class="ein" type="number" data-c="netTargetPct" value="${CC_CFG.netTargetPct}"></div>
+    <div class="cfield"><label>OxeFit covers sales salaries</label><select class="ein" data-c="oxeCoversSalaries">${[["true","Yes — add back in NOP"],["false","No"]].map(o=>`<option value="${o[0]}" ${String(CC_CFG.oxeCoversSalaries)===o[0]?"selected":""}>${o[1]}</option>`).join("")}</select></div>
+  </div>
+  <div class="note"><span class="ic">i</span><span>Central shared services (the MD-run functions) is a <b>cost centre</b> — pooled and allocated to every profit centre by its number of sales reps. Global/International sales sits at company level, not attributed to Dubai or Abu Dhabi. Contribution margin is the ladder’s reward line; net operating profit is what each centre carries after its share of central cost.</span></div>
+  <div class="pcgrid" style="margin-top:14px">${cards}</div>`;
+  $("cc-body").innerHTML=html;
+  bindCtrls();
+  $("cc-body").querySelectorAll(".cc-other").forEach(inp=>inp.addEventListener("change",e=>{ CC_CFG.otherByRegion[e.target.dataset.rg]=parseFloat(e.target.value)||0; render(); ccChanged(); }));
+  const it=$("cc-body").querySelector(".cc-intltarget"); if(it) it.addEventListener("change",e=>{ CC_CFG.intlNetTargetManual=parseFloat(e.target.value)||0; render(); ccChanged(); });
+}
+
+/* ---------- view 3: distribution ---------- */
+function distModel(){
+  const months=mult();
+  const nopByRegion={}; let companyPeriod=0;
+  REGIONS.forEach(reg=>{ const n=regionModel(reg).nop; nopByRegion[reg.key]=n; companyPeriod+=n; });
+  const companyMo=companyPeriod/months;
+  const reserved=companyMo*(CC_CFG.reservePct/100);
+  const distributed=companyMo*(1-CC_CFG.reservePct/100);
+  const eqPool=distributed*(CC_CFG.eqPct/100), regionPool=distributed*(CC_CFG.regionPct/100), mdPool=distributed*(CC_CFG.mdPct/100);
+  const eqEach=eqPool/3;
+  const rev=revByRegion(); const totalRev=(rev.Dubai||0)+(rev.AbuDhabi||0)+(rev.International||0);
+  const partners={Ahmed:{eq:eqEach,rm:mdPool},Kamal:{eq:eqEach,rm:0},Sami:{eq:eqEach,rm:0}};
+  const regionRows=REGIONS.map(reg=>{
+    const rshare=totalRev?(rev[reg.key]||0)/totalRev:0;
+    const slice=regionPool*rshare;
+    const consumer=((CC_CFG.consumerPctByRegion||{})[reg.key]||0)/100;
+    let toMd, toOwner;
+    if(reg.md){ toMd=0; toOwner=slice; } // International owner is the MD (Ahmed)
+    else { toMd=slice*consumer*(CC_CFG.consumerMdShare/100); toOwner=slice-toMd; }
+    if(partners[reg.lead]) partners[reg.lead].rm+=toOwner;
+    partners.Ahmed.rm+=toMd;
+    return {reg,rev:rev[reg.key]||0,rshare,consumer,slice,toOwner,toMd};
+  });
+  return {companyMo,reserved,distributed,eqPool,regionPool,mdPool,eqEach,partners,regionRows,totalRev};
+}
+function renderDist(){
+  const d=distModel();
+  const order=["Ahmed","Kamal","Sami"];
+  const totals={}; order.forEach(p=>{ totals[p]=d.partners[p].eq+d.partners[p].rm; });
+  const grand=order.reduce((a,p)=>a+totals[p],0)||1;
+  const bars=order.map(p=>{
+    const t=totals[p], eqW=t?d.partners[p].eq/t*100:0, rmW=t?d.partners[p].rm/t*100:0;
+    return `<div style="margin-bottom:12px"><div style="display:flex;justify-content:space-between;font-size:12.5px"><b>${p}</b><span style="color:var(--muted)">${fmt0(t)}/mo · ${(t/grand*100).toFixed(1)}%</span></div>
+      <div class="pbar"><div class="eq" style="width:${eqW}%"></div><div class="rg" style="width:${rmW}%"></div></div></div>`;
+  }).join("");
+  const ptable=order.map(p=>`<tr><td class="l">${p}</td><td>${fmt0(d.partners[p].eq)}</td><td>${fmt0(d.partners[p].rm)}</td><td><b>${fmt0(totals[p])}</b></td><td>${(totals[p]/grand*100).toFixed(1)}%</td></tr>`).join("");
+  const rrows=d.regionRows.map(r=>`<tr><td class="l">${r.reg.label} · ${r.reg.lead}</td><td>${fmt0(r.rev)}</td><td>${(r.rshare*100).toFixed(0)}%</td><td>${(r.consumer*100).toFixed(0)}%</td><td>${fmt0(r.slice)}</td><td>${fmt0(r.toOwner)}</td><td>${fmt0(r.toMd)}</td></tr>`).join("");
+  const consInputs=REGIONS.map(reg=>`<div class="cfield"><label>Consumer % · ${reg.label}</label><input class="ein" type="number" data-cons="${reg.key}" value="${(CC_CFG.consumerPctByRegion||{})[reg.key]||0}"></div>`).join("");
+  const html=`${ctrlsHTML()}
+  <div class="blkhead" style="margin-top:16px"><h3>Distribution &amp; partner contribution</h3><span class="why">${CC_CFG.reservePct}% reserved · ${100-CC_CFG.reservePct}% shared · region ${CC_CFG.regionPct}% by revenue &amp; deal type · shown per month</span></div>
+  <div class="addbar"><button class="btn primary" id="cc-distpdf">↓ Export PDF for partners</button></div>
+  <div class="dgrid">
+    <div>
+      <div class="stack">
+        <div class="big ink"><div class="k">Company operating profit · per month</div><div class="v">${fmt0(d.companyMo)}</div></div>
+        <div class="big slate"><div class="k">Reserved for CoreV — ${CC_CFG.reservePct}% · per month</div><div class="v">${fmt0(d.reserved)}</div></div>
+        <div class="big blue"><div class="k">Distributed to partners — ${100-CC_CFG.reservePct}% · per month</div><div class="v">${fmt0(d.distributed)}</div></div>
+      </div>
+      <div class="split3">
+        <div class="blkhead" style="margin:14px 0 4px"><h3 style="font-size:13px">The ${100-CC_CFG.reservePct}% splits three ways</h3></div>
+        <div class="row"><span class="lbl">Equal across the three partners</span><input class="rin" type="number" data-c="eqPct" value="${CC_CFG.eqPct}"></div>
+        <div class="row"><span class="lbl">Region sales — the deal's region owner</span><input class="rin" type="number" data-c="regionPct" value="${CC_CFG.regionPct}"></div>
+        <div class="row"><span class="lbl">Operational &amp; managing (MD)</span><input class="rin" type="number" data-c="mdPct" value="${CC_CFG.mdPct}"></div>
+      </div>
+    </div>
+    <div>
+      ${bars}
+      <div class="plegend"><span><span class="sw" style="background:var(--blue)"></span>Equal (${CC_CFG.eqPct}%)</span><span><span class="sw" style="background:var(--gold)"></span>Region + MD</span></div>
+      <div class="panel scroll" style="margin-top:12px"><table class="data">
+        <thead><tr><th class="l">Partner</th><th>Equal ${CC_CFG.eqPct}%</th><th>Region + MD</th><th>Total</th><th>%</th></tr></thead>
+        <tbody>${ptable}</tbody>
+        <tfoot><tr><td class="l">Total distributed</td><td>${fmt0(d.eqPool)}</td><td>${fmt0(d.regionPool+d.mdPool)}</td><td>${fmt0(d.distributed)}</td><td>100%</td></tr></tfoot>
+      </table></div>
+    </div>
+  </div>
+  <div class="blkhead" style="margin-top:18px"><h3 style="font-size:13px">Region ${CC_CFG.regionPct}% — how it breaks down</h3><span class="why">revenue-weighted; consumer ${CC_CFG.consumerMdShare}/${100-CC_CFG.consumerMdShare} region/MD, commercial &amp; international 100% region</span></div>
+  <div class="ctrls" style="grid-template-columns:repeat(3,1fr);margin-bottom:10px">${consInputs}</div>
+  <div class="panel scroll"><table class="data">
+    <thead><tr><th class="l">Region · owner</th><th>Revenue</th><th>Rev %</th><th>Consumer %</th><th>${CC_CFG.regionPct}% slice</th><th>→ owner</th><th>→ MD (Ahmed)</th></tr></thead>
+    <tbody>${rrows}</tbody>
+    <tfoot><tr><td class="l">Region ${CC_CFG.regionPct}% pool</td><td>${fmt0(d.totalRev)}</td><td>100%</td><td></td><td>${fmt0(d.regionPool)}</td><td>${fmt0(d.regionRows.reduce((a,r)=>a+r.toOwner,0))}</td><td>${fmt0(d.regionRows.reduce((a,r)=>a+r.toMd,0))}</td></tr></tfoot>
+  </table></div>`;
+  $("cc-body").innerHTML=html;
+  bindCtrls();
+  $("cc-body").querySelectorAll("[data-cons]").forEach(inp=>inp.addEventListener("change",e=>{ CC_CFG.consumerPctByRegion[e.target.dataset.cons]=parseFloat(e.target.value)||0; render(); ccChanged(); }));
+  $("cc-distpdf").addEventListener("click",distPDF);
+}
+
+/* ---------- shared control binding ---------- */
+function bindCtrls(){
+  $("cc-body").querySelectorAll("[data-c]").forEach(el=>{
+    const ev=(el.tagName==="SELECT"||el.type==="text")?"change":"change";
+    el.addEventListener(ev,e=>{
+      const k=e.target.dataset.c; let v=e.target.value;
+      if(k==="view"||k==="factorNote") CC_CFG[k]=v;
+      else if(k==="oxeCoversSalaries") CC_CFG[k]=(v==="true");
+      else if(k==="centralPool") CC_CFG[k]=(v===""?null:parseFloat(v)||0);
+      else CC_CFG[k]=parseFloat(v)||0;
+      render(); ccChanged();
+    });
+  });
+}
+
+/* ---------- PDF ---------- */
+function distPDF(){
+  if(!window.jspdf){ alert("PDF library still loading — try again."); return; }
+  const d=distModel(); const order=["Ahmed","Kamal","Sami"];
+  const totals={}; order.forEach(p=>totals[p]=d.partners[p].eq+d.partners[p].rm);
+  const { jsPDF }=window.jspdf; const doc=new jsPDF({orientation:"landscape",unit:"pt",format:"a4"});
+  const W=doc.internal.pageSize.getWidth(),M=40; let y=42;
+  if(window.COREV_LOGO){ try{ doc.addImage(window.COREV_LOGO,"PNG",M,18,62,26); }catch(e){} }
+  doc.setDrawColor(28,78,216); doc.setLineWidth(2); doc.line(M,52,W-M,52);
+  doc.setFont("helvetica","bold"); doc.setFontSize(15); doc.setTextColor(14,22,38); doc.text("Distribution & partner contribution",M,74);
+  doc.setFont("helvetica","normal"); doc.setFontSize(9.5); doc.setTextColor(107,122,147);
+  doc.text(`${CC_CFG.reservePct}% reserved · ${100-CC_CFG.reservePct}% shared · per month`,M,89);
+  doc.text(new Date().toLocaleDateString(),W-M,89,{align:"right"});
+  y=104;
+  const kp=[["Company operating profit / mo",fmt0(d.companyMo)],["Reserved for CoreV",fmt0(d.reserved)],["Distributed to partners",fmt0(d.distributed)]];
+  const cw=(W-2*M-16)/3;
+  kp.forEach((k,i)=>{ const x=M+i*(cw+8); doc.setFillColor(247,249,252); doc.setDrawColor(228,233,242); doc.roundedRect(x,y,cw,44,6,6,"FD");
+    doc.setFont("helvetica","bold"); doc.setFontSize(7.5); doc.setTextColor(107,122,147); doc.text(k[0].toUpperCase(),x+10,y+16);
+    doc.setFontSize(14); doc.setTextColor(28,78,216); doc.text("AED "+k[1],x+10,y+34); });
+  y+=60;
+  doc.autoTable({ startY:y, head:[["Partner","Equal "+CC_CFG.eqPct+"%","Region + MD","Total / mo","%"]],
+    body:order.map(p=>[p,"AED "+fmt0(d.partners[p].eq),"AED "+fmt0(d.partners[p].rm),"AED "+fmt0(totals[p]),(totals[p]/(d.distributed||1)*100).toFixed(1)+"%"]),
+    foot:[["Total distributed","AED "+fmt0(d.eqPool),"AED "+fmt0(d.regionPool+d.mdPool),"AED "+fmt0(d.distributed),"100%"]],
+    theme:"grid", margin:{left:M,right:M}, styles:{font:"helvetica",fontSize:9,cellPadding:5,textColor:[27,39,64],lineColor:[228,233,242]},
+    headStyles:{fillColor:[14,22,38],textColor:[255,255,255],halign:"right"}, footStyles:{fillColor:[242,245,251],textColor:[14,22,38],fontStyle:"bold",halign:"right"},
+    columnStyles:{0:{halign:"left",fontStyle:"bold"}}, bodyStyles:{halign:"right"} });
+  y=doc.lastAutoTable.finalY+16;
+  doc.autoTable({ startY:y, head:[["Region · owner","Revenue","Rev %","Consumer %",CC_CFG.regionPct+"% slice","→ owner","→ MD (Ahmed)"]],
+    body:d.regionRows.map(r=>[r.reg.label+" · "+r.reg.lead,"AED "+fmt0(r.rev),(r.rshare*100).toFixed(0)+"%",(r.consumer*100).toFixed(0)+"%","AED "+fmt0(r.slice),"AED "+fmt0(r.toOwner),"AED "+fmt0(r.toMd)]),
+    theme:"grid", margin:{left:M,right:M}, styles:{font:"helvetica",fontSize:8.5,cellPadding:4,textColor:[27,39,64],lineColor:[228,233,242]},
+    headStyles:{fillColor:[14,22,38],textColor:[255,255,255],halign:"right"}, columnStyles:{0:{halign:"left"}}, bodyStyles:{halign:"right"} });
+  const fn="CoreV_Partner_Distribution.pdf";
+  try{ const blob=doc.output("blob"),url=URL.createObjectURL(blob);
+    const mob=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+    if(mob) window.open(url,"_blank"); else { const a=document.createElement("a"); a.href=url; a.download=fn; document.body.appendChild(a); a.click(); a.remove(); }
+    setTimeout(()=>URL.revokeObjectURL(url),60000);
+  }catch(e){ try{doc.save(fn);}catch(_){} }
+}
+
+/* ---------- render + sync ---------- */
+function render(){
+  $("cc-nav").querySelectorAll("button").forEach(b=>b.classList.toggle("active",b.dataset.k===CC_VIEW));
+  if(CC_VIEW==="targets") renderTargets();
+  else if(CC_VIEW==="centres") renderCentres();
+  else renderDist();
+}
+function ccChanged(){ if(window.CoreVSync) window.CoreVSync.changed(); }
+if(window.CoreVSync) window.CoreVSync.register('costcenter',
+  ()=>({reps:CC_REPS,cfg:CC_CFG,view:CC_VIEW}),
+  env=>{ try{ if(Array.isArray(env.reps)) CC_REPS=env.reps; if(env.cfg&&typeof env.cfg==='object') CC_CFG=Object.assign(CC_CFG,env.cfg); if(env.view) CC_VIEW=env.view; render(); }catch(_){}}
+);
+window.addEventListener("corev:store", ()=>{ try{ render(); }catch(_){}} );
+window.addEventListener("corev:products", ()=>{ try{ render(); }catch(_){}} );
 
 renderNav();
 render();
