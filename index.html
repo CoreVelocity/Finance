@@ -810,13 +810,13 @@
       <button id="altSignIn" class="gate-alt">Having trouble? Try popup sign-in</button>
       <div id="authErr" class="gate-err"></div>
       <div class="gate-foot">Management access only</div>
-      <div class="gate-ver">v1.34.0 · 2026-06-14</div>
+      <div class="gate-ver">v1.34.1 · 2026-06-14</div>
     </div>
   </div>
 
   <div id="appRoot" style="display:none">
   <header class="topbar">
-    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.34.0</span></div>
+    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.34.1</span></div>
     <nav class="tabnav">
       <button data-tab="tab-costing" class="active"><span class="n">01</span>Costing</button>
       <button data-tab="tab-commission"><span class="n">02</span>Commission</button>
@@ -3896,7 +3896,7 @@ function renderCentres(){
       ? `<input class="cin cc-intltarget" type="number" value="${Math.round(CC_CFG.intlNetTargetManual)}">`
       : `<span class="val">${fmt0(m.netTarget)}</span>`;
     cards+=`<div class="pc">
-      <div class="pc-h"><span class="lead">LEAD <b>${reg.lead}</b></span><div class="k">Profit centre${reg.md?" · MD":""}</div><div class="n">${reg.label}</div></div>
+      <div class="pc-h"><div class="k">Profit centre</div><div class="n">${reg.label}</div></div>
       <div class="pc-line"><span class="lbl">Revenue <span class="src">HubSpot</span></span><span class="val">${fmt0(m.rev)}</span></div>
       <div class="pc-line"><span class="lbl">Product cost (OxeFit) <span class="src">OxeFit</span></span><span class="val">${fmt0(m.productCost)}</span></div>
       <div class="pc-line"><span class="lbl">Commissions <span class="src">Commission</span></span><span class="val">${fmt0(m.commissions)}</span></div>
@@ -3955,7 +3955,7 @@ function distModel(){
     partners.Ahmed.rm+=toMd;
     return {reg,rev:rev[reg.key]||0,rshare,consumer,slice,toOwner,toMd};
   });
-  return {companyMo,reserved,distributed,eqPool,regionPool,mdPool,eqEach,partners,regionRows,totalRev};
+  return {companyMo,companyPeriod,nopByRegion,reserved,distributed,eqPool,regionPool,mdPool,eqEach,partners,regionRows,totalRev};
 }
 function renderDist(){
   const d=distModel();
@@ -3968,7 +3968,7 @@ function renderDist(){
       <div class="pbar"><div class="eq" style="width:${eqW}%"></div><div class="rg" style="width:${rmW}%"></div></div></div>`;
   }).join("");
   const ptable=order.map(p=>`<tr><td class="l">${p}</td><td>${fmt0(d.partners[p].eq)}</td><td>${fmt0(d.partners[p].rm)}</td><td><b>${fmt0(totals[p])}</b></td><td>${(totals[p]/grand*100).toFixed(1)}%</td></tr>`).join("");
-  const rrows=d.regionRows.map(r=>`<tr><td class="l">${r.reg.label} · ${r.reg.lead}</td><td>${fmt0(r.rev)}</td><td>${(r.rshare*100).toFixed(0)}%</td><td>${(r.consumer*100).toFixed(0)}%</td><td>${fmt0(r.slice)}</td><td>${fmt0(r.toOwner)}</td><td>${fmt0(r.toMd)}</td></tr>`).join("");
+  const rrows=d.regionRows.map(r=>`<tr><td class="l">${r.reg.label}</td><td>${fmt0(r.rev)}</td><td>${(r.rshare*100).toFixed(0)}%</td><td>${(r.consumer*100).toFixed(0)}%</td><td>${fmt0(r.slice)}</td><td>${fmt0(r.toOwner)}</td><td>${fmt0(r.toMd)}</td></tr>`).join("");
   const consInputs=REGIONS.map(reg=>`<div class="cfield"><label>Consumer % · ${reg.label}</label><input class="ein" type="number" data-cons="${reg.key}" value="${(CC_CFG.consumerPctByRegion||{})[reg.key]||0}"></div>`).join("");
   const html=`${ctrlsHTML()}
   <div class="blkhead" style="margin-top:16px"><h3>Distribution &amp; partner contribution</h3><span class="why">${CC_CFG.reservePct}% reserved · ${100-CC_CFG.reservePct}% shared · region ${CC_CFG.regionPct}% by revenue &amp; deal type · shown per month</span></div>
@@ -3976,7 +3976,7 @@ function renderDist(){
   <div class="dgrid">
     <div>
       <div class="stack">
-        <div class="big ink"><div class="k">Company operating profit · per month</div><div class="v">${fmt0(d.companyMo)}</div></div>
+        <div class="big ink"><div class="k">Company operating profit · per month</div><div class="v">${fmt0(d.companyMo)}</div><div style="font-size:11px;opacity:.82;margin-top:5px">Σ net operating profit of the 3 centres — ${fmt0(d.companyPeriod)} (${CC_CFG.view}) ÷ ${mult()} mo.<br>Dubai ${fmt0(d.nopByRegion.Dubai)} · Abu Dhabi ${fmt0(d.nopByRegion.AbuDhabi)} · International ${fmt0(d.nopByRegion.International)}</div></div>
         <div class="big slate"><div class="k">Reserved for CoreV — ${CC_CFG.reservePct}% · per month</div><div class="v">${fmt0(d.reserved)}</div></div>
         <div class="big blue"><div class="k">Distributed to partners — ${100-CC_CFG.reservePct}% · per month</div><div class="v">${fmt0(d.distributed)}</div></div>
       </div>
@@ -4000,7 +4000,7 @@ function renderDist(){
   <div class="blkhead" style="margin-top:18px"><h3 style="font-size:13px">Region ${CC_CFG.regionPct}% — how it breaks down</h3><span class="why">revenue-weighted; consumer ${CC_CFG.consumerMdShare}/${100-CC_CFG.consumerMdShare} region/MD, commercial &amp; international 100% region</span></div>
   <div class="ctrls" style="grid-template-columns:repeat(3,1fr);margin-bottom:10px">${consInputs}</div>
   <div class="panel scroll"><table class="data">
-    <thead><tr><th class="l">Region · owner</th><th>Revenue</th><th>Rev %</th><th>Consumer %</th><th>${CC_CFG.regionPct}% slice</th><th>→ owner</th><th>→ MD (Ahmed)</th></tr></thead>
+    <thead><tr><th class="l">Region</th><th>Revenue</th><th>Rev %</th><th>Consumer %</th><th>${CC_CFG.regionPct}% slice</th><th>→ owner</th><th>→ MD (Ahmed)</th></tr></thead>
     <tbody>${rrows}</tbody>
     <tfoot><tr><td class="l">Region ${CC_CFG.regionPct}% pool</td><td>${fmt0(d.totalRev)}</td><td>100%</td><td></td><td>${fmt0(d.regionPool)}</td><td>${fmt0(d.regionRows.reduce((a,r)=>a+r.toOwner,0))}</td><td>${fmt0(d.regionRows.reduce((a,r)=>a+r.toMd,0))}</td></tr></tfoot>
   </table></div>`;
@@ -4053,7 +4053,7 @@ function distPDF(){
     columnStyles:{0:{halign:"left",fontStyle:"bold"}}, bodyStyles:{halign:"right"} });
   y=doc.lastAutoTable.finalY+16;
   doc.autoTable({ startY:y, head:[["Region · owner","Revenue","Rev %","Consumer %",CC_CFG.regionPct+"% slice","→ owner","→ MD (Ahmed)"]],
-    body:d.regionRows.map(r=>[r.reg.label+" · "+r.reg.lead,"AED "+fmt0(r.rev),(r.rshare*100).toFixed(0)+"%",(r.consumer*100).toFixed(0)+"%","AED "+fmt0(r.slice),"AED "+fmt0(r.toOwner),"AED "+fmt0(r.toMd)]),
+    body:d.regionRows.map(r=>[r.reg.label,"AED "+fmt0(r.rev),(r.rshare*100).toFixed(0)+"%",(r.consumer*100).toFixed(0)+"%","AED "+fmt0(r.slice),"AED "+fmt0(r.toOwner),"AED "+fmt0(r.toMd)]),
     theme:"grid", margin:{left:M,right:M}, styles:{font:"helvetica",fontSize:8.5,cellPadding:4,textColor:[27,39,64],lineColor:[228,233,242]},
     headStyles:{fillColor:[14,22,38],textColor:[255,255,255],halign:"right"}, columnStyles:{0:{halign:"left"}}, bodyStyles:{halign:"right"} });
   const fn="CoreV_Partner_Distribution.pdf";
