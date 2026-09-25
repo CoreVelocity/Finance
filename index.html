@@ -810,13 +810,13 @@
       <button id="altSignIn" class="gate-alt">Having trouble? Try popup sign-in</button>
       <div id="authErr" class="gate-err"></div>
       <div class="gate-foot">Management access only</div>
-      <div class="gate-ver">v1.34.1 · 2026-06-14</div>
+      <div class="gate-ver">v1.35.0 · 2026-06-14</div>
     </div>
   </div>
 
   <div id="appRoot" style="display:none">
   <header class="topbar">
-    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.34.1</span></div>
+    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.35.0</span></div>
     <nav class="tabnav">
       <button data-tab="tab-costing" class="active"><span class="n">01</span>Costing</button>
       <button data-tab="tab-commission"><span class="n">02</span>Commission</button>
@@ -2930,6 +2930,13 @@ function oxefitGroups(){
 function oxefitPayables(){
   const out=[]; oxefitGroups().forEach(g=>g.rows.forEach(r=>out.push({...r, payee:"OxeFit", customer:g.deal.customer, desc:(g.deal.customer||"")+" · "+r.name}))); return out;
 }
+function publishOxefit(){
+  try{
+    const arr=oxefitGroups().map(g=>({rep:g.deal.rep||"",customer:g.deal.customer||"",month:g.deal.month||"",cost:+g.cost||0}));
+    window.CoreVOxefit={deals:arr,total:arr.reduce((a,x)=>a+x.cost,0),ts:Date.now()};
+    window.dispatchEvent(new CustomEvent('corev:oxefit'));
+  }catch(_){}
+}
 function statusOf(due,paid){
   if(paid) return "paid";
   const days=Math.floor((due-today)/DAY);
@@ -3324,7 +3331,7 @@ function renderFilters(){
   fill("rm_fmonth",months,FILTER.month,"All months");
   const st=$("rm_fstatus"); if(st) st.value=FILTER.status||"";
 }
-function renderAll(){ syncedNote(); renderFilters(); renderMsEditor(); renderDashboard(); renderRecv(); renderOxe(); renderPay(); renderHR(); }
+function renderAll(){ syncedNote(); renderFilters(); renderMsEditor(); renderDashboard(); renderRecv(); renderOxe(); renderPay(); renderHR(); publishOxefit(); }
 
 $("rm-addPay").addEventListener("click",()=>{PAY.push({payee:"New payee",desc:"",amount:0,due:iso(addDays(today,14)),recur:"One-time",paid:false});renderPay();renderDashboard();rmChanged();});
 $("rm-hrSync").addEventListener("click",e=>hrSync(e.currentTarget));
@@ -3774,38 +3781,78 @@ let CC_REPS=[
   {name:"Hussean",region:"AbuDhabi",salary:14000,del:true}
 ];
 let CC_CFG={
-  reservePct:40, targetFactor:13.52, consumerMdShare:50, view:"quarter",
-  costPct:60, centralPool:null, oxeCoveredCentralPct:0, oxeCoversSalaries:true,
-  eqPct:40, regionPct:40, mdPct:20, netTargetPct:30,
+  reservePct:40, targetFactor:13.52, consumerMdShare:50, view:"quarter", period:"",
+  oxeSource:"auto", costPct:60, centralMo:32000, netTargetPct:30,
+  eqPct:40, regionPct:40, mdPct:20,
   otherByRegion:{Dubai:0,AbuDhabi:0,International:0},
   consumerPctByRegion:{Dubai:0,AbuDhabi:0,International:0},
-  intlNetTargetManual:50000, factorNote:""
+  intlNetTargetManual:50000
 };
 let CC_VIEW="targets";
 
 function store(){ return (window.CoreVStore) || {deals:[],commByRep:{}}; }
+function oxeStore(){ return (window.CoreVOxefit) || {deals:[],total:0}; }
 function regionOf(rep){ const r=CC_REPS.find(x=>x.name===rep); return r?r.region:null; }
 function mult(){ return VIEWMULT[CC_CFG.view]||3; }
 
-// live revenue & commission per region (from the commission/HubSpot store)
+/* ---- period parsing & filtering ---- */
+const MON={jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
+const MLBL=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+function parseYM(s){ if(!s) return null; s=String(s).trim(); let m;
+  m=s.match(/^(\d{4})[-\/](\d{1,2})/); if(m) return {y:+m[1],mo:+m[2]};
+  m=s.match(/([A-Za-z]{3})[A-Za-z]*[\s\/\-]+(\d{2,4})/); if(m){ const mo=MON[m[1].toLowerCase()]; let y=+m[2]; if(y<100)y+=2000; if(mo) return {y,mo}; }
+  m=s.match(/^(\d{1,2})[\/\-](\d{4})$/); if(m) return {y:+m[2],mo:+m[1]};
+  return null;
+}
+function ymNum(o){ return o? o.y*12+(o.mo-1) : null; }
+function periodKeyOf(n,view){ const y=Math.floor(n/12), mo=n%12+1;
+  if(view==="month") return y+"-"+String(mo).padStart(2,"0");
+  if(view==="quarter") return y+"-Q"+(Math.floor((mo-1)/3)+1);
+  if(view==="half") return y+"-H"+(mo<=6?1:2);
+  return ""+y;
+}
+function periodLabel(k,view){ if(!k) return "All time";
+  if(view==="month"){ const [y,mo]=k.split("-"); return MLBL[(+mo)-1]+" "+y; }
+  return k.replace("-"," ");
+}
+function periodRange(k,view){ if(!k) return null;
+  if(view==="year"){ const y=+k; return [y*12,y*12+11]; }
+  if(view==="month"){ const [y,mo]=k.split("-").map(Number); const n=y*12+(mo-1); return [n,n]; }
+  if(view==="quarter"){ const [y,q]=k.split("-Q").map(Number); const s=(q-1)*3; return [y*12+s,y*12+s+2]; }
+  if(view==="half"){ const [y,h]=k.split("-H").map(Number); const s=(h-1)*6; return [y*12+s,y*12+s+5]; }
+  return null;
+}
+function availablePeriods(){ const set=new Set(); (store().deals||[]).forEach(d=>{ const o=parseYM(d.month); if(o) set.add(periodKeyOf(ymNum(o),CC_CFG.view)); }); return Array.from(set).sort(); }
+function currentPeriod(){ const av=availablePeriods(); if(CC_CFG.period && av.includes(CC_CFG.period)) return CC_CFG.period; return av.length?av[av.length-1]:""; }
+function inPeriod(month){ const k=currentPeriod(); if(!k) return true; const rg=periodRange(k,CC_CFG.view); const o=parseYM(month); if(!o) return false; const n=ymNum(o); return n>=rg[0]&&n<=rg[1]; }
+
+/* ---- live figures per region (period-filtered) ---- */
 function revByRegion(){
   const rev={Dubai:0,AbuDhabi:0,International:0,_un:0};
-  (store().deals||[]).forEach(d=>{ const rg=regionOf(d.rep); if(rg) rev[rg]+=(+d.gross||0); else rev._un+=(+d.gross||0); });
+  (store().deals||[]).forEach(d=>{ if(!inPeriod(d.month))return; const rg=regionOf(d.rep); if(rg) rev[rg]+=(+d.gross||0); else rev._un+=(+d.gross||0); });
   return rev;
 }
+function revByRep(period){ const r={}; (store().deals||[]).forEach(d=>{ if(period&&!inPeriod(d.month))return; r[d.rep]=(r[d.rep]||0)+(+d.gross||0); }); return r; }
 function commByRegion(){
   const c={Dubai:0,AbuDhabi:0,International:0}; const cm=store().commByRep||{};
-  CC_REPS.forEach(r=>{ if(c[r.region]!=null) c[r.region]+=(+cm[r.name]||0); });
+  const rpAll=revByRep(false), rpPer=revByRep(true);
+  CC_REPS.forEach(r=>{ if(c[r.region]==null)return; const tot=rpAll[r.name]||0, per=rpPer[r.name]||0; const ratio=tot>0?per/tot:0; c[r.region]+=(+cm[r.name]||0)*ratio; });
   return c;
+}
+function oxeByRegion(){
+  const o={Dubai:0,AbuDhabi:0,International:0};
+  (oxeStore().deals||[]).forEach(x=>{ if(!inPeriod(x.month))return; const rg=regionOf(x.rep); if(o[rg]!=null) o[rg]+=(+x.cost||0); });
+  return o;
 }
 function repsInRegion(rg){ return CC_REPS.filter(r=>r.region===rg); }
 function salariesByRegion(rg){ return repsInRegion(rg).reduce((a,r)=>a+(+r.salary||0),0)*mult(); }
 function periodTargetByRegion(rg){ return repsInRegion(rg).reduce((a,r)=>a+(+r.salary||0)*CC_CFG.targetFactor,0)*mult(); }
-function centralTotal(){ return (CC_CFG.centralPool!=null && CC_CFG.centralPool!=="") ? (+CC_CFG.centralPool||0) : 32000*mult(); }
+function centralTotal(){ return (+CC_CFG.centralMo||0)*mult(); }
+function effOxePct(){ const rev=revByRegion(); const tR=(rev.Dubai||0)+(rev.AbuDhabi||0)+(rev.International||0); const tO=(oxeByRegion().Dubai||0)+(oxeByRegion().AbuDhabi||0)+(oxeByRegion().International||0); return tR?tO/tR:0; }
 
 function regionModel(reg){
   const rev=revByRegion()[reg.key]||0;
-  const productCost=rev*(CC_CFG.costPct/100);
+  const productCost=(CC_CFG.oxeSource==="auto") ? (oxeByRegion()[reg.key]||0) : rev*(CC_CFG.costPct/100);
   const grossProfit=rev-productCost;
   const grossMargin=rev?grossProfit/rev:0;
   const commissions=commByRegion()[reg.key]||0;
@@ -3815,15 +3862,12 @@ function regionModel(reg){
   const contribution=grossProfit-controllable;
   const totalReps=CC_REPS.length||1;
   const allocCentral=centralTotal()*(repsInRegion(reg.key).length/totalReps);
-  const oxeCoveredCentral=allocCentral*(CC_CFG.oxeCoveredCentralPct/100);
-  const netCentral=allocCentral-oxeCoveredCentral;
-  const salariesCovered=CC_CFG.oxeCoversSalaries?salaries:0;
-  const nop=contribution-netCentral+salariesCovered;   // OxeFit-covered salaries added back
+  const nop=contribution-allocCentral;   // canonical P&L ladder (slide 15)
   const netMargin=rev?nop/rev:0;
   const periodTarget=periodTargetByRegion(reg.key);
   const netTarget=reg.md?(+CC_CFG.intlNetTargetManual||0):periodTarget*(CC_CFG.netTargetPct/100);
   const vsTarget=nop-netTarget;
-  return {rev,productCost,grossProfit,grossMargin,commissions,salaries,other,controllable,contribution,allocCentral,netCentral,nop,netMargin,periodTarget,netTarget,vsTarget};
+  return {rev,productCost,grossProfit,grossMargin,commissions,salaries,other,controllable,contribution,allocCentral,nop,netMargin,periodTarget,netTarget,vsTarget};
 }
 
 /* ---------- nav ---------- */
@@ -3834,24 +3878,25 @@ function renderNav(){
 }
 
 function ctrlsHTML(){
-  const opt=(v,cur,arr)=>arr.map(o=>`<option value="${o[0]}" ${o[0]===cur?"selected":""}>${o[1]}</option>`).join("");
+  const av=availablePeriods(), cur=currentPeriod();
+  const perOpts=(av.length?av:[""]).map(k=>`<option value="${k}" ${k===cur?"selected":""}>${periodLabel(k,CC_CFG.view)}</option>`).join("");
+  const viewOpts=[["month","Month"],["quarter","Quarter"],["half","Half-year"],["year","Year"]].map(o=>`<option value="${o[0]}" ${o[0]===CC_CFG.view?"selected":""}>${o[1]}</option>`).join("");
   return `<div class="ctrls">
     <div class="cfield"><label>Reserve % (CoreV)</label><input class="ein" type="number" data-c="reservePct" value="${CC_CFG.reservePct}"></div>
     <div class="cfield"><label>Monthly target factor (× salary)</label><input class="ein" type="number" step="0.01" data-c="targetFactor" value="${CC_CFG.targetFactor}"></div>
     <div class="cfield"><label>Consumer → MD share % (region keeps rest)</label><input class="ein" type="number" data-c="consumerMdShare" value="${CC_CFG.consumerMdShare}"></div>
-    <div class="cfield"><label>View by</label><select class="ein" data-c="view">${opt("v",CC_CFG.view,[["month","Month"],["quarter","Quarter"],["half","Half-year"],["year","Year"]])}</select></div>
-    <div class="cfield"><label>OxeFit cost % of revenue</label><input class="ein" type="number" data-c="costPct" value="${CC_CFG.costPct}"></div>
-  </div>
-  <div class="cfield" style="margin-top:12px"><label>Target factor note (for your records)</label><input class="ein txt" type="text" data-c="factorNote" value="${(CC_CFG.factorNote||"").replace(/"/g,'&quot;')}" placeholder='e.g. Factor set to "4" XS1 PEAK with discount, based on the lowest salary'></div>`;
+    <div class="cfield"><label>View by</label><select class="ein" data-c="view">${viewOpts}</select></div>
+    <div class="cfield"><label>Period</label><select class="ein" data-c="period">${perOpts}</select></div>
+  </div>`;
 }
 
 /* ---------- view 1: targets & status ---------- */
 function statusOf(att){ if(att>=0.5) return ["on","On track"]; if(att>=0.3) return ["coach","Coaching"]; return ["exit","Exit"]; }
 function renderTargets(){
   const rev=revByRegion(); const deals=store().deals||[];
-  const cwByRep={}; deals.forEach(d=>{ cwByRep[d.rep]=(cwByRep[d.rep]||0)+(+d.gross||0); });
+  const cwByRep={}; deals.forEach(d=>{ if(!inPeriod(d.month))return; cwByRep[d.rep]=(cwByRep[d.rep]||0)+(+d.gross||0); });
   const assigned=CC_REPS.reduce((a,r)=>a+(cwByRep[r.name]||0),0);
-  const totalCW=deals.reduce((a,d)=>a+(+d.gross||0),0);
+  const totalCW=deals.reduce((a,d)=>a+(inPeriod(d.month)?(+d.gross||0):0),0);
   let rows="";
   CC_REPS.forEach((r,i)=>{
     const monthly=(+r.salary||0)*CC_CFG.targetFactor;
@@ -3898,33 +3943,37 @@ function renderCentres(){
     cards+=`<div class="pc">
       <div class="pc-h"><div class="k">Profit centre</div><div class="n">${reg.label}</div></div>
       <div class="pc-line"><span class="lbl">Revenue <span class="src">HubSpot</span></span><span class="val">${fmt0(m.rev)}</span></div>
-      <div class="pc-line"><span class="lbl">Product cost (OxeFit) <span class="src">OxeFit</span></span><span class="val">${fmt0(m.productCost)}</span></div>
+      <div class="pc-line"><span class="lbl">Product cost (OxeFit) <span class="src">${CC_CFG.oxeSource==="auto"?"Payouts":"manual "+CC_CFG.costPct+"%"}</span></span><span class="val">${fmt0(m.productCost)}</span></div>
       <div class="pc-line"><span class="lbl">Commissions <span class="src">Commission</span></span><span class="val">${fmt0(m.commissions)}</span></div>
       <div class="pc-line"><span class="lbl">Sales salaries <span class="src">from reps</span></span><span class="val">${fmt0(m.salaries)}</span></div>
       <div class="pc-line"><span class="lbl">Other costs <span class="src">manual</span></span><input class="cin cc-other" data-rg="${reg.key}" type="number" value="${Math.round(otherVal)}"></div>
       <div class="pc-line"><span class="lbl">Period sales target <span class="src">${CC_CFG.targetFactor}× salary</span></span><span class="val">${fmt0(m.periodTarget)}</span></div>
       <div class="pc-line"><span class="lbl">Net profit target <span class="src">${reg.md?"manual":CC_CFG.netTargetPct+"% of target"}</span></span>${netTargetCell}</div>
-      <div class="pc-nop"><div class="k">Net operating profit</div><div class="v">${fmt0(m.nop)}</div><div class="d">Contribution margin − net central cost${CC_CFG.oxeCoversSalaries?" (salaries OxeFit-covered)":""}. The reward basis.</div></div>
+      <div class="pc-nop"><div class="k">Net operating profit</div><div class="v">${fmt0(m.nop)}</div><div class="d">Contribution margin − this centre's share of central cost. The reward basis.</div></div>
       <div class="pc-mini">
         <div class="m"><div class="k">Gross profit</div><div class="v">${fmt0(m.grossProfit)}</div><div class="s">Revenue − product cost</div></div>
         <div class="m"><div class="k">Gross margin</div><div class="v">${pct(m.grossMargin)}</div><div class="s">Gross profit ÷ revenue</div></div>
         <div class="m"><div class="k">Controllable costs</div><div class="v">${fmt0(m.controllable)}</div><div class="s">Commissions + salaries + other</div></div>
         <div class="m"><div class="k">Contribution margin</div><div class="v">${fmt0(m.contribution)}</div><div class="s">Gross profit − controllable</div></div>
         <div class="m"><div class="k">Net margin</div><div class="v">${pct(m.netMargin)}</div><div class="s">Net operating profit ÷ revenue</div></div>
-        <div class="m"><div class="k">Allocated central</div><div class="v">${fmt0(m.allocCentral)}</div><div class="s">Share of central pool by rep count</div></div>
-        <div class="m"><div class="k">Net central cost</div><div class="v">${fmt0(m.netCentral)}</div><div class="s">After OxeFit-covered portion</div></div>
+        <div class="m"><div class="k">Allocated central</div><div class="v">${fmt0(m.allocCentral)}</div><div class="s">Share of central cost by rep count</div></div>
         <div class="m"><div class="k">Vs target</div><div class="v ${m.vsTarget>=0?'pos':'neg'}">${(m.vsTarget>=0?"+":"")+fmt0(m.vsTarget)}</div><div class="s">Net operating profit − target</div></div>
       </div>
     </div>`;
   });
+  const eff=effOxePct();
+  const oxeOpts=[["auto","Auto — actual cost from Payouts"],["manual","Manual %"]].map(o=>`<option value="${o[0]}" ${o[0]===CC_CFG.oxeSource?"selected":""}>${o[1]}</option>`).join("");
+  const costCell = CC_CFG.oxeSource==="manual"
+    ? `<div class="cfield"><label>OxeFit cost % of revenue</label><input class="ein" type="number" data-c="costPct" value="${CC_CFG.costPct}"></div>`
+    : `<div class="cfield"><label>Effective OxeFit cost %</label><input class="ein" type="text" value="${(eff*100).toFixed(1)}%" disabled style="opacity:.65"></div>`;
   const html=`${ctrlsHTML()}
   <div class="ctrls" style="grid-template-columns:repeat(4,1fr);margin-top:12px">
-    <div class="cfield"><label>Central pool (this period)</label><input class="ein" type="number" data-c="centralPool" value="${CC_CFG.centralPool!=null?CC_CFG.centralPool:''}" placeholder="${fmt0(32000*mult())} (marketing default)"></div>
-    <div class="cfield"><label>OxeFit-covered central %</label><input class="ein" type="number" data-c="oxeCoveredCentralPct" value="${CC_CFG.oxeCoveredCentralPct}"></div>
+    <div class="cfield"><label>OxeFit product cost source</label><select class="ein" data-c="oxeSource">${oxeOpts}</select></div>
+    ${costCell}
+    <div class="cfield"><label>Central shared-services / month</label><input class="ein" type="number" data-c="centralMo" value="${CC_CFG.centralMo}"></div>
     <div class="cfield"><label>Net profit target % (region)</label><input class="ein" type="number" data-c="netTargetPct" value="${CC_CFG.netTargetPct}"></div>
-    <div class="cfield"><label>OxeFit covers sales salaries</label><select class="ein" data-c="oxeCoversSalaries">${[["true","Yes — add back in NOP"],["false","No"]].map(o=>`<option value="${o[0]}" ${String(CC_CFG.oxeCoversSalaries)===o[0]?"selected":""}>${o[1]}</option>`).join("")}</select></div>
   </div>
-  <div class="note"><span class="ic">i</span><span>Central shared services (the MD-run functions) is a <b>cost centre</b> — pooled and allocated to every profit centre by its number of sales reps. Global/International sales sits at company level, not attributed to Dubai or Abu Dhabi. Contribution margin is the ladder’s reward line; net operating profit is what each centre carries after its share of central cost.</span></div>
+  <div class="note"><span class="ic">i</span><span><b>Product cost (OxeFit)</b> on <i>Auto</i> is the actual cost owed to OxeFit for this period's deals, pulled live from Payouts &amp; OxeFit (the effective % is that total ÷ revenue). <b>Central shared-services</b> — the MD-run functions (marketing, events, admin) — is the <b>cost centre</b>: entered per month, scaled to the period, and allocated to each region by its number of sales reps. Net operating profit = contribution margin − that allocated central cost.</span></div>
   <div class="pcgrid" style="margin-top:14px">${cards}</div>`;
   $("cc-body").innerHTML=html;
   bindCtrls();
@@ -4013,12 +4062,10 @@ function renderDist(){
 /* ---------- shared control binding ---------- */
 function bindCtrls(){
   $("cc-body").querySelectorAll("[data-c]").forEach(el=>{
-    const ev=(el.tagName==="SELECT"||el.type==="text")?"change":"change";
-    el.addEventListener(ev,e=>{
+    el.addEventListener("change",e=>{
       const k=e.target.dataset.c; let v=e.target.value;
-      if(k==="view"||k==="factorNote") CC_CFG[k]=v;
-      else if(k==="oxeCoversSalaries") CC_CFG[k]=(v==="true");
-      else if(k==="centralPool") CC_CFG[k]=(v===""?null:parseFloat(v)||0);
+      if(k==="view"){ CC_CFG.view=v; CC_CFG.period=""; }          // reset period to latest of the new granularity
+      else if(k==="period"||k==="oxeSource") CC_CFG[k]=v;
       else CC_CFG[k]=parseFloat(v)||0;
       render(); ccChanged();
     });
@@ -4077,6 +4124,7 @@ if(window.CoreVSync) window.CoreVSync.register('costcenter',
   env=>{ try{ if(Array.isArray(env.reps)) CC_REPS=env.reps; if(env.cfg&&typeof env.cfg==='object') CC_CFG=Object.assign(CC_CFG,env.cfg); if(env.view) CC_VIEW=env.view; render(); }catch(_){}}
 );
 window.addEventListener("corev:store", ()=>{ try{ render(); }catch(_){}} );
+window.addEventListener("corev:oxefit", ()=>{ try{ render(); }catch(_){}} );
 window.addEventListener("corev:products", ()=>{ try{ render(); }catch(_){}} );
 
 renderNav();
