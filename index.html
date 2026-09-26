@@ -810,13 +810,13 @@
       <button id="altSignIn" class="gate-alt">Having trouble? Try popup sign-in</button>
       <div id="authErr" class="gate-err"></div>
       <div class="gate-foot">Management access only</div>
-      <div class="gate-ver">v1.36.2 · 2026-06-14</div>
+      <div class="gate-ver">v1.37.0 · 2026-06-14</div>
     </div>
   </div>
 
   <div id="appRoot" style="display:none">
   <header class="topbar">
-    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.36.2</span></div>
+    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.37.0</span></div>
     <nav class="tabnav">
       <button data-tab="tab-costing" class="active"><span class="n">01</span>Costing</button>
       <button data-tab="tab-commission"><span class="n">02</span>Commission</button>
@@ -2446,10 +2446,12 @@ function renderRefs(){
 }
 
 function publishStore(){
-  const deals=[]; const commByRep={};
+  const deals=[]; const commByRep={}; const commDetailByRep={};
   REPS.forEach(r=>{ r.deals.forEach(d=>deals.push({rep:r.name,customer:d.cust,gross:d.gross,collected:effColl(d),month:d.month||"",future:!!d.future,hsId:d.hsId||null,tag:d.tag||""}));
-    try{ commByRep[r.name]=(repRoll(r).earned)||0; }catch(_){ commByRep[r.name]=0; } });
-  window.CoreVStore={deals,commByRep,ts:Date.now()}; window.dispatchEvent(new CustomEvent('corev:store'));
+    try{ const R=repRoll(r); let paid=0; (R.months||[]).forEach(mo=>{ if(payoutPaid(r,mo.month)) paid+=mo.R.eligible; });
+      commByRep[r.name]=R.earned||0; commDetailByRep[r.name]={earned:R.earned||0, eligible:R.eligible||0, paid:paid||0};
+    }catch(_){ commByRep[r.name]=0; commDetailByRep[r.name]={earned:0,eligible:0,paid:0}; } });
+  window.CoreVStore={deals,commByRep,commDetailByRep,ts:Date.now()}; window.dispatchEvent(new CustomEvent('corev:store'));
   if(window.CoreVSync) window.CoreVSync.changed();
 }
 let execMonth="";
@@ -3785,7 +3787,7 @@ let CC_REPS=[
 ];
 let CC_CFG={
   reservePct:40, targetFactor:13.52, consumerMode:"equal", consumerLead:"Ahmed", view:"quarter", period:"all",
-  oxeSource:"auto", costPct:60, centralMo:32000, netTargetPct:30,
+  oxeSource:"auto", costPct:60, centralMo:32000, netTargetPct:25, commBasis:"earned",
   eqPct:40, regionPct:40, mdPct:20,
   otherByRegion:{Sami:0,Kamal:0,Ahmed:0},
   consumerPctByRegion:{Sami:0,Kamal:0,Ahmed:0},
@@ -3845,9 +3847,11 @@ function revByRegion(){
 }
 function revByRep(period){ const r={}; (store().deals||[]).forEach(d=>{ if(period&&!inPeriod(d.month))return; r[d.rep]=(r[d.rep]||0)+(+d.gross||0); }); return r; }
 function commByRegion(){
-  const c={}; PARTNER_KEYS.forEach(k=>c[k]=0); const cm=store().commByRep||{};
+  const c={}; PARTNER_KEYS.forEach(k=>c[k]=0);
+  const cm=store().commByRep||{}, det=store().commDetailByRep||{}, basis=CC_CFG.commBasis||"earned";
   const rpAll=revByRep(false), rpPer=revByRep(true);
-  CC_REPS.forEach(r=>{ if(c[r.region]==null)return; const tot=rpAll[r.name]||0, per=rpPer[r.name]||0; const ratio=tot>0?per/tot:0; c[r.region]+=(+cm[r.name]||0)*ratio; });
+  CC_REPS.forEach(r=>{ if(c[r.region]==null)return; const d=det[r.name]; const val=d?(+d[basis]||0):(+cm[r.name]||0);
+    const tot=rpAll[r.name]||0, per=rpPer[r.name]||0; const ratio=tot>0?per/tot:0; c[r.region]+=val*ratio; });
   return c;
 }
 function oxeByRegion(){
@@ -3952,7 +3956,7 @@ function renderCentres(){
       <div class="pc-h"><div class="k">Profit centre</div><div class="n">${reg.label}</div></div>
       <div class="pc-line"><span class="lbl">Revenue <span class="src">HubSpot</span></span><span class="val">${fmt0(m.rev)}</span></div>
       <div class="pc-line"><span class="lbl">Product cost (OxeFit) <span class="src">${CC_CFG.oxeSource==="auto"?"Payouts":"manual "+CC_CFG.costPct+"%"}</span></span><span class="val">${fmt0(m.productCost)}</span></div>
-      <div class="pc-line"><span class="lbl">Commissions <span class="src">Commission</span></span><span class="val">${fmt0(m.commissions)}</span></div>
+      <div class="pc-line"><span class="lbl">Commissions <span class="src">Comm · ${CC_CFG.commBasis}</span></span><span class="val">${fmt0(m.commissions)}</span></div>
       <div class="pc-line"><span class="lbl">Sales salaries <span class="src">from reps</span></span><span class="val">${fmt0(m.salaries)}</span></div>
       <div class="pc-line"><span class="lbl">Other costs <span class="src">manual</span></span><input class="cin cc-other" data-rg="${reg.key}" type="number" value="${Math.round(otherVal)}"></div>
       <div class="pc-line"><span class="lbl">Period sales target <span class="src">${CC_CFG.targetFactor}× salary</span></span><span class="val">${fmt0(m.periodTarget)}</span></div>
@@ -3974,14 +3978,16 @@ function renderCentres(){
   const costCell = CC_CFG.oxeSource==="manual"
     ? `<div class="cfield"><label>OxeFit cost % of revenue</label><input class="ein" type="number" data-c="costPct" value="${CC_CFG.costPct}"></div>`
     : `<div class="cfield"><label>Effective OxeFit cost %</label><input class="ein" type="text" value="${(eff*100).toFixed(1)}%" disabled style="opacity:.65"></div>`;
+  const basisOpts=[["earned","Earned (accrued)"],["eligible","Eligible (collected)"],["paid","Paid out"]].map(o=>`<option value="${o[0]}" ${o[0]===CC_CFG.commBasis?"selected":""}>${o[1]}</option>`).join("");
   const html=`${ctrlsHTML()}
-  <div class="ctrls" style="grid-template-columns:repeat(4,1fr);margin-top:12px">
+  <div class="ctrls" style="grid-template-columns:repeat(5,1fr);margin-top:12px">
     <div class="cfield"><label>OxeFit product cost source</label><select class="ein" data-c="oxeSource">${oxeOpts}</select></div>
     ${costCell}
     <div class="cfield"><label>Central shared-services / month</label><input class="ein" type="number" data-c="centralMo" value="${CC_CFG.centralMo}"></div>
     <div class="cfield"><label>Net profit target % (region)</label><input class="ein" type="number" data-c="netTargetPct" value="${CC_CFG.netTargetPct}"></div>
+    <div class="cfield"><label>Commission basis</label><select class="ein" data-c="commBasis">${basisOpts}</select></div>
   </div>
-  <div class="note"><span class="ic">i</span><span><b>Product cost (OxeFit)</b> on <i>Auto</i> is the actual cost owed to OxeFit for this period's deals, pulled live from Payouts &amp; OxeFit (the effective % is that total ÷ revenue). <b>Central shared-services</b> — the MD-run functions (marketing, events, admin) — is the <b>cost centre</b>: entered per month, scaled to the period, and allocated to each partner by its number of resources. Net operating profit = contribution margin − that allocated central cost.</span></div>
+  <div class="note"><span class="ic">i</span><span><b>Product cost (OxeFit)</b> on <i>Auto</i> is the actual cost owed to OxeFit for this period's deals, pulled live from Payouts &amp; OxeFit (the effective % is that total ÷ revenue). <b>Commissions</b> pull from the Commission tab on your chosen basis — <i>Earned</i> (accrued), <i>Eligible</i> (collected) or <i>Paid out</i>. <b>Central shared-services</b> — the MD-run functions (marketing, events, admin) — is the <b>cost centre</b>: entered per month, scaled to the period, allocated to each partner by its number of resources. Net operating profit = contribution margin − that allocated central cost.</span></div>
   <div class="pcgrid" style="margin-top:14px">${cards}</div>`;
   $("cc-body").innerHTML=html;
   bindCtrls();
@@ -4085,7 +4091,7 @@ function bindCtrls(){
     el.addEventListener("change",e=>{
       const k=e.target.dataset.c; let v=e.target.value;
       if(k==="view"){ CC_CFG.view=v; CC_CFG.period="all"; }          // reset to All time on the new granularity
-      else if(k==="period"||k==="oxeSource"||k==="consumerMode"||k==="consumerLead") CC_CFG[k]=v;
+      else if(k==="period"||k==="oxeSource"||k==="consumerMode"||k==="consumerLead"||k==="commBasis") CC_CFG[k]=v;
       else CC_CFG[k]=parseFloat(v)||0;
       render(); ccChanged();
     });
