@@ -810,19 +810,19 @@
       <button id="altSignIn" class="gate-alt">Having trouble? Try popup sign-in</button>
       <div id="authErr" class="gate-err"></div>
       <div class="gate-foot">Management access only</div>
-      <div class="gate-ver">v1.35.0 · 2026-06-14</div>
+      <div class="gate-ver">v1.36.0 · 2026-06-14</div>
     </div>
   </div>
 
   <div id="appRoot" style="display:none">
   <header class="topbar">
-    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.35.0</span></div>
+    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.36.0</span></div>
     <nav class="tabnav">
       <button data-tab="tab-costing" class="active"><span class="n">01</span>Costing</button>
       <button data-tab="tab-commission"><span class="n">02</span>Commission</button>
       <button data-tab="tab-reminders"><span class="n">03</span>Payouts &amp; OxeFit</button>
       <button data-tab="tab-distributor"><span class="n">04</span>Distributor</button>
-      <button data-tab="tab-costcenter"><span class="n">05</span>Cost centres</button>
+      <button data-tab="tab-costcenter"><span class="n">05</span>Partners</button>
     </nav>
     <button id="cloudChip" class="cloudchip" title="Shared drive — click to refresh"><span class="cc-dot"></span><span class="cc-t">Sync</span></button>
     <div id="userChip" class="userchip" style="display:none"><span class="uc-dot"></span><span id="userName"></span><button id="signOut" class="uc-out">Sign out</button></div>
@@ -1361,7 +1361,7 @@
 
 <div id="tab-costcenter">
   <div class="wrap">
-    <div class="blkhead"><h2>Contribution &amp; cost centres per region</h2><span class="why">— each sales stream a profit centre; central shared services allocated across them. Revenue &amp; commissions pull live from the suite.</span></div>
+    <div class="blkhead"><h2>Contribution &amp; partner cost centres</h2><span class="why">— each partner is a profit &amp; cost centre; resources map to partners, central shared services allocated across them. Revenue &amp; commissions pull live from the suite.</span></div>
     <div class="ccnav" id="cc-nav"></div>
     <div id="cc-body"></div>
   </div>
@@ -3761,33 +3761,44 @@ const fmt = n => (n<0?"−":"")+"AED "+Math.abs(Math.round(n)).toLocaleString();
 const fmt0 = n => Math.round(n).toLocaleString();
 const pct = n => (n*100).toFixed(1)+"%";
 
+// Cost centres are PARTNERS. Reps are mapped to a partner (the rep.region field holds a partner key).
 const REGIONS=[
-  {key:"Dubai", label:"Dubai", lead:"Sami", md:false},
-  {key:"AbuDhabi", label:"Abu Dhabi", lead:"Kamal", md:false},
-  {key:"International", label:"International", lead:"Ahmed", md:true}
+  {key:"Sami",  label:"Sami",  lead:"Sami",  md:false},
+  {key:"Kamal", label:"Kamal", lead:"Kamal", md:false},
+  {key:"Ahmed", label:"Ahmed", lead:"Ahmed", md:true}
 ];
+const PARTNER_KEYS=REGIONS.map(r=>r.key);
+const REGION_MIGRATE={Dubai:"Sami", AbuDhabi:"Kamal", International:"Ahmed"};
 const VIEWMULT={month:1, quarter:3, half:6, year:12};
 
 let CC_REPS=[
-  {name:"Fatima",region:"Dubai",salary:12000},
-  {name:"Wafiq",region:"AbuDhabi",salary:25000},
-  {name:"Kamal",region:"AbuDhabi",salary:0},
-  {name:"Sami",region:"Dubai",salary:0},
-  {name:"Ahmed",region:"International",salary:0},
-  {name:"Jawdat",region:"AbuDhabi",salary:18000},
-  {name:"Milena",region:"Dubai",salary:18000,del:true},
-  {name:"Katy",region:"Dubai",salary:18000,del:true},
-  {name:"Hasan",region:"Dubai",salary:20000,del:true},
-  {name:"Hussean",region:"AbuDhabi",salary:14000,del:true}
+  {name:"Fatima",region:"Sami",salary:12000},
+  {name:"Wafiq",region:"Kamal",salary:25000},
+  {name:"Kamal",region:"Kamal",salary:0},
+  {name:"Sami",region:"Sami",salary:0},
+  {name:"Ahmed",region:"Ahmed",salary:0},
+  {name:"Jawdat",region:"Kamal",salary:18000},
+  {name:"Milena",region:"Sami",salary:18000,del:true},
+  {name:"Katy",region:"Sami",salary:18000,del:true},
+  {name:"Hasan",region:"Sami",salary:20000,del:true},
+  {name:"Hussean",region:"Kamal",salary:14000,del:true}
 ];
 let CC_CFG={
-  reservePct:40, targetFactor:13.52, consumerMdShare:50, view:"quarter", period:"",
+  reservePct:40, targetFactor:13.52, consumerMode:"equal", consumerLead:"Ahmed", view:"quarter", period:"",
   oxeSource:"auto", costPct:60, centralMo:32000, netTargetPct:30,
   eqPct:40, regionPct:40, mdPct:20,
-  otherByRegion:{Dubai:0,AbuDhabi:0,International:0},
-  consumerPctByRegion:{Dubai:0,AbuDhabi:0,International:0},
+  otherByRegion:{Sami:0,Kamal:0,Ahmed:0},
+  consumerPctByRegion:{Sami:0,Kamal:0,Ahmed:0},
   intlNetTargetManual:50000
 };
+// migrate any old region-keyed data (Dubai/AbuDhabi/International) → partner keys
+function migrateKeyed(obj){ if(!obj||typeof obj!=="object") return obj; const o={}; Object.keys(obj).forEach(k=>{ o[REGION_MIGRATE[k]||k]=obj[k]; }); PARTNER_KEYS.forEach(k=>{ if(o[k]==null) o[k]=0; }); return o; }
+function migrateAll(){
+  CC_REPS.forEach(r=>{ if(REGION_MIGRATE[r.region]) r.region=REGION_MIGRATE[r.region]; });
+  CC_CFG.otherByRegion=migrateKeyed(CC_CFG.otherByRegion);
+  CC_CFG.consumerPctByRegion=migrateKeyed(CC_CFG.consumerPctByRegion);
+  if(REGION_MIGRATE[CC_CFG.consumerLead]) CC_CFG.consumerLead=REGION_MIGRATE[CC_CFG.consumerLead];
+}
 let CC_VIEW="targets";
 
 function store(){ return (window.CoreVStore) || {deals:[],commByRep:{}}; }
@@ -3881,10 +3892,9 @@ function ctrlsHTML(){
   const av=availablePeriods(), cur=currentPeriod();
   const perOpts=(av.length?av:[""]).map(k=>`<option value="${k}" ${k===cur?"selected":""}>${periodLabel(k,CC_CFG.view)}</option>`).join("");
   const viewOpts=[["month","Month"],["quarter","Quarter"],["half","Half-year"],["year","Year"]].map(o=>`<option value="${o[0]}" ${o[0]===CC_CFG.view?"selected":""}>${o[1]}</option>`).join("");
-  return `<div class="ctrls">
+  return `<div class="ctrls" style="grid-template-columns:repeat(4,1fr)">
     <div class="cfield"><label>Reserve % (CoreV)</label><input class="ein" type="number" data-c="reservePct" value="${CC_CFG.reservePct}"></div>
     <div class="cfield"><label>Monthly target factor (× salary)</label><input class="ein" type="number" step="0.01" data-c="targetFactor" value="${CC_CFG.targetFactor}"></div>
-    <div class="cfield"><label>Consumer → MD share % (region keeps rest)</label><input class="ein" type="number" data-c="consumerMdShare" value="${CC_CFG.consumerMdShare}"></div>
     <div class="cfield"><label>View by</label><select class="ein" data-c="view">${viewOpts}</select></div>
     <div class="cfield"><label>Period</label><select class="ein" data-c="period">${perOpts}</select></div>
   </div>`;
@@ -3916,11 +3926,11 @@ function renderTargets(){
     </tr>`;
   });
   const html=`${ctrlsHTML()}
-  <div class="note"><span class="ic">i</span><span>All figures auto-calculate live from HubSpot, Costing &amp; Commission and the rep table below. Monthly target = ${CC_CFG.targetFactor}× salary; the period target scales to the view (month ×1 · quarter ×3 · half ×6 · year ×12). Rule vs the period target: &lt;30% exit · 30–50% coaching · 50%+ on track.</span></div>
+  <div class="note"><span class="ic">i</span><span>All figures auto-calculate live from HubSpot, Costing &amp; Commission and the resource table below. Map each person to the <b>partner</b> they roll up to. Monthly target = ${CC_CFG.targetFactor}× salary; the period target scales to the view (month ×1 · quarter ×3 · half ×6 · year ×12). Rule vs the period target: &lt;30% exit · 30–50% coaching · 50%+ on track.</span></div>
   <div class="totrow"><span>Closed-won <b>${fmt(totalCW)}</b></span><span>Assigned <b>${fmt(assigned)}</b></span><span>Unassigned <b>${fmt(totalCW-assigned)}</b></span></div>
-  <div class="addbar"><input class="ein txt" id="cc-newrep" type="text" placeholder="New sales rep name" style="max-width:220px"><button class="btn dark" id="cc-addrep">+ Add sales rep</button><span class="why">assign a region &amp; salary — targets &amp; status calculate automatically.</span></div>
+  <div class="addbar"><input class="ein txt" id="cc-newrep" type="text" placeholder="New resource name" style="max-width:220px"><button class="btn dark" id="cc-addrep">+ Add resource</button><span class="why">map to a partner &amp; set salary — targets &amp; status calculate automatically.</span></div>
   <div class="panel scroll"><table class="data">
-    <thead><tr><th class="l">Rep</th><th class="l">Region</th><th>Salary/mo</th><th>Monthly (${CC_CFG.targetFactor}×)</th><th>Period target</th><th>Closed won</th><th>Attain</th><th class="l">Status</th></tr></thead>
+    <thead><tr><th class="l">Resource</th><th class="l">Partner</th><th>Salary/mo</th><th>Monthly (${CC_CFG.targetFactor}×)</th><th>Period target</th><th>Closed won</th><th>Attain</th><th class="l">Status</th></tr></thead>
     <tbody>${rows}</tbody>
   </table></div>`;
   $("cc-body").innerHTML=html;
@@ -3928,7 +3938,7 @@ function renderTargets(){
   $("cc-body").querySelectorAll(".cc-region").forEach(s=>s.addEventListener("change",e=>{ CC_REPS[+e.target.dataset.i].region=e.target.value; render(); ccChanged(); }));
   $("cc-body").querySelectorAll(".cc-salary").forEach(inp=>inp.addEventListener("change",e=>{ CC_REPS[+e.target.dataset.i].salary=parseFloat(e.target.value)||0; render(); ccChanged(); }));
   $("cc-body").querySelectorAll(".cc-del").forEach(x=>x.addEventListener("click",e=>{ CC_REPS.splice(+e.target.dataset.i,1); render(); ccChanged(); }));
-  $("cc-addrep").addEventListener("click",()=>{ const n=($("cc-newrep").value||"").trim(); if(!n) return; CC_REPS.push({name:n,region:"Dubai",salary:0,del:true}); render(); ccChanged(); });
+  $("cc-addrep").addEventListener("click",()=>{ const n=($("cc-newrep").value||"").trim(); if(!n) return; CC_REPS.push({name:n,region:PARTNER_KEYS[0],salary:0,del:true}); render(); ccChanged(); });
 }
 
 /* ---------- view 2: profit centres ---------- */
@@ -3973,7 +3983,7 @@ function renderCentres(){
     <div class="cfield"><label>Central shared-services / month</label><input class="ein" type="number" data-c="centralMo" value="${CC_CFG.centralMo}"></div>
     <div class="cfield"><label>Net profit target % (region)</label><input class="ein" type="number" data-c="netTargetPct" value="${CC_CFG.netTargetPct}"></div>
   </div>
-  <div class="note"><span class="ic">i</span><span><b>Product cost (OxeFit)</b> on <i>Auto</i> is the actual cost owed to OxeFit for this period's deals, pulled live from Payouts &amp; OxeFit (the effective % is that total ÷ revenue). <b>Central shared-services</b> — the MD-run functions (marketing, events, admin) — is the <b>cost centre</b>: entered per month, scaled to the period, and allocated to each region by its number of sales reps. Net operating profit = contribution margin − that allocated central cost.</span></div>
+  <div class="note"><span class="ic">i</span><span><b>Product cost (OxeFit)</b> on <i>Auto</i> is the actual cost owed to OxeFit for this period's deals, pulled live from Payouts &amp; OxeFit (the effective % is that total ÷ revenue). <b>Central shared-services</b> — the MD-run functions (marketing, events, admin) — is the <b>cost centre</b>: entered per month, scaled to the period, and allocated to each partner by its number of resources. Net operating profit = contribution margin − that allocated central cost.</span></div>
   <div class="pcgrid" style="margin-top:14px">${cards}</div>`;
   $("cc-body").innerHTML=html;
   bindCtrls();
@@ -3990,21 +4000,27 @@ function distModel(){
   const reserved=companyMo*(CC_CFG.reservePct/100);
   const distributed=companyMo*(1-CC_CFG.reservePct/100);
   const eqPool=distributed*(CC_CFG.eqPct/100), regionPool=distributed*(CC_CFG.regionPct/100), mdPool=distributed*(CC_CFG.mdPct/100);
-  const eqEach=eqPool/3;
-  const rev=revByRegion(); const totalRev=(rev.Dubai||0)+(rev.AbuDhabi||0)+(rev.International||0);
-  const partners={Ahmed:{eq:eqEach,rm:mdPool},Kamal:{eq:eqEach,rm:0},Sami:{eq:eqEach,rm:0}};
+  const nP=REGIONS.length; const eqEach=eqPool/nP;
+  const rev=revByRegion(); const totalRev=PARTNER_KEYS.reduce((a,k)=>a+(rev[k]||0),0);
+  const mdKey=(REGIONS.find(r=>r.md)||{}).key||"Ahmed";
+  const partners={}; REGIONS.forEach(reg=>partners[reg.key]={eq:eqEach,rm:0});
+  partners[mdKey].rm+=mdPool;
+  let consumerPool=0;
   const regionRows=REGIONS.map(reg=>{
     const rshare=totalRev?(rev[reg.key]||0)/totalRev:0;
     const slice=regionPool*rshare;
     const consumer=((CC_CFG.consumerPctByRegion||{})[reg.key]||0)/100;
-    let toMd, toOwner;
-    if(reg.md){ toMd=0; toOwner=slice; } // International owner is the MD (Ahmed)
-    else { toMd=slice*consumer*(CC_CFG.consumerMdShare/100); toOwner=slice-toMd; }
-    if(partners[reg.lead]) partners[reg.lead].rm+=toOwner;
-    partners.Ahmed.rm+=toMd;
-    return {reg,rev:rev[reg.key]||0,rshare,consumer,slice,toOwner,toMd};
+    const consumerAmt=slice*consumer;          // consumer portion → pooled, distributed per mode
+    const ownerAmt=slice-consumerAmt;          // commercial/own portion → this partner
+    partners[reg.key].rm+=ownerAmt;
+    consumerPool+=consumerAmt;
+    return {reg,rev:rev[reg.key]||0,rshare,consumer,slice,ownerAmt,consumerAmt};
   });
-  return {companyMo,companyPeriod,nopByRegion,reserved,distributed,eqPool,regionPool,mdPool,eqEach,partners,regionRows,totalRev};
+  // consumer distribution: no partner engaged → equal; partner lead → the chosen partner
+  const leadKey = (CC_CFG.consumerMode==="lead" && partners[CC_CFG.consumerLead]) ? CC_CFG.consumerLead : null;
+  if(leadKey){ partners[leadKey].rm+=consumerPool; }
+  else { const each=consumerPool/nP; REGIONS.forEach(reg=>partners[reg.key].rm+=each); }
+  return {companyMo,companyPeriod,nopByRegion,reserved,distributed,eqPool,regionPool,mdPool,eqEach,partners,regionRows,totalRev,consumerPool,leadKey};
 }
 function renderDist(){
   const d=distModel();
@@ -4017,41 +4033,48 @@ function renderDist(){
       <div class="pbar"><div class="eq" style="width:${eqW}%"></div><div class="rg" style="width:${rmW}%"></div></div></div>`;
   }).join("");
   const ptable=order.map(p=>`<tr><td class="l">${p}</td><td>${fmt0(d.partners[p].eq)}</td><td>${fmt0(d.partners[p].rm)}</td><td><b>${fmt0(totals[p])}</b></td><td>${(totals[p]/grand*100).toFixed(1)}%</td></tr>`).join("");
-  const rrows=d.regionRows.map(r=>`<tr><td class="l">${r.reg.label}</td><td>${fmt0(r.rev)}</td><td>${(r.rshare*100).toFixed(0)}%</td><td>${(r.consumer*100).toFixed(0)}%</td><td>${fmt0(r.slice)}</td><td>${fmt0(r.toOwner)}</td><td>${fmt0(r.toMd)}</td></tr>`).join("");
+  const rrows=d.regionRows.map(r=>`<tr><td class="l">${r.reg.label}</td><td>${fmt0(r.rev)}</td><td>${(r.rshare*100).toFixed(0)}%</td><td>${(r.consumer*100).toFixed(0)}%</td><td>${fmt0(r.slice)}</td><td>${fmt0(r.ownerAmt)}</td><td>${fmt0(r.consumerAmt)}</td></tr>`).join("");
   const consInputs=REGIONS.map(reg=>`<div class="cfield"><label>Consumer % · ${reg.label}</label><input class="ein" type="number" data-cons="${reg.key}" value="${(CC_CFG.consumerPctByRegion||{})[reg.key]||0}"></div>`).join("");
+  const modeOpts=[["equal","Split equally — no partner engaged"],["lead","Credit a lead partner"]].map(o=>`<option value="${o[0]}" ${o[0]===CC_CFG.consumerMode?"selected":""}>${o[1]}</option>`).join("");
+  const leadOpts=REGIONS.map(reg=>`<option value="${reg.key}" ${reg.key===CC_CFG.consumerLead?"selected":""}>${reg.label}</option>`).join("");
+  const consumerNote = d.leadKey ? `credited in full to <b>${d.leadKey}</b>` : `split equally across the ${REGIONS.length} partners`;
   const html=`${ctrlsHTML()}
-  <div class="blkhead" style="margin-top:16px"><h3>Distribution &amp; partner contribution</h3><span class="why">${CC_CFG.reservePct}% reserved · ${100-CC_CFG.reservePct}% shared · region ${CC_CFG.regionPct}% by revenue &amp; deal type · shown per month</span></div>
+  <div class="blkhead" style="margin-top:16px"><h3>Distribution &amp; partner contribution</h3><span class="why">${CC_CFG.reservePct}% reserved · ${100-CC_CFG.reservePct}% shared · partner share ${CC_CFG.regionPct}% by revenue; consumer ${consumerNote} · per month</span></div>
   <div class="addbar"><button class="btn primary" id="cc-distpdf">↓ Export PDF for partners</button></div>
   <div class="dgrid">
     <div>
       <div class="stack">
-        <div class="big ink"><div class="k">Company operating profit · per month</div><div class="v">${fmt0(d.companyMo)}</div><div style="font-size:11px;opacity:.82;margin-top:5px">Σ net operating profit of the 3 centres — ${fmt0(d.companyPeriod)} (${CC_CFG.view}) ÷ ${mult()} mo.<br>Dubai ${fmt0(d.nopByRegion.Dubai)} · Abu Dhabi ${fmt0(d.nopByRegion.AbuDhabi)} · International ${fmt0(d.nopByRegion.International)}</div></div>
+        <div class="big ink"><div class="k">Company operating profit · per month</div><div class="v">${fmt0(d.companyMo)}</div><div style="font-size:11px;opacity:.82;margin-top:5px">Σ net operating profit of the ${REGIONS.length} partner centres — ${fmt0(d.companyPeriod)} (${CC_CFG.view}) ÷ ${mult()} mo.<br>${REGIONS.map(reg=>reg.label+" "+fmt0(d.nopByRegion[reg.key]||0)).join(" · ")}</div></div>
         <div class="big slate"><div class="k">Reserved for CoreV — ${CC_CFG.reservePct}% · per month</div><div class="v">${fmt0(d.reserved)}</div></div>
         <div class="big blue"><div class="k">Distributed to partners — ${100-CC_CFG.reservePct}% · per month</div><div class="v">${fmt0(d.distributed)}</div></div>
       </div>
       <div class="split3">
         <div class="blkhead" style="margin:14px 0 4px"><h3 style="font-size:13px">The ${100-CC_CFG.reservePct}% splits three ways</h3></div>
-        <div class="row"><span class="lbl">Equal across the three partners</span><input class="rin" type="number" data-c="eqPct" value="${CC_CFG.eqPct}"></div>
-        <div class="row"><span class="lbl">Region sales — the deal's region owner</span><input class="rin" type="number" data-c="regionPct" value="${CC_CFG.regionPct}"></div>
+        <div class="row"><span class="lbl">Equal across the partners</span><input class="rin" type="number" data-c="eqPct" value="${CC_CFG.eqPct}"></div>
+        <div class="row"><span class="lbl">Partner sales — the deal's owning partner</span><input class="rin" type="number" data-c="regionPct" value="${CC_CFG.regionPct}"></div>
         <div class="row"><span class="lbl">Operational &amp; managing (MD)</span><input class="rin" type="number" data-c="mdPct" value="${CC_CFG.mdPct}"></div>
+      </div>
+      <div class="ctrls" style="grid-template-columns:1fr 1fr;margin-top:12px">
+        <div class="cfield"><label>Consumer deals</label><select class="ein" data-c="consumerMode">${modeOpts}</select></div>
+        ${CC_CFG.consumerMode==="lead"?`<div class="cfield"><label>Lead partner</label><select class="ein" data-c="consumerLead">${leadOpts}</select></div>`:`<div class="cfield"><label>&nbsp;</label><div class="why" style="padding-top:9px">Consumer share is pooled and split equally.</div></div>`}
       </div>
     </div>
     <div>
       ${bars}
-      <div class="plegend"><span><span class="sw" style="background:var(--blue)"></span>Equal (${CC_CFG.eqPct}%)</span><span><span class="sw" style="background:var(--gold)"></span>Region + MD</span></div>
+      <div class="plegend"><span><span class="sw" style="background:var(--blue)"></span>Equal (${CC_CFG.eqPct}%)</span><span><span class="sw" style="background:var(--gold)"></span>Partner + MD</span></div>
       <div class="panel scroll" style="margin-top:12px"><table class="data">
-        <thead><tr><th class="l">Partner</th><th>Equal ${CC_CFG.eqPct}%</th><th>Region + MD</th><th>Total</th><th>%</th></tr></thead>
+        <thead><tr><th class="l">Partner</th><th>Equal ${CC_CFG.eqPct}%</th><th>Partner + MD</th><th>Total</th><th>%</th></tr></thead>
         <tbody>${ptable}</tbody>
         <tfoot><tr><td class="l">Total distributed</td><td>${fmt0(d.eqPool)}</td><td>${fmt0(d.regionPool+d.mdPool)}</td><td>${fmt0(d.distributed)}</td><td>100%</td></tr></tfoot>
       </table></div>
     </div>
   </div>
-  <div class="blkhead" style="margin-top:18px"><h3 style="font-size:13px">Region ${CC_CFG.regionPct}% — how it breaks down</h3><span class="why">revenue-weighted; consumer ${CC_CFG.consumerMdShare}/${100-CC_CFG.consumerMdShare} region/MD, commercial &amp; international 100% region</span></div>
+  <div class="blkhead" style="margin-top:18px"><h3 style="font-size:13px">Partner ${CC_CFG.regionPct}% — how it breaks down</h3><span class="why">revenue-weighted; commercial stays with the partner, consumer is ${consumerNote}</span></div>
   <div class="ctrls" style="grid-template-columns:repeat(3,1fr);margin-bottom:10px">${consInputs}</div>
   <div class="panel scroll"><table class="data">
-    <thead><tr><th class="l">Region</th><th>Revenue</th><th>Rev %</th><th>Consumer %</th><th>${CC_CFG.regionPct}% slice</th><th>→ owner</th><th>→ MD (Ahmed)</th></tr></thead>
+    <thead><tr><th class="l">Partner</th><th>Revenue</th><th>Rev %</th><th>Consumer %</th><th>${CC_CFG.regionPct}% slice</th><th>→ owner</th><th>→ consumer pool</th></tr></thead>
     <tbody>${rrows}</tbody>
-    <tfoot><tr><td class="l">Region ${CC_CFG.regionPct}% pool</td><td>${fmt0(d.totalRev)}</td><td>100%</td><td></td><td>${fmt0(d.regionPool)}</td><td>${fmt0(d.regionRows.reduce((a,r)=>a+r.toOwner,0))}</td><td>${fmt0(d.regionRows.reduce((a,r)=>a+r.toMd,0))}</td></tr></tfoot>
+    <tfoot><tr><td class="l">Partner ${CC_CFG.regionPct}% pool</td><td>${fmt0(d.totalRev)}</td><td>100%</td><td></td><td>${fmt0(d.regionPool)}</td><td>${fmt0(d.regionRows.reduce((a,r)=>a+r.ownerAmt,0))}</td><td>${fmt0(d.consumerPool)}</td></tr></tfoot>
   </table></div>`;
   $("cc-body").innerHTML=html;
   bindCtrls();
@@ -4065,7 +4088,7 @@ function bindCtrls(){
     el.addEventListener("change",e=>{
       const k=e.target.dataset.c; let v=e.target.value;
       if(k==="view"){ CC_CFG.view=v; CC_CFG.period=""; }          // reset period to latest of the new granularity
-      else if(k==="period"||k==="oxeSource") CC_CFG[k]=v;
+      else if(k==="period"||k==="oxeSource"||k==="consumerMode"||k==="consumerLead") CC_CFG[k]=v;
       else CC_CFG[k]=parseFloat(v)||0;
       render(); ccChanged();
     });
@@ -4092,15 +4115,15 @@ function distPDF(){
     doc.setFont("helvetica","bold"); doc.setFontSize(7.5); doc.setTextColor(107,122,147); doc.text(k[0].toUpperCase(),x+10,y+16);
     doc.setFontSize(14); doc.setTextColor(28,78,216); doc.text("AED "+k[1],x+10,y+34); });
   y+=60;
-  doc.autoTable({ startY:y, head:[["Partner","Equal "+CC_CFG.eqPct+"%","Region + MD","Total / mo","%"]],
+  doc.autoTable({ startY:y, head:[["Partner","Equal "+CC_CFG.eqPct+"%","Partner + MD","Total / mo","%"]],
     body:order.map(p=>[p,"AED "+fmt0(d.partners[p].eq),"AED "+fmt0(d.partners[p].rm),"AED "+fmt0(totals[p]),(totals[p]/(d.distributed||1)*100).toFixed(1)+"%"]),
     foot:[["Total distributed","AED "+fmt0(d.eqPool),"AED "+fmt0(d.regionPool+d.mdPool),"AED "+fmt0(d.distributed),"100%"]],
     theme:"grid", margin:{left:M,right:M}, styles:{font:"helvetica",fontSize:9,cellPadding:5,textColor:[27,39,64],lineColor:[228,233,242]},
     headStyles:{fillColor:[14,22,38],textColor:[255,255,255],halign:"right"}, footStyles:{fillColor:[242,245,251],textColor:[14,22,38],fontStyle:"bold",halign:"right"},
     columnStyles:{0:{halign:"left",fontStyle:"bold"}}, bodyStyles:{halign:"right"} });
   y=doc.lastAutoTable.finalY+16;
-  doc.autoTable({ startY:y, head:[["Region · owner","Revenue","Rev %","Consumer %",CC_CFG.regionPct+"% slice","→ owner","→ MD (Ahmed)"]],
-    body:d.regionRows.map(r=>[r.reg.label,"AED "+fmt0(r.rev),(r.rshare*100).toFixed(0)+"%",(r.consumer*100).toFixed(0)+"%","AED "+fmt0(r.slice),"AED "+fmt0(r.toOwner),"AED "+fmt0(r.toMd)]),
+  doc.autoTable({ startY:y, head:[["Partner","Revenue","Rev %","Consumer %",CC_CFG.regionPct+"% slice","→ owner","→ consumer pool"]],
+    body:d.regionRows.map(r=>[r.reg.label,"AED "+fmt0(r.rev),(r.rshare*100).toFixed(0)+"%",(r.consumer*100).toFixed(0)+"%","AED "+fmt0(r.slice),"AED "+fmt0(r.ownerAmt),"AED "+fmt0(r.consumerAmt)]),
     theme:"grid", margin:{left:M,right:M}, styles:{font:"helvetica",fontSize:8.5,cellPadding:4,textColor:[27,39,64],lineColor:[228,233,242]},
     headStyles:{fillColor:[14,22,38],textColor:[255,255,255],halign:"right"}, columnStyles:{0:{halign:"left"}}, bodyStyles:{halign:"right"} });
   const fn="CoreV_Partner_Distribution.pdf";
@@ -4121,12 +4144,13 @@ function render(){
 function ccChanged(){ if(window.CoreVSync) window.CoreVSync.changed(); }
 if(window.CoreVSync) window.CoreVSync.register('costcenter',
   ()=>({reps:CC_REPS,cfg:CC_CFG,view:CC_VIEW}),
-  env=>{ try{ if(Array.isArray(env.reps)) CC_REPS=env.reps; if(env.cfg&&typeof env.cfg==='object') CC_CFG=Object.assign(CC_CFG,env.cfg); if(env.view) CC_VIEW=env.view; render(); }catch(_){}}
+  env=>{ try{ if(Array.isArray(env.reps)) CC_REPS=env.reps; if(env.cfg&&typeof env.cfg==='object') CC_CFG=Object.assign(CC_CFG,env.cfg); if(env.view) CC_VIEW=env.view; migrateAll(); render(); }catch(_){}}
 );
 window.addEventListener("corev:store", ()=>{ try{ render(); }catch(_){}} );
 window.addEventListener("corev:oxefit", ()=>{ try{ render(); }catch(_){}} );
 window.addEventListener("corev:products", ()=>{ try{ render(); }catch(_){}} );
 
+migrateAll();
 renderNav();
 render();
 
