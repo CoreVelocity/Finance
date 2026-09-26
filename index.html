@@ -810,13 +810,13 @@
       <button id="altSignIn" class="gate-alt">Having trouble? Try popup sign-in</button>
       <div id="authErr" class="gate-err"></div>
       <div class="gate-foot">Management access only</div>
-      <div class="gate-ver">v1.36.1 · 2026-06-14</div>
+      <div class="gate-ver">v1.36.2 · 2026-06-14</div>
     </div>
   </div>
 
   <div id="appRoot" style="display:none">
   <header class="topbar">
-    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.36.1</span></div>
+    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.36.2</span></div>
     <nav class="tabnav">
       <button data-tab="tab-costing" class="active"><span class="n">01</span>Costing</button>
       <button data-tab="tab-commission"><span class="n">02</span>Commission</button>
@@ -3839,27 +3839,27 @@ function inPeriod(month){ const k=currentPeriod(); if(k==="all") return true; co
 
 /* ---- live figures per region (period-filtered) ---- */
 function revByRegion(){
-  const rev={Dubai:0,AbuDhabi:0,International:0,_un:0};
-  (store().deals||[]).forEach(d=>{ if(!inPeriod(d.month))return; const rg=regionOf(d.rep); if(rg) rev[rg]+=(+d.gross||0); else rev._un+=(+d.gross||0); });
+  const rev={_un:0}; PARTNER_KEYS.forEach(k=>rev[k]=0);
+  (store().deals||[]).forEach(d=>{ if(!inPeriod(d.month))return; const rg=regionOf(d.rep); if(rg!=null && rev[rg]!=null) rev[rg]+=(+d.gross||0); else rev._un+=(+d.gross||0); });
   return rev;
 }
 function revByRep(period){ const r={}; (store().deals||[]).forEach(d=>{ if(period&&!inPeriod(d.month))return; r[d.rep]=(r[d.rep]||0)+(+d.gross||0); }); return r; }
 function commByRegion(){
-  const c={Dubai:0,AbuDhabi:0,International:0}; const cm=store().commByRep||{};
+  const c={}; PARTNER_KEYS.forEach(k=>c[k]=0); const cm=store().commByRep||{};
   const rpAll=revByRep(false), rpPer=revByRep(true);
   CC_REPS.forEach(r=>{ if(c[r.region]==null)return; const tot=rpAll[r.name]||0, per=rpPer[r.name]||0; const ratio=tot>0?per/tot:0; c[r.region]+=(+cm[r.name]||0)*ratio; });
   return c;
 }
 function oxeByRegion(){
-  const o={Dubai:0,AbuDhabi:0,International:0};
-  (oxeStore().deals||[]).forEach(x=>{ if(!inPeriod(x.month))return; const rg=regionOf(x.rep); if(o[rg]!=null) o[rg]+=(+x.cost||0); });
+  const o={}; PARTNER_KEYS.forEach(k=>o[k]=0);
+  (oxeStore().deals||[]).forEach(x=>{ if(!inPeriod(x.month))return; const rg=regionOf(x.rep); if(rg!=null && o[rg]!=null) o[rg]+=(+x.cost||0); });
   return o;
 }
 function repsInRegion(rg){ return CC_REPS.filter(r=>r.region===rg); }
 function salariesByRegion(rg){ return repsInRegion(rg).reduce((a,r)=>a+(+r.salary||0),0)*mult(); }
 function periodTargetByRegion(rg){ return repsInRegion(rg).reduce((a,r)=>a+(+r.salary||0)*CC_CFG.targetFactor,0)*mult(); }
 function centralTotal(){ return (+CC_CFG.centralMo||0)*mult(); }
-function effOxePct(){ const rev=revByRegion(); const tR=(rev.Dubai||0)+(rev.AbuDhabi||0)+(rev.International||0); const tO=(oxeByRegion().Dubai||0)+(oxeByRegion().AbuDhabi||0)+(oxeByRegion().International||0); return tR?tO/tR:0; }
+function effOxePct(){ const rev=revByRegion(),oxe=oxeByRegion(); const tR=PARTNER_KEYS.reduce((a,k)=>a+(rev[k]||0),0); const tO=PARTNER_KEYS.reduce((a,k)=>a+(oxe[k]||0),0); return tR?tO/tR:0; }
 
 function regionModel(reg){
   const rev=revByRegion()[reg.key]||0;
