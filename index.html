@@ -810,13 +810,13 @@
       <button id="altSignIn" class="gate-alt">Having trouble? Try popup sign-in</button>
       <div id="authErr" class="gate-err"></div>
       <div class="gate-foot">Management access only</div>
-      <div class="gate-ver">v1.36.0 · 2026-06-14</div>
+      <div class="gate-ver">v1.36.1 · 2026-06-14</div>
     </div>
   </div>
 
   <div id="appRoot" style="display:none">
   <header class="topbar">
-    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.36.0</span></div>
+    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.36.1</span></div>
     <nav class="tabnav">
       <button data-tab="tab-costing" class="active"><span class="n">01</span>Costing</button>
       <button data-tab="tab-commission"><span class="n">02</span>Commission</button>
@@ -3784,7 +3784,7 @@ let CC_REPS=[
   {name:"Hussean",region:"Kamal",salary:14000,del:true}
 ];
 let CC_CFG={
-  reservePct:40, targetFactor:13.52, consumerMode:"equal", consumerLead:"Ahmed", view:"quarter", period:"",
+  reservePct:40, targetFactor:13.52, consumerMode:"equal", consumerLead:"Ahmed", view:"quarter", period:"all",
   oxeSource:"auto", costPct:60, centralMo:32000, netTargetPct:30,
   eqPct:40, regionPct:40, mdPct:20,
   otherByRegion:{Sami:0,Kamal:0,Ahmed:0},
@@ -3834,8 +3834,8 @@ function periodRange(k,view){ if(!k) return null;
   return null;
 }
 function availablePeriods(){ const set=new Set(); (store().deals||[]).forEach(d=>{ const o=parseYM(d.month); if(o) set.add(periodKeyOf(ymNum(o),CC_CFG.view)); }); return Array.from(set).sort(); }
-function currentPeriod(){ const av=availablePeriods(); if(CC_CFG.period && av.includes(CC_CFG.period)) return CC_CFG.period; return av.length?av[av.length-1]:""; }
-function inPeriod(month){ const k=currentPeriod(); if(!k) return true; const rg=periodRange(k,CC_CFG.view); const o=parseYM(month); if(!o) return false; const n=ymNum(o); return n>=rg[0]&&n<=rg[1]; }
+function currentPeriod(){ if(CC_CFG.period==="all"||!CC_CFG.period) return "all"; const av=availablePeriods(); return av.includes(CC_CFG.period)?CC_CFG.period:"all"; }
+function inPeriod(month){ const k=currentPeriod(); if(k==="all") return true; const rg=periodRange(k,CC_CFG.view); const o=parseYM(month); if(!o) return false; const n=ymNum(o); return n>=rg[0]&&n<=rg[1]; }
 
 /* ---- live figures per region (period-filtered) ---- */
 function revByRegion(){
@@ -3876,7 +3876,7 @@ function regionModel(reg){
   const nop=contribution-allocCentral;   // canonical P&L ladder (slide 15)
   const netMargin=rev?nop/rev:0;
   const periodTarget=periodTargetByRegion(reg.key);
-  const netTarget=reg.md?(+CC_CFG.intlNetTargetManual||0):periodTarget*(CC_CFG.netTargetPct/100);
+  const netTarget=periodTarget*(CC_CFG.netTargetPct/100);
   const vsTarget=nop-netTarget;
   return {rev,productCost,grossProfit,grossMargin,commissions,salaries,other,controllable,contribution,allocCentral,nop,netMargin,periodTarget,netTarget,vsTarget};
 }
@@ -3890,7 +3890,7 @@ function renderNav(){
 
 function ctrlsHTML(){
   const av=availablePeriods(), cur=currentPeriod();
-  const perOpts=(av.length?av:[""]).map(k=>`<option value="${k}" ${k===cur?"selected":""}>${periodLabel(k,CC_CFG.view)}</option>`).join("");
+  const perOpts=['<option value="all" '+(cur==="all"?"selected":"")+'>All time</option>'].concat(av.map(k=>`<option value="${k}" ${k===cur?"selected":""}>${periodLabel(k,CC_CFG.view)}</option>`)).join("");
   const viewOpts=[["month","Month"],["quarter","Quarter"],["half","Half-year"],["year","Year"]].map(o=>`<option value="${o[0]}" ${o[0]===CC_CFG.view?"selected":""}>${o[1]}</option>`).join("");
   return `<div class="ctrls" style="grid-template-columns:repeat(4,1fr)">
     <div class="cfield"><label>Reserve % (CoreV)</label><input class="ein" type="number" data-c="reservePct" value="${CC_CFG.reservePct}"></div>
@@ -3947,9 +3947,7 @@ function renderCentres(){
   REGIONS.forEach(reg=>{
     const m=regionModel(reg);
     const otherVal=+((CC_CFG.otherByRegion||{})[reg.key])||0;
-    const netTargetCell = reg.md
-      ? `<input class="cin cc-intltarget" type="number" value="${Math.round(CC_CFG.intlNetTargetManual)}">`
-      : `<span class="val">${fmt0(m.netTarget)}</span>`;
+    const netTargetCell = `<span class="val">${fmt0(m.netTarget)}</span>`;
     cards+=`<div class="pc">
       <div class="pc-h"><div class="k">Profit centre</div><div class="n">${reg.label}</div></div>
       <div class="pc-line"><span class="lbl">Revenue <span class="src">HubSpot</span></span><span class="val">${fmt0(m.rev)}</span></div>
@@ -3958,7 +3956,7 @@ function renderCentres(){
       <div class="pc-line"><span class="lbl">Sales salaries <span class="src">from reps</span></span><span class="val">${fmt0(m.salaries)}</span></div>
       <div class="pc-line"><span class="lbl">Other costs <span class="src">manual</span></span><input class="cin cc-other" data-rg="${reg.key}" type="number" value="${Math.round(otherVal)}"></div>
       <div class="pc-line"><span class="lbl">Period sales target <span class="src">${CC_CFG.targetFactor}× salary</span></span><span class="val">${fmt0(m.periodTarget)}</span></div>
-      <div class="pc-line"><span class="lbl">Net profit target <span class="src">${reg.md?"manual":CC_CFG.netTargetPct+"% of target"}</span></span>${netTargetCell}</div>
+      <div class="pc-line"><span class="lbl">Net profit target <span class="src">${CC_CFG.netTargetPct}% of target</span></span>${netTargetCell}</div>
       <div class="pc-nop"><div class="k">Net operating profit</div><div class="v">${fmt0(m.nop)}</div><div class="d">Contribution margin − this centre's share of central cost. The reward basis.</div></div>
       <div class="pc-mini">
         <div class="m"><div class="k">Gross profit</div><div class="v">${fmt0(m.grossProfit)}</div><div class="s">Revenue − product cost</div></div>
@@ -3988,7 +3986,6 @@ function renderCentres(){
   $("cc-body").innerHTML=html;
   bindCtrls();
   $("cc-body").querySelectorAll(".cc-other").forEach(inp=>inp.addEventListener("change",e=>{ CC_CFG.otherByRegion[e.target.dataset.rg]=parseFloat(e.target.value)||0; render(); ccChanged(); }));
-  const it=$("cc-body").querySelector(".cc-intltarget"); if(it) it.addEventListener("change",e=>{ CC_CFG.intlNetTargetManual=parseFloat(e.target.value)||0; render(); ccChanged(); });
 }
 
 /* ---------- view 3: distribution ---------- */
@@ -4087,7 +4084,7 @@ function bindCtrls(){
   $("cc-body").querySelectorAll("[data-c]").forEach(el=>{
     el.addEventListener("change",e=>{
       const k=e.target.dataset.c; let v=e.target.value;
-      if(k==="view"){ CC_CFG.view=v; CC_CFG.period=""; }          // reset period to latest of the new granularity
+      if(k==="view"){ CC_CFG.view=v; CC_CFG.period="all"; }          // reset to All time on the new granularity
       else if(k==="period"||k==="oxeSource"||k==="consumerMode"||k==="consumerLead") CC_CFG[k]=v;
       else CC_CFG[k]=parseFloat(v)||0;
       render(); ccChanged();
