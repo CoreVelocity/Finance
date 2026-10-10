@@ -810,13 +810,13 @@
       <button id="altSignIn" class="gate-alt">Having trouble? Try popup sign-in</button>
       <div id="authErr" class="gate-err"></div>
       <div class="gate-foot">Management access only</div>
-      <div class="gate-ver">v1.38.1 · 2026-10-10</div>
+      <div class="gate-ver">v1.38.2 · 2026-10-10</div>
     </div>
   </div>
 
   <div id="appRoot" style="display:none">
   <header class="topbar">
-    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.38.1</span></div>
+    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.38.2</span></div>
     <nav class="tabnav">
       <button data-tab="tab-costing" class="active"><span class="n">01</span>Costing</button>
       <button data-tab="tab-commission"><span class="n">02</span>Commission</button>
@@ -2606,7 +2606,7 @@ function crmFetchDeals(silent,_try){
       deals= await window.CoreVGraph.readJson(base+"deals.json");
       try{ comps=await window.CoreVGraph.readJson(base+"companies.json"); }catch(_){ comps=null; }
     }catch(e){ hsStatus("Fetch failed: "+((e&&e.message)||e),"err"); return; }
-    const arr = x => Array.isArray(x)?x:((x&&(x.records||x.items||x.data))||[]);
+    const arr = x => Array.isArray(x)?x:((x&&(x.rows||x.records||x.items||x.data))||[]);
     const dealArr=arr(deals);
     if(!dealArr.length){ hsStatus("No deals found in CoreV SalesForce (OXEFIT/CoreVCRM/deals.json).","err"); return; }
     const stages=(cfg&&cfg.stages)||[]; const stageKind={}; stages.forEach(s=>{ if(s&&s.id) stageKind[s.id]=s.kind; });
