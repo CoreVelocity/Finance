@@ -810,13 +810,13 @@
       <button id="altSignIn" class="gate-alt">Having trouble? Try popup sign-in</button>
       <div id="authErr" class="gate-err"></div>
       <div class="gate-foot">Management access only</div>
-      <div class="gate-ver">v1.37.0 · 2026-06-14</div>
+      <div class="gate-ver">v1.37.1 · 2026-06-14</div>
     </div>
   </div>
 
   <div id="appRoot" style="display:none">
   <header class="topbar">
-    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.37.0</span></div>
+    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.37.1</span></div>
     <nav class="tabnav">
       <button data-tab="tab-costing" class="active"><span class="n">01</span>Costing</button>
       <button data-tab="tab-commission"><span class="n">02</span>Commission</button>
@@ -2291,13 +2291,15 @@ function renderRep(){
     <div class="f"><label>Eligible (total)</label><div class="v tnum" style="color:var(--pos)">${f2(R.eligible)}</div></div>
     <div class="f"><label>Outstanding payout</label><div class="v tnum" style="color:${outPay>0?'var(--pend)':'var(--pos)'}">${f2(outPay)}</div></div>
     <div class="repacts">
-      <button class="btn sm primary" id="rep_pdf">⤓ Statement PDF</button>
+      <button class="btn sm primary" id="rep_pdf">⤓ Full-year PDF</button>
+      <button class="btn sm" id="rep_pdf_month">⤓ Last-month PDF</button>
       <button class="btn sm" id="rep_email">✉ Email</button>
       <button class="btn sm danger" id="rep_del">Delete rep</button>
     </div>`;
   $("rep_name").addEventListener("input",e=>{r.name=e.target.value;renderTabs();renderSummary();publishStore();});
   $("rep_target").addEventListener("change",e=>{r.target=parseFloat(e.target.value)||0;renderAll();});
   $("rep_pdf").addEventListener("click",()=>repPDF(r));
+  $("rep_pdf_month").addEventListener("click",()=>{ const m=lastMonthOf(r); if(!m){alert("No dated deals for this rep yet — the last-month statement needs at least one closed deal with a month.");return;} repPDF(r,m); });
   $("rep_email").addEventListener("click",()=>emailRep(r));
   $("rep_del").addEventListener("click",()=>{
     if(REPS.length<=1){alert("Keep at least one rep.");return;}
@@ -2682,47 +2684,60 @@ function pdfFooter(doc){
   doc.text("CoreV · MENA Finance Suite",W-40,H-30,{align:"right"});
 }
 function ready(){ return window.jspdf && window.jspdf.jsPDF; }
-function repPDF(r){
+function lastMonthOf(r){ const R=repRoll(r); const ms=R.months.filter(mo=>mo.month!=="—"); if(!ms.length) return null;
+  return ms.reduce((a,b)=> monthSortKey(b.month)>monthSortKey(a.month)?b:a).month; }
+function repPDF(r, onlyMonth){
   if(!ready()){alert("PDF engine still loading — try again in a second.");return;}
   const {jsPDF}=window.jspdf; const doc=new jsPDF({unit:"pt",format:"a4"});
   const R=repRoll(r); const W=doc.internal.pageSize.getWidth();
-  let paidSum=0,outSum=0; R.months.forEach(mo=>{ if(payoutPaid(r,mo.month)) paidSum+=mo.R.eligible; else outSum+=mo.R.eligible; });
-  pdfHeader(doc,"Sales Commission Statement",r.name);
+  const useMonths = onlyMonth ? R.months.filter(mo=>mo.month===onlyMonth) : R.months;
+  const S={earned:0,eligible:0,pending:0,tgt:0,paidSum:0,outSum:0,active:0};
+  useMonths.forEach(mo=>{const M=mo.R; S.earned+=M.earned;S.eligible+=M.eligible;S.pending+=M.pending;S.tgt+=M.tgt; if(mo.deals.length)S.active++; if(payoutPaid(r,mo.month))S.paidSum+=M.eligible; else S.outSum+=M.eligible;});
+  pdfHeader(doc, onlyMonth?("Monthly Commission Statement — "+onlyMonth):"Sales Commission Statement — Fiscal Year", r.name);
   let y=104;
   doc.setFont("helvetica","bold");doc.setFontSize(11);doc.setTextColor(14,22,38);doc.text("Summary",40,y);
-  const info=[["Monthly target","AED "+fmt(r.target)],["Active months",String(R.active)],
-    ["Total credited sales","AED "+fmt(R.tgt)],["Total earned","AED "+f2(R.earned)],
-    ["Eligible (collected)","AED "+f2(R.eligible)],["Pending on collection","AED "+f2(R.pending)],
-    ["Paid out to date","AED "+f2(paidSum)],["Outstanding payout","AED "+f2(outSum)]];
+  const info = onlyMonth
+    ? [["Month",onlyMonth],["Monthly target","AED "+fmt(r.target)],
+       ["Credited sales","AED "+fmt(S.tgt)],["Earned","AED "+f2(S.earned)],
+       ["Eligible (collected)","AED "+f2(S.eligible)],["Pending on collection","AED "+f2(S.pending)],
+       ["Paid out","AED "+f2(S.paidSum)],["Outstanding payout","AED "+f2(S.outSum)]]
+    : [["Monthly target","AED "+fmt(r.target)],["Active months",String(S.active)],
+       ["Total credited sales","AED "+fmt(S.tgt)],["Total earned","AED "+f2(S.earned)],
+       ["Eligible (collected)","AED "+f2(S.eligible)],["Pending on collection","AED "+f2(S.pending)],
+       ["Paid out to date","AED "+f2(S.paidSum)],["Outstanding payout","AED "+f2(S.outSum)]];
   doc.autoTable({startY:y+4,theme:"plain",styles:{fontSize:10,cellPadding:3},
     body:info,columnStyles:{0:{textColor:[110,118,136]},1:{halign:"right",fontStyle:"bold",textColor:[14,22,38]}}});
   y=doc.lastAutoTable.finalY+18;
-  doc.setFont("helvetica","bold");doc.setFontSize(11);doc.setTextColor(14,22,38);doc.text("Monthly breakdown",40,y);
-  const mrows=R.months.map(mo=>{const M=mo.R; const st=M.gated?"Below min":(M.accelEarned>0?"Accelerator":"Base");
-    return [mo.month==="—"?"Unscheduled":mo.month, fmt(M.tgt), pct(M.attain,0), st, f2(M.earned), f2(M.eligible), f2(M.pending), payoutPaid(r,mo.month)?"Paid":"Pending"];});
-  doc.autoTable({startY:y+6,head:[["Month","Credited","Attain","Status","Earned","Eligible","Pending","Payout"]],
-    body:mrows.length?mrows:[["—","","","","","","",""]],styles:{fontSize:9,cellPadding:4},
-    headStyles:{fillColor:[27,38,56],textColor:[255,255,255],fontSize:8.5},
-    foot:[["Total",fmt(R.tgt),"","",f2(R.earned),f2(R.eligible),f2(R.pending),""]],footStyles:{fillColor:[14,22,38],textColor:[255,255,255]},
-    columnStyles:{1:{halign:"right"},4:{halign:"right"},5:{halign:"right",fontStyle:"bold",textColor:[17,122,78]},6:{halign:"right"}}});
-  y=doc.lastAutoTable.finalY+18;
-  doc.setFont("helvetica","bold");doc.setFontSize(11);doc.setTextColor(14,22,38);doc.text("Deals by month",40,y);
-  const drows=[]; R.months.forEach(mo=>{ mo.deals.forEach(d=>{const c=dealCalc(d);const e=mo.R.gated?0:c.elig;
+  if(!onlyMonth){
+    doc.setFont("helvetica","bold");doc.setFontSize(11);doc.setTextColor(14,22,38);doc.text("Monthly breakdown",40,y);
+    const mrows=R.months.map(mo=>{const M=mo.R; const st=M.gated?"Below min":(M.accelEarned>0?"Accelerator":"Base");
+      return [mo.month==="—"?"Unscheduled":mo.month, fmt(M.tgt), pct(M.attain,0), st, f2(M.earned), f2(M.eligible), f2(M.pending), payoutPaid(r,mo.month)?"Paid":"Pending"];});
+    doc.autoTable({startY:y+6,head:[["Month","Credited","Attain","Status","Earned","Eligible","Pending","Payout"]],
+      body:mrows.length?mrows:[["—","","","","","","",""]],styles:{fontSize:9,cellPadding:4},
+      headStyles:{fillColor:[27,38,56],textColor:[255,255,255],fontSize:8.5},
+      foot:[["Total",fmt(S.tgt),"","",f2(S.earned),f2(S.eligible),f2(S.pending),""]],footStyles:{fillColor:[14,22,38],textColor:[255,255,255]},
+      columnStyles:{1:{halign:"right"},4:{halign:"right"},5:{halign:"right",fontStyle:"bold",textColor:[17,122,78]},6:{halign:"right"}}});
+    y=doc.lastAutoTable.finalY+18;
+  }
+  doc.setFont("helvetica","bold");doc.setFontSize(11);doc.setTextColor(14,22,38);doc.text(onlyMonth?"Deals this month":"Deals by month",40,y);
+  const drows=[]; useMonths.forEach(mo=>{ mo.deals.forEach(d=>{const c=dealCalc(d);const e=mo.R.gated?0:c.elig;
     drows.push([mo.month==="—"?"—":mo.month,d.cust,d.type,fmt(c.ex),d.tag,f2(c.comm),pct(c.coll,0),f2(e)]);}); });
   doc.autoTable({startY:y+6,head:[["Month","Customer","Type","Excl VAT","Role","Commission","Coll %","Eligible"]],
     body:drows.length?drows:[["—","—","","","","","",""]],styles:{fontSize:9,cellPadding:4},
     headStyles:{fillColor:[27,38,56],textColor:[255,255,255],fontSize:8.5},
     columnStyles:{3:{halign:"right"},5:{halign:"right"},7:{halign:"right",fontStyle:"bold",textColor:[17,122,78]}}});
   y=doc.lastAutoTable.finalY+16;
-  const proj=repProjection(r);
-  if(proj.length){
-    if(y>700){doc.addPage();y=60;}
-    doc.setFont("helvetica","bold");doc.setFontSize(11);doc.setTextColor(14,22,38);doc.text("Projected payout (future plan)",40,y);
-    doc.autoTable({startY:y+6,head:[["Month","Projected commission (AED)"]],
-      body:proj.map(p=>[ymLabel(p.ym),f2(p.amt)]),styles:{fontSize:9,cellPadding:4},
-      headStyles:{fillColor:[27,38,56],textColor:[255,255,255],fontSize:8.5},columnStyles:{1:{halign:"right"}}});
+  if(!onlyMonth){
+    const proj=repProjection(r);
+    if(proj.length){
+      if(y>700){doc.addPage();y=60;}
+      doc.setFont("helvetica","bold");doc.setFontSize(11);doc.setTextColor(14,22,38);doc.text("Projected payout (future plan)",40,y);
+      doc.autoTable({startY:y+6,head:[["Month","Projected commission (AED)"]],
+        body:proj.map(p=>[ymLabel(p.ym),f2(p.amt)]),styles:{fontSize:9,cellPadding:4},
+        headStyles:{fillColor:[27,38,56],textColor:[255,255,255],fontSize:8.5},columnStyles:{1:{halign:"right"}}});
+      y=doc.lastAutoTable.finalY+18;
+    }
   }
-  y=doc.lastAutoTable.finalY+18;
   if(y>600){doc.addPage();y=60;}
   doc.setFont("helvetica","bold");doc.setFontSize(11);doc.setTextColor(14,22,38);doc.text("Commission rules",40,y); y+=14;
   doc.setFont("helvetica","normal");doc.setFontSize(9);doc.setTextColor(70,80,100);
@@ -2742,7 +2757,7 @@ function repPDF(r){
     styles:{fontSize:8.5,cellPadding:3},headStyles:{fillColor:[27,38,56],textColor:[255,255,255],fontSize:8},
     columnStyles:{1:{halign:"right"},2:{halign:"right"},3:{halign:"right",fontStyle:"bold"}}});
   pdfFooter(doc);
-  savePdf(doc,"CoreV_Commission_"+r.name.replace(/\s+/g,"_")+".pdf");
+  savePdf(doc,"CoreV_Commission_"+r.name.replace(/\s+/g,"_")+(onlyMonth?("_"+onlyMonth.replace(/[^\w]/g,"-")):"_FY")+".pdf");
 }
 function referralPDF(){
   if(!ready()){alert("PDF engine still loading — try again in a second.");return;}
