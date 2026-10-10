@@ -810,13 +810,13 @@
       <button id="altSignIn" class="gate-alt">Having trouble? Try popup sign-in</button>
       <div id="authErr" class="gate-err"></div>
       <div class="gate-foot">Management access only</div>
-      <div class="gate-ver">v1.37.1 · 2026-06-14</div>
+      <div class="gate-ver">v1.38.1 · 2026-10-10</div>
     </div>
   </div>
 
   <div id="appRoot" style="display:none">
   <header class="topbar">
-    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.37.1</span></div>
+    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.38.1</span></div>
     <nav class="tabnav">
       <button data-tab="tab-costing" class="active"><span class="n">01</span>Costing</button>
       <button data-tab="tab-commission"><span class="n">02</span>Commission</button>
@@ -1096,57 +1096,25 @@
       </div>
     </section>
 
-    <!-- HUBSPOT -->
+    <!-- COREV SALESFORCE -->
     <section class="blk">
-      <div class="blkhead"><h2>HubSpot</h2><span class="why">— pull closed-won deals: value → Gross (AED), name → customer, close date → month.</span>
-        <button class="btn hub" id="hs_connectbtn" style="margin-left:auto">🔑 Connect HubSpot</button>
-      </div>
+      <div class="blkhead"><h2>CoreV SalesForce</h2><span class="why">— pull won deals from the CRM: value → Gross (AED), company → customer, close date → month.</span></div>
       <div class="panel pad">
-        <div class="hub-status" id="hs_status">Not connected. Click <b>Connect HubSpot</b> to add your token, proxy URL and owner mapping.</div>
+        <div class="hub-status" id="hs_status">Reads won deals from <b>OXEFIT/CoreVCRM</b> on the shared drive. Sign in with Microsoft, then Fetch.</div>
         <div class="toolrow" style="margin-top:12px">
-          <button class="btn hub" id="hs_fetch">⤓ Fetch closed-won deals</button>
+          <button class="btn hub" id="hs_fetch">⤓ Fetch won deals from CoreV SalesForce</button>
           <button class="btn" id="hs_auto">Auto-pull on open: <b id="hs_autostate">on</b></button>
           <button class="btn danger" id="hs_reset">Reset deals &amp; re-sync</button>
         </div>
         <details style="margin-top:14px">
           <summary style="cursor:pointer;font-size:12px;color:var(--muted)">CSV import (fallback)</summary>
           <div style="margin-top:8px">
-            <textarea class="csv" id="hs_csv" placeholder="Paste HubSpot deals CSV (headers: Deal Name, Amount, Deal owner, Close Date, Deal Stage)…"></textarea>
+            <textarea class="csv" id="hs_csv" placeholder="Paste a deals CSV (headers: Deal Name, Amount, Deal owner, Close Date, Deal Stage)…"></textarea>
             <div class="toolrow" style="margin-top:8px"><input type="file" id="hs_file" accept=".csv" style="font-size:12px"><button class="btn primary" id="hs_import">Import CSV</button></div>
           </div>
         </details>
       </div>
     </section>
-
-    <!-- HUBSPOT CONNECT MODAL -->
-    <div id="hs_modal" class="hs-modal-overlay" style="display:none">
-      <div class="hs-modal">
-        <div class="hs-modal-head"><span>🔑 Connect HubSpot — Private App Token</span><button class="hs-x" id="hs_modalclose">×</button></div>
-        <div class="hs-modal-body">
-          <div class="hs-steps">Create a HubSpot <b>Private App</b> with read scopes <code>crm.objects.deals.read</code>, <code>crm.objects.owners.read</code>, <code>crm.schemas.deals.read</code> → copy the access token (starts with <code>pat-…</code>) → paste below.</div>
-          <label class="hs-lbl">Access Token</label>
-          <div style="position:relative"><input id="hs_token" class="hs-modal-in" type="password" placeholder="pat-..." autocomplete="off"><button id="hs_showtoken" class="hs-show" type="button">show</button></div>
-          <a class="hs-link" id="hs_openapps" href="https://app.hubspot.com/private-apps/" target="_blank" rel="noopener">Open HubSpot Private Apps ↗</a>
-          <label class="hs-lbl" style="margin-top:16px">CORS Proxy URL <span style="color:var(--warn)">*</span></label>
-          <input id="hs_proxy" class="hs-modal-in" type="text" placeholder="https://your-worker.workers.dev">
-          <div class="hs-hint">HubSpot blocks direct browser calls (CORS). A tiny Cloudflare Worker forwards them. <a class="hs-link" id="hs_workerlink">Show me the Worker code →</a></div>
-          <pre id="hs_workercode" class="hs-pre" style="display:none"></pre>
-          <div class="hs-maphead"><b>👥 Rep ↔ HubSpot Owner Mapping</b><span class="hs-req">Required before importing deals</span></div>
-          <div class="hs-hint" style="margin-top:2px">For each rep, pick the matching HubSpot user. Saved to this browser.</div>
-          <div id="hs_ownermap" class="hs-ownermap2"></div>
-          <div class="toolrow" style="justify-content:flex-end;margin-top:10px">
-            <button class="btn" id="hs_refreshowners">↻ Refresh Owners</button>
-            <button class="btn primary" id="hs_savemapping">Save Mapping</button>
-          </div>
-          <div class="hs-modal-status" id="hs_modalstatus"></div>
-        </div>
-        <div class="hs-modal-foot">
-          <button class="btn danger" id="hs_disconnect">Disconnect</button>
-          <button class="btn" id="hs_modalclose2">Close</button>
-          <button class="btn primary" id="hs_savetoken">Save Token &amp; Test</button>
-        </div>
-      </div>
-    </div>
 
     <!-- TEAM SUMMARY -->
     <section class="blk">
@@ -2620,12 +2588,66 @@ async function hsFetchClosedWon(silent){
 }
 function hsToggleAuto(){ HS.auto=!HS.auto; hsPersist(); const s=$("hs_autostate"); if(s)s.textContent=HS.auto?"on":"off"; }
 function hsResetDeals(){
-  if(!confirm("Clear ALL deals for every rep and re-pull from HubSpot? Manually-entered deals will be removed."))return;
+  if(!confirm("Clear ALL deals for every rep and re-pull from CoreV SalesForce? Manually-entered deals will be removed."))return;
   REPS.forEach(r=>{ r.deals=[]; }); renderAll();
-  if(hsConnected()) hsFetchClosedWon(false); else hsStatus("Deals cleared. Connect HubSpot to re-pull, or add deals manually.","ok");
+  crmFetchDeals(false);
 }
-function hsInit(){ hsLoad(); const s=$("hs_autostate"); if(s)s.textContent=HS.auto?"on":"off"; hsRefreshChip();
-  if(hsConnected()&&HS.auto&&REPS.some(r=>HS.ownerMap[r.name])) hsFetchClosedWon(true); }
+function crmFetchDeals(silent,_try){
+  _try=_try||0;
+  if(!window.CoreVGraph){ if(!silent) hsStatus("Sign in with Microsoft first.","err"); return; }
+  (async function(){
+    try{ if(window.CoreVGraphToken) await window.CoreVGraphToken(); }
+    catch(e){ if(silent&&_try<20){ setTimeout(()=>crmFetchDeals(true,_try+1),2500); return; } if(!silent) hsStatus("Sign in with Microsoft first.","err"); return; }
+    if(!silent) hsStatus("Fetching won deals from CoreV SalesForce…");
+    const base="/OXEFIT/CoreVCRM/";
+    let cfg,deals,comps;
+    try{
+      cfg  = await window.CoreVGraph.readJson(base+"config.json");
+      deals= await window.CoreVGraph.readJson(base+"deals.json");
+      try{ comps=await window.CoreVGraph.readJson(base+"companies.json"); }catch(_){ comps=null; }
+    }catch(e){ hsStatus("Fetch failed: "+((e&&e.message)||e),"err"); return; }
+    const arr = x => Array.isArray(x)?x:((x&&(x.records||x.items||x.data))||[]);
+    const dealArr=arr(deals);
+    if(!dealArr.length){ hsStatus("No deals found in CoreV SalesForce (OXEFIT/CoreVCRM/deals.json).","err"); return; }
+    const stages=(cfg&&cfg.stages)||[]; const stageKind={}; stages.forEach(s=>{ if(s&&s.id) stageKind[s.id]=s.kind; });
+    const owners=(cfg&&cfg.owners)||[]; const ownerById={}; owners.forEach(o=>{ if(o&&o.id) ownerById[o.id]=o; });
+    const coById={}; arr(comps).forEach(c=>{ if(c&&c.id) coById[c.id]=c; });
+    const firstName=s=>String(s||"").trim().split(/\s+/)[0]||"";
+    const norm=s=>String(s||"").trim().toLowerCase();
+    function repFor(owner,create){
+      const fn=norm(firstName(owner&&owner.name)); const em=norm(((owner&&owner.email)||"").split("@")[0]);
+      let rep=REPS.find(r=>norm(r.name)===fn || (em&&norm(r.name)===em));
+      if(rep) return rep;
+      if(create===false) return null;
+      rep={name:(firstName(owner&&owner.name)||(owner&&owner.name)||"Unknown"),target:270000,deals:[]};
+      REPS.push(rep); return rep;
+    }
+    const vat=(typeof RULES!=="undefined"&&RULES.vat)||0;          // CRM amounts are ex-VAT; engine strips vat, so gross up
+    const grossUp=a=> (vat>0&&vat<1)? a/(1-vat) : a;
+    let total=0,added=0,teamed=0;
+    dealArr.forEach(d=>{
+      if(!d||d._del) return;
+      if(stageKind[d.stageId]!=="won") return;
+      total++;
+      const owner=ownerById[d.ownerId]||null;
+      const rep=repFor(owner,true); if(!rep) return;
+      const cust=(d.companyId&&coById[d.companyId]&&coById[d.companyId].name)||d.name||"\u2014";
+      const amount=grossUp(parseFloat(d.amount)||0);
+      const month=d.closeDate?monthFromISO(d.closeDate):"";
+      const collabIds=(Array.isArray(d.collaboratorIds)?d.collaboratorIds:(d.collaboratorId?[d.collaboratorId]:[])).filter(id=>id&&String(id)!==String(d.ownerId));
+      const collabNames=collabIds.map(id=>(ownerById[id]||{}).name||"").filter(Boolean);
+      // lead owner \u2014 TEAMING+ when the deal is collaborated, else FULL
+      if(pushHubDeal(rep,{hsId:"crm:"+d.id,cust:cust,amount:amount,month:month,tag:collabIds.length?"TEAMING+":"FULL",collab:collabNames})) added++;
+      // each collaborator that maps to an existing rep \u2014 supporting TEAMING share
+      collabIds.forEach(cid=>{ const crep=repFor(ownerById[cid]||null,false); if(!crep||crep===rep) return; teamed++;
+        if(pushHubDeal(crep,{hsId:"crm:"+d.id,cust:cust,amount:amount,month:month,tag:"TEAMING",collab:[rep.name].concat(collabNames.filter(n=>n!==crep.name&&!norm(crep.name).startsWith(norm(firstName(n)))))})) added++;
+      });
+    });
+    hsStatus("Synced "+total+" won deal"+(total===1?"":"s")+" from CoreV SalesForce — "+added+" new, rest updated"+(teamed?", "+teamed+" collaborator split"+(teamed===1?"":"s")+" as TEAMING":"")+". Amounts read as ex-VAT.","ok");
+    renderAll();
+  })();
+}
+function hsInit(){ hsLoad(); const s=$("hs_autostate"); if(s)s.textContent=HS.auto?"on":"off"; if(HS.auto) crmFetchDeals(true); }
 function parseCSV(text){
   const rows=[];let i=0,f="",row=[],q=false;
   while(i<text.length){const c=text[i];
@@ -2799,17 +2821,7 @@ $("addDeal").addEventListener("click",()=>{REPS[sel].deals.push({type:"B2C",cust
 $("addRef").addEventListener("click",()=>{REFS.push({cust:"New referral",gross:0,coll:0,month:""});renderRefs();renderSummary();});
 $("ref_pdf").addEventListener("click",referralPDF);
 $("ref_email").addEventListener("click",emailRef);
-$("hs_connectbtn").addEventListener("click",hsOpenModal);
-$("hs_modalclose").addEventListener("click",hsCloseModal);
-$("hs_modalclose2").addEventListener("click",hsCloseModal);
-$("hs_savetoken").addEventListener("click",hsSaveTokenTest);
-$("hs_refreshowners").addEventListener("click",hsRefreshOwners);
-$("hs_savemapping").addEventListener("click",hsSaveMapping);
-$("hs_disconnect").addEventListener("click",hsDisconnect);
-$("hs_showtoken").addEventListener("click",hsShowToken);
-$("hs_workerlink").addEventListener("click",hsToggleWorker);
-$("hs_modal").addEventListener("click",e=>{ if(e.target.id==="hs_modal") hsCloseModal(); });
-$("hs_fetch").addEventListener("click",()=>hsFetchClosedWon(false));
+$("hs_fetch").addEventListener("click",()=>crmFetchDeals(false));
 $("hs_auto").addEventListener("click",hsToggleAuto);
 $("hs_reset").addEventListener("click",hsResetDeals);
 $("hs_import").addEventListener("click",()=>importCSVText($("hs_csv").value));
