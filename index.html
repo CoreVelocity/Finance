@@ -812,13 +812,13 @@
       <button id="altSignIn" class="gate-alt">Having trouble? Try popup sign-in</button>
       <div id="authErr" class="gate-err"></div>
       <div class="gate-foot">Management access only</div>
-      <div class="gate-ver">v1.40.1 · 2026-10-17</div>
+      <div class="gate-ver">v1.41.0 · 2026-10-17</div>
     </div>
   </div>
 
   <div id="appRoot" style="display:none">
   <header class="topbar">
-    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.40.1</span></div>
+    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.41.0</span></div>
     <nav class="tabnav">
       <button data-tab="tab-costing" class="active"><span class="n">01</span>Costing</button>
       <button data-tab="tab-commission"><span class="n">02</span>Commission</button>
@@ -3789,140 +3789,138 @@ function saveBlob(blob,fname){
 async function distXLSX(internal){
   if(!window.ExcelJS){ alert("Excel library still loading — try again in a moment."); return; }
   const cat=CATS[ACTIVE], m=compute(cat); const terr=(cat.territory||"").trim(); const titleTerr=terr||cat.label;
-  const P=cat.products;
+  const P=cat.products, a=cat.a;
   const MONEY='"$"#,##0.00', PCT='0%';
-  const INK='FF0E1626', INK2='FF1B2740', GREEN='FFD6EFD6', GREENT='FF0E5A33', YELL='FFFFF200', GREY='FFF2F5FB', LINE='FFDCE3EE';
-  const COLW=['L'];   // product cols are D..L (indices 0..8 → excel col 4..12)
-  const pcol=i=>String.fromCharCode(68+i);     // 0→D … 8→L
-  const wb=new ExcelJS.Workbook(); wb.creator="CoreV Finance Suite";
-  const ws=wb.addWorksheet("Reseller Model",{views:[{showGridLines:false}]});
-  ws.getColumn(1).width=34; ws.getColumn(2).width=12; ws.getColumn(3).width=12;
-  for(let c=4;c<=12;c++) ws.getColumn(c).width=14.5;
+  const INK='FF0E1626', INK2='FF1B2740', GREEN='FFD6EFD6', GREENT='FF0E5A33', YELL='FFFFF200', GREY='FFF2F5FB', LINE='FFDCE3EE', AMBER='FFB7791F';
+  const col=i=>String.fromCharCode(68+i);                 // 0→D … 8→L
   const border={top:{style:'thin',color:{argb:LINE}},left:{style:'thin',color:{argb:LINE}},bottom:{style:'thin',color:{argb:LINE}},right:{style:'thin',color:{argb:LINE}}};
-  function sc(addr,val,o){ o=o||{}; const c=ws.getCell(addr); c.value=val;
-    if(o.num)c.numFmt=o.num;
-    if(o.bold||o.white||o.color)c.font={bold:!!o.bold,color:o.white?{argb:'FFFFFFFF'}:(o.color?{argb:o.color}:undefined),size:o.size||11};
-    if(o.fill)c.fill={type:'pattern',pattern:'solid',fgColor:{argb:o.fill}};
-    c.alignment={horizontal:o.align||'left',vertical:'middle',wrapText:!!o.wrap};
-    if(o.border!==false)c.border=border;
-    return c; }
-  // --- title ---
-  ws.mergeCells('A1:L1'); sc('A1',"Distributor Proposal — "+titleTerr,{bold:true,size:15,border:false});
-  ws.mergeCells('A2:C2'); sc('A2',(internal?"Internal (with CoreV margins)  ·  ":"External (distributor-facing)  ·  ")+"Currency USD  ·  "+new Date().toLocaleDateString(),{color:'FF6B7A93',border:false});
-  // --- financial grid ---
-  let r=4;
-  const rHdr1=r, rHdr2=r+1, rTransfer=r+2, rList=r+3, rMSRP=r+4, rProfit=r+5, rProfitPct=r+6;
-  // segment header row
-  sc('A'+rHdr1,'XS1 / XP1 FINANCIALS',{bold:true,white:true,fill:INK});
-  sc('B'+rHdr1,'',{fill:INK}); sc('C'+rHdr1,'',{fill:INK});
-  const seg=['CONSUMER','CONSUMER','CONSUMER','CONSUMER','CONSUMER XFIT XP1','COMMERCIAL APEX','COMMERCIAL APEX','COMMERCIAL APEX XP1','OXELEAD DATA'];
-  seg.forEach((s,i)=>sc(pcol(i)+rHdr1,s,{bold:true,white:true,fill:INK,align:'center',size:9,wrap:true}));
-  // bundle names
-  sc('A'+rHdr2,'BUNDLE PACKAGES',{bold:true,white:true,fill:INK2});
-  sc('B'+rHdr2,'',{fill:INK2}); sc('C'+rHdr2,'',{fill:INK2});
-  const shortName=['PEAK-1YR','FLOW-1YR','PEAK-PLUS-3YR','FLOW-PLUS-3YR','XP1-XFIT-3YR','PEAK-PLUS-3YR','FLOW-PLUS-3YR','XP1-APEX-3YR','OXELEAD-3YR'];
-  shortName.forEach((s,i)=>sc(pcol(i)+rHdr2,s,{bold:true,white:true,fill:INK2,align:'center',size:9,wrap:true}));
-  // transfer (input), list (formula), msrp (input), profit$ (formula), profit% (formula)
-  sc('A'+rTransfer,'TRANSFER COST (dealer price)',{bold:true});
-  sc('A'+rList,'Market List — Excl VAT',{});
-  sc('A'+rMSRP,'MSRP — Baseline (do not sell below)',{});
-  sc('A'+rProfit,'RESELLER — Profit / Unit $',{bold:true,fill:GREEN});
-  sc('A'+rProfitPct,'RESELLER — Profit % (Profit ÷ Transfer)',{bold:true,fill:GREEN});
-  P.forEach((p,i)=>{ const C=pcol(i);
-    sc(C+rTransfer,p.transfer,{num:MONEY,align:'right'});
-    sc(C+rList,{formula:`${C}${rMSRP}*${p.mult}`},{num:MONEY,align:'right'});
-    sc(C+rMSRP,p.msrp,{num:MONEY,align:'right'});
-    sc(C+rProfit,{formula:`${C}${rList}-${C}${rTransfer}`},{num:MONEY,align:'right',fill:GREEN,color:GREENT,bold:true});
-    sc(C+rProfitPct,{formula:`${C}${rProfit}/${C}${rTransfer}`},{num:PCT,align:'right',fill:GREEN,color:GREENT,bold:true});
-  });
-  r=rProfitPct+1;
-  let rOxe,rCoreV,rCoreVPct;
-  if(internal){ rOxe=r; rCoreV=r+1; rCoreVPct=r+2;
-    sc('A'+rOxe,'OxeFit cost (CoreV) — internal',{bold:true,color:'FFB7791F'});
-    sc('A'+rCoreV,'CoreV margin $ — internal',{bold:true,color:'FFB7791F'});
-    sc('A'+rCoreVPct,'CoreV margin % — internal',{bold:true,color:'FFB7791F'});
-    P.forEach((p,i)=>{ const C=pcol(i);
-      sc(C+rOxe,p.oxefit,{num:MONEY,align:'right',color:'FFB7791F'});
-      sc(C+rCoreV,{formula:`${C}${rTransfer}-${C}${rOxe}`},{num:MONEY,align:'right',color:'FFB7791F'});
-      sc(C+rCoreVPct,{formula:`${C}${rCoreV}/${C}${rTransfer}`},{num:PCT,align:'right',color:'FFB7791F'});
-    });
-    r=rCoreVPct+1;
+  const wb=new ExcelJS.Workbook(); wb.creator="CoreV Finance Suite";
+  function mk(name){ const ws=wb.addWorksheet(name,{views:[{showGridLines:false}]});
+    ws.getColumn(1).width=34; ws.getColumn(2).width=15; ws.getColumn(3).width=11; for(let c=4;c<=12;c++) ws.getColumn(c).width=14.5;
+    return (addr,val,o)=>{ o=o||{}; const c=ws.getCell(addr); c.value=val;
+      if(o.num)c.numFmt=o.num;
+      if(o.bold||o.white||o.color)c.font={bold:!!o.bold,color:o.white?{argb:'FFFFFFFF'}:(o.color?{argb:o.color}:undefined),size:o.size||11};
+      if(o.fill)c.fill={type:'pattern',pattern:'solid',fgColor:{argb:o.fill}};
+      c.alignment={horizontal:o.align||'left',vertical:'middle',wrapText:!!o.wrap};
+      if(o.border!==false)c.border=border;
+      return c; };
   }
-  r+=1;
-  // --- assumptions / qty block ---
-  const a=cat.a;
-  const qHdr=r;
-  sc('A'+qHdr,'ASSUMPTIONS & QUANTITIES',{bold:true,white:true,fill:INK}); sc('B'+qHdr,'',{fill:INK}); sc('C'+qHdr,'',{fill:INK});
-  ['QTY / Q1','QTY / Q2','QTY / Q3','QTY / Q4','TOTAL'].forEach((h,i)=>sc(String.fromCharCode(69+i)+qHdr,h,{bold:true,white:true,fill:INK,align:'center',size:9}));
-  const rXS1=qHdr+1, rXP1=qHdr+2, rMix=qHdr+3, rW=qHdr+4, rFP=qHdr+5;
-  sc('A'+rXS1,'MIN ORDER / YR — XS1',{bold:true}); sc('B'+rXS1,m.minXS1,{align:'center',bold:true});
-  sc('D'+rXS1,'XS1',{bold:true,align:'center'});
-  m.e16.forEach((v,i)=>sc(String.fromCharCode(69+i)+rXS1,v,{align:'center'}));
-  sc('I'+rXS1,{formula:`SUM(E${rXS1}:H${rXS1})`},{align:'center',bold:true});
-  sc('A'+rXP1,'MIN ORDER / YR — XP1',{bold:true}); sc('B'+rXP1,{formula:`SUM(E${rXP1}:H${rXP1})`},{align:'center',bold:true});
-  sc('D'+rXP1,'XP1',{bold:true,align:'center'});
-  m.e17.forEach((v,i)=>sc(String.fromCharCode(69+i)+rXP1,v,{align:'center'}));
-  sc('I'+rXP1,{formula:`SUM(E${rXP1}:H${rXP1})`},{align:'center',bold:true});
-  sc('A'+rMix,'% CONSUMER : COMMERCIAL',{}); sc('B'+rMix,a.consumer,{num:PCT,align:'center',fill:YELL}); sc('C'+rMix,a.commercial,{num:PCT,align:'center',fill:YELL});
-  sc('D'+rMix,'# of Container',{bold:true,align:'right'}); a.nCont.forEach((v,i)=>sc(String.fromCharCode(69+i)+rMix,v,{align:'center',fill:YELL}));
-  sc('A'+rW,'Weight 1 YR vs 3 YR',{}); sc('B'+rW,a.w1yr,{num:PCT,align:'center',fill:YELL}); sc('C'+rW,a.w3yr,{num:PCT,align:'center',fill:YELL});
-  sc('D'+rW,'Container Type',{bold:true,align:'right'}); a.cType.forEach((v,i)=>sc(String.fromCharCode(69+i)+rW,"Container "+v,{align:'center',fill:YELL,size:9}));
-  sc('A'+rFP,'FLOW vs PEAK',{}); sc('B'+rFP,a.wflow,{num:PCT,align:'center',fill:YELL}); sc('C'+rFP,a.wpeak,{num:PCT,align:'center',fill:YELL});
-  r=rFP+2;
-  // --- requested commitments (per-quarter plan with live money formulas) ---
-  const cHdr=r;
-  sc('A'+cHdr,'REQUESTED COMMITMENTS',{bold:true,white:true,fill:INK}); sc('B'+cHdr,'',{fill:INK}); sc('C'+cHdr,'',{fill:INK});
-  sc('D'+cHdr,'Transfer COST',{bold:true,white:true,fill:INK,align:'center',size:9});
-  ['Quarter 1','Quarter 2','Quarter 3','Quarter 4'].forEach((h,i)=>sc(String.fromCharCode(69+i)+cHdr,h,{bold:true,white:true,fill:INK,align:'center',size:9}));
-  sc('I'+cHdr,'Reseller GP',{bold:true,white:true,fill:INK,align:'center',size:9});
-  sc('J'+cHdr,'Total Order to CoreV',{bold:true,white:true,fill:INK,align:'center',size:9});
-  const c0=cHdr+1; let rr=c0;
+  const subtitle=(internal?"Internal (with CoreV margins)":"External (distributor-facing)")+"  ·  Currency USD  ·  "+new Date().toLocaleDateString();
+
+  /* ===== Sheet 1: Reseller Model (clean price sheet — Consumer block, then Commercial block) ===== */
+  const s1=mk("Reseller Model");
+  s1('A1',"Distributor Proposal — "+titleTerr,{bold:true,size:15,border:false});
+  s1('A2',subtitle,{color:'FF6B7A93',border:false});
+  function priceBlock(sc,top,seg,names,prods){
+    const rS=top,rN=top+1,rT=top+2,rL=top+3,rM=top+4,rP=top+5,rPp=top+6;
+    sc('A'+rS,'XS1 / XP1 FINANCIALS',{bold:true,white:true,fill:INK});
+    sc('A'+rN,'BUNDLE PACKAGES',{bold:true,white:true,fill:INK2});
+    sc('A'+rT,'TRANSFER COST (dealer price)',{bold:true});
+    sc('A'+rL,'Market List — Excl VAT',{});
+    sc('A'+rM,'MSRP — Baseline (do not sell below)',{});
+    sc('A'+rP,'RESELLER — Profit / Unit $',{bold:true,fill:GREEN});
+    sc('A'+rPp,'RESELLER — Profit % (Profit ÷ Transfer)',{bold:true,fill:GREEN});
+    prods.forEach((p,i)=>{ const C=String.fromCharCode(68+i);
+      sc(C+rS,seg[i],{bold:true,white:true,fill:INK,align:'center',size:9,wrap:true});
+      sc(C+rN,names[i],{bold:true,white:true,fill:INK2,align:'center',size:9,wrap:true});
+      sc(C+rT,p.transfer,{num:MONEY,align:'right'});
+      sc(C+rL,{formula:`${C}${rM}*${p.mult}`},{num:MONEY,align:'right'});
+      sc(C+rM,p.msrp,{num:MONEY,align:'right'});
+      sc(C+rP,{formula:`${C}${rL}-${C}${rT}`},{num:MONEY,align:'right',fill:GREEN,color:GREENT,bold:true});
+      sc(C+rPp,{formula:`${C}${rP}/${C}${rT}`},{num:PCT,align:'right',fill:GREEN,color:GREENT,bold:true});
+      if(internal){ const rO=rPp+1,rCm=rPp+2,rCp=rPp+3;
+        sc('A'+rO,'OxeFit cost (CoreV) — internal',{bold:true,color:AMBER}); sc('A'+rCm,'CoreV margin $ — internal',{bold:true,color:AMBER}); sc('A'+rCp,'CoreV margin % — internal',{bold:true,color:AMBER});
+        sc(C+rO,p.oxefit,{num:MONEY,align:'right',color:AMBER});
+        sc(C+rCm,{formula:`${C}${rT}-${C}${rO}`},{num:MONEY,align:'right',color:AMBER});
+        sc(C+rCp,{formula:`${C}${rCm}/${C}${rT}`},{num:PCT,align:'right',color:AMBER});
+      }
+    });
+    return internal?rPp+4:rPp+1;
+  }
+  const consEnd=priceBlock(s1,4,['CONSUMER','CONSUMER','CONSUMER','CONSUMER','CONSUMER XFIT XP1'],['PEAK-1YR','FLOW-1YR','PEAK-PLUS-3YR','FLOW-PLUS-3YR','XP1-XFIT-3YR'],P.slice(0,5));
+  priceBlock(s1,consEnd+2,['COMMERCIAL APEX','COMMERCIAL APEX','COMMERCIAL APEX XP1','OXELEAD DATA'],['PEAK-PLUS-3YR','FLOW-PLUS-3YR','XP1-APEX-3YR','OXELEAD-3YR'],P.slice(5,9));
+
+  /* ===== Sheet 2: Order plan (full working model — financials + assumptions + commitments + containers) ===== */
+  const s2=mk("Order plan");
+  s2('A1',"Distributor Proposal — "+titleTerr,{bold:true,size:15,border:false});
+  s2('A2',subtitle,{color:'FF6B7A93',border:false}); s2('D2','ORDERING PER QUARTER',{bold:true,color:'FF6B7A93',border:false});
+  // financials across all 9
+  const seg9=['CONSUMER','CONSUMER','CONSUMER','CONSUMER','CONSUMER XFIT XP1','COMMERCIAL APEX','COMMERCIAL APEX','COMMERCIAL APEX XP1','OXELEAD DATA'];
+  const name9=['PEAK-1YR','FLOW-1YR','PEAK-PLUS-3YR','FLOW-PLUS-3YR','XP1-XFIT-3YR','PEAK-PLUS-3YR','FLOW-PLUS-3YR','XP1-APEX-3YR','OXELEAD-3YR'];
+  const rSeg=4,rNm=5,rTr=6,rLi=7,rMs=8,rPr=9,rPp=10;
+  s2('A'+rSeg,'XS1 / XP1 FINANCIALS',{bold:true,white:true,fill:INK});
+  s2('A'+rNm,'BUNDLE PACKAGES',{bold:true,white:true,fill:INK2});
+  s2('A'+rTr,'TRANSFER COST (dealer price)',{bold:true});
+  s2('A'+rLi,'Market List — Excl VAT',{});
+  s2('A'+rMs,'MSRP — Baseline (do not sell below)',{});
+  s2('A'+rPr,'RESELLER — Profit / Unit $',{bold:true,fill:GREEN});
+  s2('A'+rPp,'RESELLER — Profit % (Profit ÷ Transfer)',{bold:true,fill:GREEN});
+  P.forEach((p,i)=>{ const C=col(i);
+    s2(C+rSeg,seg9[i],{bold:true,white:true,fill:INK,align:'center',size:9,wrap:true});
+    s2(C+rNm,name9[i],{bold:true,white:true,fill:INK2,align:'center',size:9,wrap:true});
+    s2(C+rTr,p.transfer,{num:MONEY,align:'right'});
+    s2(C+rLi,{formula:`${C}${rMs}*${p.mult}`},{num:MONEY,align:'right'});
+    s2(C+rMs,p.msrp,{num:MONEY,align:'right'});
+    s2(C+rPr,{formula:`${C}${rLi}-${C}${rTr}`},{num:MONEY,align:'right',fill:GREEN,color:GREENT,bold:true});
+    s2(C+rPp,{formula:`${C}${rPr}/${C}${rTr}`},{num:PCT,align:'right',fill:GREEN,color:GREENT,bold:true});
+  });
+  let rOx=0;
+  if(internal){ rOx=rPp+1; const rCm=rPp+2,rCp=rPp+3;
+    s2('A'+rOx,'OxeFit cost (CoreV) — internal',{bold:true,color:AMBER}); s2('A'+rCm,'CoreV margin $ — internal',{bold:true,color:AMBER}); s2('A'+rCp,'CoreV margin % — internal',{bold:true,color:AMBER});
+    P.forEach((p,i)=>{ const C=col(i);
+      s2(C+rOx,p.oxefit,{num:MONEY,align:'right',color:AMBER});
+      s2(C+rCm,{formula:`${C}${rTr}-${C}${rOx}`},{num:MONEY,align:'right',color:AMBER});
+      s2(C+rCp,{formula:`${C}${rCm}/${C}${rTr}`},{num:PCT,align:'right',color:AMBER});
+    });
+  }
+  // assumptions
+  let r=(internal?rPp+3:rPp)+2;
+  const qH=r;
+  s2('A'+qH,'ASSUMPTIONS & QUANTITIES',{bold:true,white:true,fill:INK}); s2('B'+qH,'',{fill:INK}); s2('C'+qH,'',{fill:INK});
+  ['QTY / Q1','QTY / Q2','QTY / Q3','QTY / Q4','TOTAL'].forEach((h,i)=>s2(String.fromCharCode(69+i)+qH,h,{bold:true,white:true,fill:INK,align:'center',size:9}));
+  const rX=qH+1,rXp=qH+2,rMix=qH+3,rW=qH+4,rFp=qH+5;
+  s2('A'+rX,'MIN ORDER / YR — XS1',{bold:true}); s2('B'+rX,{formula:`I${rX}`},{align:'center',bold:true}); s2('D'+rX,'XS1',{bold:true,align:'center'});
+  m.e16.forEach((v,i)=>s2(String.fromCharCode(69+i)+rX,v,{align:'center'})); s2('I'+rX,{formula:`SUM(E${rX}:H${rX})`},{align:'center',bold:true});
+  s2('A'+rXp,'MIN ORDER / YR — XP1',{bold:true}); s2('B'+rXp,{formula:`I${rXp}`},{align:'center',bold:true}); s2('D'+rXp,'XP1',{bold:true,align:'center'});
+  m.e17.forEach((v,i)=>s2(String.fromCharCode(69+i)+rXp,v,{align:'center'})); s2('I'+rXp,{formula:`SUM(E${rXp}:H${rXp})`},{align:'center',bold:true});
+  s2('A'+rMix,'% CONSUMER : COMMERCIAL',{}); s2('B'+rMix,a.consumer,{num:PCT,align:'center',fill:YELL}); s2('C'+rMix,a.commercial,{num:PCT,align:'center',fill:YELL});
+  s2('D'+rMix,'# of Container',{bold:true,align:'right'}); a.nCont.forEach((v,i)=>s2(String.fromCharCode(69+i)+rMix,v,{align:'center',fill:YELL})); s2('I'+rMix,{formula:`SUM(E${rMix}:H${rMix})`},{align:'center',bold:true});
+  s2('A'+rW,'Weight 1 YR vs 3 YR',{}); s2('B'+rW,a.w1yr,{num:PCT,align:'center',fill:YELL}); s2('C'+rW,a.w3yr,{num:PCT,align:'center',fill:YELL});
+  s2('D'+rW,'Container Type',{bold:true,align:'right'}); a.cType.forEach((v,i)=>s2(String.fromCharCode(69+i)+rW,"Container "+v,{align:'center',fill:YELL,size:9}));
+  s2('A'+rFp,'FLOW vs PEAK',{}); s2('B'+rFp,a.wflow,{num:PCT,align:'center',fill:YELL}); s2('C'+rFp,a.wpeak,{num:PCT,align:'center',fill:YELL});
+  // commitments
+  r=rFp+2; const cH=r;
+  s2('A'+cH,'REQUESTED COMMITMENTS',{bold:true,white:true,fill:INK}); s2('B'+cH,'Category',{bold:true,white:true,fill:INK,size:9}); s2('C'+cH,'',{fill:INK});
+  s2('D'+cH,'Transfer COST',{bold:true,white:true,fill:INK,align:'center',size:9});
+  ['Quarter 1','Quarter 2','Quarter 3','Quarter 4'].forEach((h,i)=>s2(String.fromCharCode(69+i)+cH,h,{bold:true,white:true,fill:INK,align:'center',size:9}));
+  s2('I'+cH,'Reseller GP',{bold:true,white:true,fill:INK,align:'center',size:9});
+  s2('J'+cH,'Total Order to CoreV',{bold:true,white:true,fill:INK,align:'center',size:9});
+  if(internal) s2('K'+cH,'OxeFit cost',{bold:true,white:true,fill:INK,align:'center',size:9});
+  const c0=cH+1; let rr=c0;
   m.rows.forEach(row=>{ const R=rr;
-    sc('A'+R,row.label,{}); sc('B'+R,row.grp,{color:'FF6B7A93',size:9});
-    if(row.spare) sc('D'+R,row.transfer,{num:MONEY,align:'right'});
-    else sc('D'+R,{formula:`${pcol(row.p)}${rTransfer}`},{num:MONEY,align:'right'});
-    row.qty.forEach((q,i)=>sc(String.fromCharCode(69+i)+R,q,{align:'center'}));
-    if(row.demo||row.spare) sc('I'+R,0,{num:MONEY,align:'right',color:'FF6B7A93'});
-    else sc('I'+R,{formula:`SUM(E${R}:H${R})*${pcol(row.p)}${rProfit}`},{num:MONEY,align:'right',color:GREENT});
-    sc('J'+R,{formula:`SUM(E${R}:H${R})*D${R}`},{num:MONEY,align:'right'});
+    s2('A'+R,row.label,{}); s2('B'+R,row.grp,{color:'FF6B7A93',size:9});
+    if(row.spare) s2('D'+R,row.transfer,{num:MONEY,align:'right'}); else s2('D'+R,{formula:`${col(row.p)}${rTr}`},{num:MONEY,align:'right'});
+    row.qty.forEach((q,i)=>s2(String.fromCharCode(69+i)+R,q,{align:'center'}));
+    if(row.demo||row.spare) s2('I'+R,0,{num:MONEY,align:'right',color:'FF6B7A93'});
+    else s2('I'+R,{formula:`SUM(E${R}:H${R})*${col(row.p)}${rPr}`},{num:MONEY,align:'right',color:GREENT});
+    s2('J'+R,{formula:`SUM(E${R}:H${R})*D${R}`},{num:MONEY,align:'right'});
+    if(internal){ if(row.spare) s2('K'+R,{formula:`SUM(E${R}:H${R})*1500`},{num:MONEY,align:'right',color:AMBER}); else s2('K'+R,{formula:`SUM(E${R}:H${R})*${col(row.p)}${rOx}`},{num:MONEY,align:'right',color:AMBER}); }
     rr++;
   });
   const cEnd=rr-1, rTot=rr;
-  sc('A'+rTot,'Total Orders per Quarter',{bold:true,fill:GREY}); sc('B'+rTot,'',{fill:GREY}); sc('C'+rTot,'',{fill:GREY}); sc('D'+rTot,'',{fill:GREY});
-  ['E','F','G','H'].forEach(X=>sc(X+rTot,{formula:`SUMPRODUCT(${X}${c0}:${X}${cEnd},$D${c0}:$D${cEnd})`},{num:MONEY,align:'right',bold:true,fill:GREY}));
-  sc('I'+rTot,{formula:`SUM(I${c0}:I${cEnd})`},{num:MONEY,align:'right',bold:true,fill:GREY,color:GREENT});
-  sc('J'+rTot,{formula:`SUM(J${c0}:J${cEnd})`},{num:MONEY,align:'right',bold:true,fill:GREY});
-  r=rTot+2;
-  // --- container reference table ---
-  const kHdr=r; sc('A'+kHdr,'CONTAINER COMPOSITION',{bold:true}); sc('B'+kHdr,'XS1',{bold:true,align:'center',fill:GREY}); sc('C'+kHdr,'XP1',{bold:true,align:'center',fill:GREY});
-  [['Container A — XS1 + XP1',21,2],['Container B — XS1 ONLY',27,0],['Container C — XP1 ONLY',0,8]].forEach((row,i)=>{
-    sc('A'+(kHdr+1+i),row[0],{}); sc('B'+(kHdr+1+i),row[1],{align:'center'}); sc('C'+(kHdr+1+i),row[2],{align:'center'});
+  s2('A'+rTot,'Total Orders per Quarter',{bold:true,fill:GREY}); s2('B'+rTot,'',{fill:GREY}); s2('C'+rTot,'',{fill:GREY}); s2('D'+rTot,'',{fill:GREY});
+  ['E','F','G','H'].forEach(X=>s2(X+rTot,{formula:`SUMPRODUCT(${X}${c0}:${X}${cEnd},$D${c0}:$D${cEnd})`},{num:MONEY,align:'right',bold:true,fill:GREY}));
+  s2('I'+rTot,{formula:`SUM(I${c0}:I${cEnd})`},{num:MONEY,align:'right',bold:true,fill:GREY,color:GREENT});
+  s2('J'+rTot,{formula:`SUM(J${c0}:J${cEnd})`},{num:MONEY,align:'right',bold:true,fill:GREY});
+  if(internal) s2('K'+rTot,{formula:`SUM(K${c0}:K${cEnd})`},{num:MONEY,align:'right',bold:true,fill:GREY,color:AMBER});
+  // container composition
+  r=rTot+2; const kH=r;
+  s2('A'+kH,'CONTAINER COMPOSITION',{bold:true}); s2('B'+kH,'XS1',{bold:true,align:'center',fill:GREY}); s2('C'+kH,'XP1',{bold:true,align:'center',fill:GREY});
+  const q1t=a.cType[0];
+  [['Container A — XS1 + XP1',21,2,'A'],['Container B — XS1 ONLY',27,0,'B'],['Container C — XP1 ONLY',0,8,'C']].forEach((row,i)=>{ const R=kH+1+i;
+    s2('A'+R,row[0],{}); s2('B'+R,row[1],{align:'center'}); s2('C'+R,row[2],{align:'center'});
+    if(row[3]===q1t) s2('D'+R,'*Selected for 1st Quarter',{color:'FF6B7A93',size:9,border:false});
   });
-
-  /* ---- sheet 2: order plan summary ---- */
-  const os=wb.addWorksheet("Order plan",{views:[{showGridLines:false}]});
-  os.getColumn(1).width=30; for(let c=2;c<=9;c++) os.getColumn(c).width=14;
-  function sc2(addr,val,o){ o=o||{}; const c=os.getCell(addr); c.value=val;
-    if(o.num)c.numFmt=o.num; if(o.bold||o.white)c.font={bold:!!o.bold,color:o.white?{argb:'FFFFFFFF'}:undefined};
-    if(o.fill)c.fill={type:'pattern',pattern:'solid',fgColor:{argb:o.fill}};
-    c.alignment={horizontal:o.align||'left',vertical:'middle'}; if(o.border!==false)c.border=border; return c; }
-  const lastCol=internal?'I':'H';
-  os.mergeCells('A1:'+lastCol+'1'); sc2('A1',"Annual order plan — "+titleTerr,{bold:true,border:false});
-  const oh=internal?["Line","Q1","Q2","Q3","Q4","Units","Your GP","Order to CoreV","OxeFit cost"]:["Line","Q1","Q2","Q3","Q4","Units","Your GP","Order to CoreV"];
-  const hr=3; oh.forEach((h,i)=>sc2(String.fromCharCode(65+i)+hr,h,{bold:true,white:true,fill:INK,align:i?'center':'left'}));
-  let orr=hr+1;
-  m.rows.forEach(row=>{ const R=orr; sc2('A'+R,row.label,{});
-    [row.qty[0],row.qty[1],row.qty[2],row.qty[3],row.units].forEach((v,i)=>sc2(String.fromCharCode(66+i)+R,v,{align:'center'}));
-    sc2('G'+R,row.gp||0,{num:MONEY,align:'right'}); sc2('H'+R,row.order,{num:MONEY,align:'right'});
-    if(internal) sc2('I'+R,row.units*row.oxe,{num:MONEY,align:'right',color:'FFB7791F'});
-    orr++; });
-  const oEnd=orr-1;
-  sc2('A'+orr,'XS1 units / quarter',{bold:true,fill:GREY}); m.e16.forEach((v,i)=>sc2(String.fromCharCode(66+i)+orr,v,{align:'center',fill:GREY})); sc2('F'+orr,m.minXS1,{align:'center',bold:true,fill:GREY}); sc2('G'+orr,'',{fill:GREY}); sc2('H'+orr,'',{fill:GREY}); if(internal)sc2('I'+orr,'',{fill:GREY}); orr++;
-  sc2('A'+orr,'XP1 units / quarter',{bold:true,fill:GREY}); m.e17.forEach((v,i)=>sc2(String.fromCharCode(66+i)+orr,v,{align:'center',fill:GREY})); sc2('F'+orr,m.minXP1,{align:'center',bold:true,fill:GREY}); sc2('G'+orr,'',{fill:GREY}); sc2('H'+orr,'',{fill:GREY}); if(internal)sc2('I'+orr,'',{fill:GREY}); orr++;
-  sc2('A'+orr,'Payment to CoreV / quarter',{bold:true});
-  ['B','C','D','E'].forEach((X,i)=>sc2(X+orr,m.quarterOrder[i],{num:MONEY,align:'right',bold:true}));
-  sc2('F'+orr,'',{}); sc2('G'+orr,m.totalResellerGP,{num:MONEY,align:'right',bold:true}); sc2('H'+orr,m.totalToCoreV,{num:MONEY,align:'right',bold:true});
-  if(internal) sc2('I'+orr,m.orderToOxe,{num:MONEY,align:'right',bold:true,color:'FFB7791F'});
 
   const fname="CoreV_Distributor_"+titleTerr.replace(/[^A-Za-z0-9]+/g,"-")+"_"+(internal?"INTERNAL":"external")+".xlsx";
   try{ const buf=await wb.xlsx.writeBuffer(); saveBlob(new Blob([buf],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}),fname); }
