@@ -10,6 +10,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@azure/msal-browser@2.38.3/lib/msal-browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 
   :root{
@@ -654,6 +655,7 @@
   #tab-distributor select.yin{font-family:"Inter";font-size:12.5px}
   #tab-distributor .ein{width:118px;border:1.5px solid var(--blue);background:#EEF3FF;border-radius:7px;padding:6px 8px;font-family:"JetBrains Mono";font-size:12.5px;color:var(--blue);font-weight:600;text-align:right}
   #tab-distributor .ein:focus{outline:none;box-shadow:0 0 0 3px rgba(28,78,216,.2)}
+  #tab-distributor .ein.txt{width:100%;text-align:left;font-family:"Inter",sans-serif;font-weight:500;color:var(--text)}
   #tab-distributor .pcell{position:relative;flex:1}
   #tab-distributor .pcell .yin{width:100%;padding-right:26px}
   #tab-distributor .pcell .ps{position:absolute;right:11px;top:50%;transform:translateY(-50%);font-family:"JetBrains Mono";font-size:12px;color:#8A7A2E;font-weight:700;pointer-events:none}
@@ -810,13 +812,13 @@
       <button id="altSignIn" class="gate-alt">Having trouble? Try popup sign-in</button>
       <div id="authErr" class="gate-err"></div>
       <div class="gate-foot">Management access only</div>
-      <div class="gate-ver">v1.38.2 · 2026-10-10</div>
+      <div class="gate-ver">v1.39.0 · 2026-10-17</div>
     </div>
   </div>
 
   <div id="appRoot" style="display:none">
   <header class="topbar">
-    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.38.2</span></div>
+    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.39.0</span></div>
     <nav class="tabnav">
       <button data-tab="tab-costing" class="active"><span class="n">01</span>Costing</button>
       <button data-tab="tab-commission"><span class="n">02</span>Commission</button>
@@ -3659,12 +3661,17 @@ function render(){
     </table></div></section>`;
 
   // controls
-  let controls = `<div class="btnrow">
+  if(cat.territory===undefined) cat.territory="";
+  let controls = `<div class="afield" style="max-width:420px;margin-bottom:4px"><label>Territory (shown on the exports)</label>
+      <input class="ein txt" id="dist-territory" type="text" value="${(cat.territory||"").replace(/"/g,'&quot;')}" placeholder="e.g. Jordan, Egypt, Kingdom of Saudi Arabia…" style="width:100%"></div>
+  <div class="btnrow">
     <button class="btn primary" id="dist-pdf-ext">⬇ Distributor PDF (external)</button>
-    <button class="btn" id="dist-pdf-int">⬇ Internal PDF (with CoreV margins)</button>
+    <button class="btn" id="dist-xls-ext">⬇ Distributor Excel (external)</button>
+    <button class="btn" id="dist-pdf-int">⬇ Internal PDF</button>
+    <button class="btn" id="dist-xls-int">⬇ Internal Excel</button>
     <label class="toggle"><input type="checkbox" id="dist-internal" ${showInternal?"checked":""}> Show CoreV margins on screen</label>
   </div>
-  <div class="note" style="margin-top:10px"><span class="ic">i</span><span>The <b>external</b> PDF never shows OxeFit cost, CoreV margin, referral or CoreV net — only dealer pricing, dealer profit and the order plan. The internal PDF and the on-screen toggle include everything.</span></div>`;
+  <div class="note" style="margin-top:10px"><span class="ic">i</span><span>The <b>external</b> PDF &amp; Excel never show OxeFit cost, CoreV margin, referral or CoreV net — only dealer pricing, dealer profit and the order plan. The internal exports and the on-screen toggle include everything. The <b>Territory</b> you enter is printed on every export.</span></div>`;
 
   $("dist-body").innerHTML = `<div class="cs active">${kpis}${kpisInt}${assum}${pricing}${order}${controls}</div>`;
 
@@ -3682,8 +3689,11 @@ function render(){
     cat.a.cType[+e.target.dataset.ctype]=e.target.value; render(); pushDist();
   }));
   $("dist-internal").addEventListener("change",e=>{ showInternal=e.target.checked; render(); });
+  const tin=$("dist-territory"); if(tin) tin.addEventListener("input",e=>{ cat.territory=e.target.value; pushDist(); });
   $("dist-pdf-ext").addEventListener("click",()=>distPDF(false));
   $("dist-pdf-int").addEventListener("click",()=>distPDF(true));
+  $("dist-xls-ext").addEventListener("click",()=>distXLSX(false));
+  $("dist-xls-int").addEventListener("click",()=>distXLSX(true));
 }
 
 /* ---------- PDF ---------- */
@@ -3692,11 +3702,13 @@ function distPDF(internal){
   const cat=CATS[ACTIVE], m=compute(cat);
   const { jsPDF }=window.jspdf; const doc=new jsPDF({orientation:"landscape",unit:"pt",format:"a4"});
   const W=doc.internal.pageSize.getWidth(); const M=40; let y=42;
+  const terr=(cat.territory||"").trim();
   const drawHeader = (sub)=>{
     if(window.COREV_LOGO){ try{ doc.addImage(window.COREV_LOGO,"PNG",M,18,62,26); }catch(e){} }   // 640x267 → keep 2.4:1
     doc.setDrawColor(28,78,216); doc.setLineWidth(2); doc.line(M,52,W-M,52);
     doc.setFont("helvetica","bold"); doc.setFontSize(15); doc.setTextColor(14,22,38);
     doc.text(`Distributor Proposal — ${cat.label}`, M, 74);
+    if(terr){ doc.setFont("helvetica","bold"); doc.setFontSize(10.5); doc.setTextColor(28,78,216); doc.text("Territory: "+terr, W-M, 74, {align:"right"}); }
     doc.setFont("helvetica","normal"); doc.setFontSize(9.5); doc.setTextColor(107,122,147);
     doc.text(sub, M, 89);
     doc.text(new Date().toLocaleDateString(), W-M, 89, {align:"right"});
@@ -3752,7 +3764,7 @@ function distPDF(internal){
     didParseCell:d=>{ if(d.section==="body"&&d.column.index===6&&d.cell.raw!=="—") d.cell.styles.textColor=[18,138,91]; }
   });
 
-  const fname=`CoreV_Distributor_${cat.label.replace(/[^A-Za-z0-9]/g,"")}_${internal?"INTERNAL":"external"}.pdf`;
+  const fname=`CoreV_Distributor_${cat.label.replace(/[^A-Za-z0-9]/g,"")}${terr?("_"+terr.replace(/[^A-Za-z0-9]+/g,"-")):""}_${internal?"INTERNAL":"external"}.pdf`;
   savePdfDoc(doc,fname);
 }
 function savePdfDoc(doc,fname){
@@ -3764,16 +3776,75 @@ function savePdfDoc(doc,fname){
     setTimeout(()=>URL.revokeObjectURL(url),60000);
   }catch(e){ try{ doc.save(fname); }catch(_){}}
 }
+function saveBlob(blob,fname){
+  try{
+    const url=URL.createObjectURL(blob);
+    const isMobile=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)||(navigator.maxTouchPoints>1&&/Macintosh/.test(navigator.userAgent));
+    if(isMobile){ window.open(url,"_blank"); }
+    else{ const aa=document.createElement("a"); aa.href=url; aa.download=fname; document.body.appendChild(aa); aa.click(); aa.remove(); }
+    setTimeout(()=>URL.revokeObjectURL(url),60000);
+  }catch(e){ alert("Download failed — try again."); }
+}
+
+/* ---------- Excel export (SheetJS) ---------- */
+function distXLSX(internal){
+  if(!window.XLSX){ alert("Excel library still loading — try again in a moment."); return; }
+  const cat=CATS[ACTIVE], m=compute(cat); const terr=(cat.territory||"").trim();
+  const n=x=>Math.round((+x||0)*100)/100;          // numeric, 2dp — usable in Excel
+  const p2=x=>Math.round((+x||0)*1000)/10;         // percent as number, 1dp
+  // ---- sheet 1: pricing ----
+  const info=[
+    ["CoreV Distributor Proposal"],
+    ["Region", cat.label],
+    ["Territory", terr||"—"],
+    ["Prepared", new Date().toLocaleDateString()],
+    ["Mode", internal?"Internal (includes CoreV margins)":"External (distributor-facing)"],
+    ["Currency","USD"],
+    []
+  ];
+  const priceHead = internal
+    ? ["Bundle","Dealer price","Market list","MSRP floor","Profit/unit","Margin %","OxeFit cost","CoreV margin","CoreV %"]
+    : ["Bundle","Dealer price","Market list","MSRP floor","Your profit/unit","Your margin %"];
+  const priceRows = cat.products.map(p=> internal
+    ? [p.name,n(p.transfer),n(p.list),n(p.msrp),n(p.rprofit),p2(p.rpct),n(p.oxefit),n(p.menaMargin),p2(p.menaPct)]
+    : [p.name,n(p.transfer),n(p.list),n(p.msrp),n(p.rprofit),p2(p.rpct)]);
+  const s1=XLSX.utils.aoa_to_sheet(info.concat([priceHead],priceRows));
+  s1["!cols"]=[{wch:26}].concat(priceHead.slice(1).map(()=>({wch:14})));
+  // ---- sheet 2: order plan ----
+  const ordHead = internal
+    ? ["Line","Q1","Q2","Q3","Q4","Units","Your GP","Order to CoreV","OxeFit cost"]
+    : ["Line","Q1","Q2","Q3","Q4","Units","Your GP","Order to CoreV"];
+  const ordRows = m.rows.map(r=>{ const b=[r.label,r.qty[0],r.qty[1],r.qty[2],r.qty[3],r.units,n(r.gp),n(r.order)]; if(internal) b.push(n(r.units*r.oxe)); return b; });
+  const sum = internal
+    ? [ ["XS1 units / qtr", m.e16[0],m.e16[1],m.e16[2],m.e16[3], m.minXS1, "","",""],
+        ["XP1 units / qtr", m.e17[0],m.e17[1],m.e17[2],m.e17[3], m.minXP1, "","",""],
+        ["Payment to CoreV / qtr", n(m.quarterOrder[0]),n(m.quarterOrder[1]),n(m.quarterOrder[2]),n(m.quarterOrder[3]), "", n(m.totalResellerGP), n(m.totalToCoreV), n(m.orderToOxe)] ]
+    : [ ["XS1 units / qtr", m.e16[0],m.e16[1],m.e16[2],m.e16[3], m.minXS1, "",""],
+        ["XP1 units / qtr", m.e17[0],m.e17[1],m.e17[2],m.e17[3], m.minXP1, "",""],
+        ["Payment to CoreV / qtr", n(m.quarterOrder[0]),n(m.quarterOrder[1]),n(m.quarterOrder[2]),n(m.quarterOrder[3]), "", n(m.totalResellerGP), n(m.totalToCoreV)] ];
+  const head2=[["Annual order plan"],["Region",cat.label],["Territory",terr||"—"],[]];
+  const s2=XLSX.utils.aoa_to_sheet(head2.concat([ordHead],ordRows,[[]],sum));
+  s2["!cols"]=[{wch:24}].concat(ordHead.slice(1).map(()=>({wch:14})));
+  // ---- workbook ----
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,s1,"Bundle pricing");
+  XLSX.utils.book_append_sheet(wb,s2,"Order plan");
+  const out=XLSX.write(wb,{bookType:"xlsx",type:"array"});
+  const fname="CoreV_Distributor_"+cat.label.replace(/[^A-Za-z0-9]/g,"")+(terr?("_"+terr.replace(/[^A-Za-z0-9]+/g,"-")):"")+"_"+(internal?"INTERNAL":"external")+".xlsx";
+  saveBlob(new Blob([out],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"}),fname);
+}
 
 /* ---------- sync ---------- */
 function distState(){ const o={}; Object.keys(CATS).forEach(k=>o[k]=CATS[k].a); return o; }
 function priceState(){ const o={}; Object.keys(CATS).forEach(k=>o[k]=CATS[k].products.map(p=>p.transfer)); return o; }
+function terrState(){ const o={}; Object.keys(CATS).forEach(k=>o[k]=CATS[k].territory||""); return o; }
 function pushDist(){ if(window.CoreVSync) window.CoreVSync.changed(); }
 if(window.CoreVSync) window.CoreVSync.register('distributor',
-  ()=>({assum:distState(), prices:priceState()}),
+  ()=>({assum:distState(), prices:priceState(), terr:terrState()}),
   env=>{ try{
     if(env.assum) Object.keys(CATS).forEach(k=>{ if(env.assum[k]) CATS[k].a=Object.assign(CATS[k].a,env.assum[k]); });
     if(env.prices) Object.keys(CATS).forEach(k=>{ if(Array.isArray(env.prices[k])) env.prices[k].forEach((t,i)=>{ if(CATS[k].products[i]&&typeof t==="number"&&t>0) CATS[k].products[i].transfer=t; }); });
+    if(env.terr) Object.keys(CATS).forEach(k=>{ if(typeof env.terr[k]==="string") CATS[k].territory=env.terr[k]; });
     render();
   }catch(_){}}
 );
