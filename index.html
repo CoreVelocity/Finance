@@ -195,6 +195,11 @@
   .dealtools{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap;margin-top:4px}
   .addline{cursor:pointer;border:0;background:var(--input);color:#fff;font-family:Inter,sans-serif;font-weight:600;font-size:13px;padding:10px 18px;border-radius:9px}
   .addline:hover{filter:brightness(1.08)}
+  .curfield{display:flex;flex-direction:column;gap:5px;justify-content:flex-end}
+  .curfield .cl{font-size:11px;letter-spacing:.02em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  .curtoggle{display:inline-flex;align-items:stretch;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:var(--card)}
+  .curtoggle button{cursor:pointer;border:0;background:transparent;color:var(--muted);font-family:Inter,sans-serif;font-weight:700;font-size:12.5px;padding:9px 18px;line-height:1}
+  .curtoggle button.active{background:var(--ink);color:#fff}
   select.cell-in{min-width:175px;font-family:Inter,sans-serif}
   .dl-del{cursor:pointer;border:1px solid var(--line);background:none;color:var(--muted);border-radius:6px;width:26px;height:26px;font-size:15px;line-height:1}
   .dl-del:hover{border-color:var(--warn);color:var(--warn)}
@@ -812,13 +817,13 @@
       <button id="altSignIn" class="gate-alt">Having trouble? Try popup sign-in</button>
       <div id="authErr" class="gate-err"></div>
       <div class="gate-foot">Management access only</div>
-      <div class="gate-ver">v1.41.0 · 2026-10-17</div>
+      <div class="gate-ver">v1.42.0 · 2026-10-17</div>
     </div>
   </div>
 
   <div id="appRoot" style="display:none">
   <header class="topbar">
-    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.41.0</span></div>
+    <div class="brand"><span class="brand-logo-wrap"><img id="brandLogo" class="brand-logo" alt="OXEFIT by CoreV"></span><span class="sub">Finance Suite</span><span class="ver-tag">v1.42.0</span></div>
     <nav class="tabnav">
       <button data-tab="tab-costing" class="active"><span class="n">01</span>Costing</button>
       <button data-tab="tab-commission"><span class="n">02</span>Commission</button>
@@ -934,6 +939,9 @@
             <label>Free units (given)</label>
             <div class="inputwrap"><input id="d_free" type="number" step="1" value="0"><span class="affix">units</span></div>
           </div>
+          <div class="curfield"><span class="cl">Currency</span>
+            <div class="curtoggle" id="d_cur"><button type="button" data-cur="AED" class="active">AED</button><button type="button" data-cur="USD">USD</button></div>
+          </div>
           <button class="addline" id="d_add">+ Add line item</button>
           <button class="addline" id="d_pdf" style="background:var(--ink)">⤓ Quote PDF</button>
           <button class="reset" id="d_clear">↺ Clear deal</button>
@@ -949,13 +957,13 @@
               <tr>
                 <th class="l">Line item</th>
                 <th>Qty</th>
-                <th>Unit price<span class="u">AED · input</span></th>
-                <th>Unit disc<span class="u">AED · input</span></th>
-                <th>Net revenue<span class="u">AED</span></th>
-                <th>OxeFit cost<span class="u">AED</span></th>
-                <th>Gross profit<span class="u">AED · %</span></th>
-                <th>CoreV cost<span class="u">AED</span></th>
-                <th>Net profit<span class="u">AED · %</span></th>
+                <th>Unit price<span class="u"><span class="ccy-deal">AED</span> · input</span></th>
+                <th>Unit disc<span class="u"><span class="ccy-deal">AED</span> · input</span></th>
+                <th>Net revenue<span class="u"><span class="ccy-deal">AED</span></span></th>
+                <th>OxeFit cost<span class="u"><span class="ccy-deal">AED</span></span></th>
+                <th>Gross profit<span class="u"><span class="ccy-deal">AED</span> · %</span></th>
+                <th>CoreV cost<span class="u"><span class="ccy-deal">AED</span></span></th>
+                <th>Net profit<span class="u"><span class="ccy-deal">AED</span> · %</span></th>
                 <th class="barcell">Split</th>
                 <th></th>
               </tr>
@@ -987,6 +995,8 @@
           <span class="why">— channel model: dealer margin + dealer sales commission sit on top of CoreV's cost stack. Uses the catalog products and the global exchange rate above.</span>
         </div>
         <div class="agrid">
+          <div class="field"><label>Currency</label>
+            <div class="curtoggle" id="dg_cur" style="align-self:flex-start"><button type="button" data-cur="AED" class="active">AED</button><button type="button" data-cur="USD">USD</button></div></div>
           <div class="field"><label>Dealer tier</label>
             <div class="inputwrap"><select id="dg_tier" class="cell-in" style="text-align:left;width:100%"></select></div></div>
           <div class="field"><label>Dealer margin (tier)</label>
@@ -1016,16 +1026,16 @@
             <thead>
               <tr>
                 <th class="l">Product / SKU</th>
-                <th>Selling price<span class="u">AED</span></th>
-                <th>Discount<span class="u">AED · input</span></th>
-                <th>Net revenue<span class="u">AED</span></th>
-                <th>OxeFit cost<span class="u">AED</span></th>
-                <th>GP before channels<span class="u">AED · %</span></th>
-                <th>Dealer margin<span class="u">AED</span></th>
-                <th>Dealer comm<span class="u">AED</span></th>
-                <th>CoreV gross<span class="u">AED · %</span></th>
+                <th>Selling price<span class="u"><span class="ccy-dealer">AED</span></span></th>
+                <th>Discount<span class="u"><span class="ccy-dealer">AED</span> · input</span></th>
+                <th>Net revenue<span class="u"><span class="ccy-dealer">AED</span></span></th>
+                <th>OxeFit cost<span class="u"><span class="ccy-dealer">AED</span></span></th>
+                <th>GP before channels<span class="u"><span class="ccy-dealer">AED</span> · %</span></th>
+                <th>Dealer margin<span class="u"><span class="ccy-dealer">AED</span></span></th>
+                <th>Dealer comm<span class="u"><span class="ccy-dealer">AED</span></span></th>
+                <th>CoreV gross<span class="u"><span class="ccy-dealer">AED</span> · %</span></th>
                 <th>CoreV cost<span class="u">ISR+B2B+ref+ops</span></th>
-                <th>CoreV net<span class="u">AED · %</span></th>
+                <th>CoreV net<span class="u"><span class="ccy-dealer">AED</span> · %</span></th>
                 <th class="barcell">Split</th>
               </tr>
             </thead>
@@ -1051,7 +1061,7 @@
       <section class="tablecard">
         <div class="scroll">
           <table>
-            <thead><tr><th class="l">Milestone</th><th>Units</th><th>Bonus (AED)</th><th>Revenue basis (AED)</th><th>Internal %</th><th class="l">Notes</th></tr></thead>
+            <thead><tr><th class="l">Milestone</th><th>Units</th><th>Bonus (<span class="ccy-dealer">AED</span>)</th><th>Revenue basis (<span class="ccy-dealer">AED</span>)</th><th>Internal %</th><th class="l">Notes</th></tr></thead>
             <tbody id="dgperf"></tbody>
           </table>
         </div>
@@ -1576,6 +1586,11 @@ let SVC = structuredClone(SERVICES);
 
 const fmt = n => Math.round(n).toLocaleString("en-US");
 const pct = n => (n*100).toFixed(1) + "%";
+// AED <-> USD (g_exch is USD->AED, so USD = AED / exch)
+const cvt   = (aed,cur)=> (cur==='USD') ? aed/(G.exch||1) : aed;
+const toAed = (v,cur)=> (cur==='USD') ? v*(G.exch||1) : v;
+function setCcy(cls,cur){ ROOT.querySelectorAll('.'+cls).forEach(el=>el.textContent=cur); }
+function setCurToggle(id,cur){ const w=$(id); if(w) w.querySelectorAll('button').forEach(b=>b.classList.toggle('active', b.dataset.cur===cur)); }
 const ROOT = document.getElementById('tab-costing');
   const $ = id => ROOT.querySelector('#'+id);
 
@@ -1729,7 +1744,7 @@ $("resetBtn").addEventListener("click", ()=>{
 });
 
 /* ---------- Deal builder ---------- */
-let DEAL = { items:[], extra:0, freeUnits:0 };
+let DEAL = { items:[], extra:0, freeUnits:0, cur:'AED' };
 
 function catalogItems(){
   const out=[];
@@ -1769,6 +1784,8 @@ function dealOptions(sel){
 
 function renderDeal(){
   if(!$("dbody")) return;
+  const CUR=DEAL.cur||'AED'; const m=n=>fmt(cvt(n,CUR));
+  setCcy('ccy-deal',CUR); setCurToggle('d_cur',CUR);
   let body="", tot={sell:0,netRev:0,oxe:0,gross:0,corev:0,net:0,units:0};
   DEAL.items.forEach((item,i)=>{
     const c=dealLineCalc(item); if(!c) return;
@@ -1780,13 +1797,13 @@ function renderDeal(){
     body+=`<tr data-i="${i}">
       <td class="l"><select class="cell-in dl-sku">${dealOptions(item.sku)}</select><div class="psku">${c.row.sku}</div></td>
       <td><input class="cell-in qty dl-qty" type="number" value="${c.qty}"></td>
-      <td><input class="cell-in dl-price" type="number" value="${Math.round(c.unitSell)}"></td>
-      <td><input class="cell-in dl-disc" type="number" value="${Math.round(c.unitDisc)}"></td>
-      <td class="derived">${fmt(c.lineNetRev)}</td>
-      <td class="derived">${fmt(c.lineOxe)}</td>
-      <td class="derived">${fmt(c.lineGross)} <span class="pct ${c.grossPct<0?'thin':'good'}">${pct(c.grossPct)}</span></td>
-      <td class="derived">${fmt(c.lineCorev)}</td>
-      <td class="derived net">${fmt(c.lineNet)} <span class="pct ${thin?'thin':'good'}">${pct(c.netPct)}</span></td>
+      <td><input class="cell-in dl-price" type="number" value="${Math.round(cvt(c.unitSell,CUR))}"></td>
+      <td><input class="cell-in dl-disc" type="number" value="${Math.round(cvt(c.unitDisc,CUR))}"></td>
+      <td class="derived">${m(c.lineNetRev)}</td>
+      <td class="derived">${m(c.lineOxe)}</td>
+      <td class="derived">${m(c.lineGross)} <span class="pct ${c.grossPct<0?'thin':'good'}">${pct(c.grossPct)}</span></td>
+      <td class="derived">${m(c.lineCorev)}</td>
+      <td class="derived net">${m(c.lineNet)} <span class="pct ${thin?'thin':'good'}">${pct(c.netPct)}</span></td>
       <td class="barcell"><div class="bar" title="OxeFit ${oxeW.toFixed(0)}% · CoreV ${corevW.toFixed(0)}% · Net ${netW.toFixed(0)}%">
         <span class="seg-oxe" style="width:${oxeW}%"></span><span class="seg-corev" style="width:${corevW}%"></span><span class="seg-net" style="width:${netW}%"></span>
       </div><div class="barpct">OxeFit ${oxeW.toFixed(0)}% · CoreV ${corevW.toFixed(0)}% · Net ${netW.toFixed(0)}%</div></td>
@@ -1804,24 +1821,24 @@ function renderDeal(){
   $("dfoot").innerHTML = DEAL.items.length ? `<tr>
     <td class="l">Deal total${DEAL.extra?` · ${pct(DEAL.extra)} deal disc`:''}</td>
     <td class="tnum">${fmt(tot.units)}</td><td></td><td></td>
-    <td class="tnum">${fmt(tot.netRev)}</td>
-    <td class="tnum">${fmt(tot.oxe)}</td>
-    <td class="tnum">${fmt(tot.gross)} <span class="pct good">${pct(gP)}</span></td>
-    <td class="tnum">${fmt(tot.corev)}</td>
-    <td class="tnum net">${fmt(netAfter)} <span class="pct ${nP<0?'thin':'good'}">${pct(nP)}</span></td>
+    <td class="tnum">${m(tot.netRev)}</td>
+    <td class="tnum">${m(tot.oxe)}</td>
+    <td class="tnum">${m(tot.gross)} <span class="pct good">${pct(gP)}</span></td>
+    <td class="tnum">${m(tot.corev)}</td>
+    <td class="tnum net">${m(netAfter)} <span class="pct ${nP<0?'thin':'good'}">${pct(nP)}</span></td>
     <td></td><td></td></tr>` : "";
 
   // giveaway note line
   const gv=$("dgiveaway");
   if(gv){ if(freeUnits>0 && tot.units>0){ gv.style.display="block";
-      gv.innerHTML=`🎁 <b>${fmt(freeUnits)} free unit${freeUnits===1?'':'s'}</b> given — revenue unchanged; cost deducted from profit: ${fmt(freeUnits)} × ${fmt(avgOxe)} avg OxeFit unit cost = <b>−${fmt(freeCost)} AED</b>. Net profit ${fmt(tot.net)} → <b>${fmt(netAfter)} AED</b>.`;
+      gv.innerHTML=`🎁 <b>${fmt(freeUnits)} free unit${freeUnits===1?'':'s'}</b> given — revenue unchanged; cost deducted from profit: ${fmt(freeUnits)} × ${m(avgOxe)} avg OxeFit unit cost = <b>−${m(freeCost)} ${CUR}</b>. Net profit ${m(tot.net)} → <b>${m(netAfter)} ${CUR}</b>.`;
     } else { gv.style.display="none"; gv.innerHTML=""; } }
 
   const cards=[
-    {lbl:"Deal net revenue", val:fmt(tot.netRev), meta:fmt(tot.units)+" unit"+(tot.units===1?"":"s")},
-    {lbl:"Gross margin", val:pct(gP), meta:fmt(tot.gross)+" AED after OxeFit"},
-    {lbl:"Net margin", val:pct(nP), meta:fmt(netAfter)+" AED CoreV net"},
-    {lbl:"Net profit", val:fmt(netAfter), meta:freeUnits>0?`after ${fmt(freeUnits)} free (−${fmt(freeCost)})`:"on "+fmt(tot.sell)+" list"},
+    {lbl:"Deal net revenue ("+CUR+")", val:m(tot.netRev), meta:fmt(tot.units)+" unit"+(tot.units===1?"":"s")},
+    {lbl:"Gross margin", val:pct(gP), meta:m(tot.gross)+" "+CUR+" after OxeFit"},
+    {lbl:"Net margin", val:pct(nP), meta:m(netAfter)+" "+CUR+" CoreV net"},
+    {lbl:"Net profit ("+CUR+")", val:m(netAfter), meta:freeUnits>0?`after ${fmt(freeUnits)} free (−${m(freeCost)})`:"on "+m(tot.sell)+" list"},
   ];
   $("dkpis").innerHTML = cards.map(c=>`<div class="kpi"><div class="lbl">${c.lbl}</div><div class="val tnum">${c.val}</div><div class="meta">${c.meta}</div></div>`).join("");
 
@@ -1834,8 +1851,8 @@ function bindDeal(){
     const i=+tr.dataset.i, item=DEAL.items[i]; if(!item) return;
     const sk=tr.querySelector(".dl-sku"); if(sk) sk.addEventListener("change",e=>{ const row=findCatalog(e.target.value); item.sku=e.target.value; if(row){ item.price=Math.round(calcRow(row).sell); item.disc=row.disc||0; } renderDeal(); });
     const q=tr.querySelector(".dl-qty"); if(q) q.addEventListener("change",e=>{ item.qty=parseFloat(e.target.value)||0; renderDeal(); });
-    const p=tr.querySelector(".dl-price"); if(p) p.addEventListener("change",e=>{ item.price=parseFloat(e.target.value)||0; renderDeal(); });
-    const d=tr.querySelector(".dl-disc"); if(d) d.addEventListener("change",e=>{ item.disc=parseFloat(e.target.value)||0; renderDeal(); });
+    const p=tr.querySelector(".dl-price"); if(p) p.addEventListener("change",e=>{ item.price=toAed(parseFloat(e.target.value)||0, DEAL.cur||'AED'); renderDeal(); });
+    const d=tr.querySelector(".dl-disc"); if(d) d.addEventListener("change",e=>{ item.disc=toAed(parseFloat(e.target.value)||0, DEAL.cur||'AED'); renderDeal(); });
   });
   $("dbody").querySelectorAll(".dl-del").forEach(b=>b.addEventListener("click",e=>{ DEAL.items.splice(+e.target.dataset.i,1); renderDeal(); }));
 }
@@ -1852,12 +1869,15 @@ function dealPDF(){
   const {jsPDF}=window.jspdf; const doc=new jsPDF({unit:"pt",format:"a4",orientation:"landscape"});
   const W=doc.internal.pageSize.getWidth(), M=40, CW=W-2*M;
   const dateStr=new Date().toISOString().slice(0,10);
+  const CUR=DEAL.cur||'AED'; const m=n=>fmt(cvt(n,CUR));
 
   // header band + logo
   doc.setFillColor(255,255,255); doc.rect(0,0,W,70,"F");
   try{ if(window.COREV_LOGO) doc.addImage(window.COREV_LOGO,"PNG",M,15,90,37); }catch(_){}
   doc.setFont("helvetica","bold"); doc.setFontSize(13); doc.setTextColor(14,22,38); doc.text("Deal quote",M+104,42);
-  doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(120,130,150); doc.text("Generated "+dateStr,W-M,42,{align:"right"});
+  doc.setFont("helvetica","normal"); doc.setFontSize(9); doc.setTextColor(120,130,150);
+  doc.text("Generated "+dateStr,W-M,42,{align:"right"});
+  doc.text("All figures in "+CUR+(CUR==='USD'?"  ·  USD→AED "+fmt(G.exch):""),W-M,55,{align:"right"});
   doc.setDrawColor(59,91,219); doc.setLineWidth(2); doc.line(M,62,W-M,62);
 
   // totals
@@ -1870,10 +1890,10 @@ function dealPDF(){
     const netW=Math.max(0,100-oxeW-corevW);
     splits.push({oxeW,corevW,netW});
     const thin=c.netPct<0.27;
-    return [ c.row.name+"\n"+c.row.sku, String(c.qty), fmt(c.unitSell), fmt(c.unitDisc), fmt(c.lineNetRev), fmt(c.lineOxe),
-      {content:fmt(c.lineGross)+"  "+pct(c.grossPct), styles:{textColor:[17,122,78]}},
-      fmt(c.lineCorev),
-      {content:fmt(c.lineNet)+"  "+pct(c.netPct), styles:{textColor: thin?[192,73,43]:[17,122,78]}},
+    return [ c.row.name+"\n"+c.row.sku, String(c.qty), m(c.unitSell), m(c.unitDisc), m(c.lineNetRev), m(c.lineOxe),
+      {content:m(c.lineGross)+"  "+pct(c.grossPct), styles:{textColor:[17,122,78]}},
+      m(c.lineCorev),
+      {content:m(c.lineNet)+"  "+pct(c.netPct), styles:{textColor: thin?[192,73,43]:[17,122,78]}},
       "" ];
   }).filter(Boolean);
   const freeUnits=Math.max(0, DEAL.freeUnits||0);
@@ -1882,10 +1902,10 @@ function dealPDF(){
 
   // KPI cards
   const cards=[
-    ["DEAL NET REVENUE", fmt(tot.netRev), fmt(tot.units)+" unit"+(tot.units===1?"":"s")],
-    ["GROSS MARGIN", pct(gP), fmt(tot.gross)+" AED after OxeFit"],
-    ["NET MARGIN", pct(nP), fmt(netAfter)+" AED CoreV net"],
-    ["NET PROFIT", fmt(netAfter), freeUnits>0?("after "+fmt(freeUnits)+" free (-"+fmt(freeCost)+")"):("on "+fmt(tot.sell)+" list")],
+    ["DEAL NET REVENUE ("+CUR+")", m(tot.netRev), fmt(tot.units)+" unit"+(tot.units===1?"":"s")],
+    ["GROSS MARGIN", pct(gP), m(tot.gross)+" "+CUR+" after OxeFit"],
+    ["NET MARGIN", pct(nP), m(netAfter)+" "+CUR+" CoreV net"],
+    ["NET PROFIT ("+CUR+")", m(netAfter), freeUnits>0?("after "+fmt(freeUnits)+" free (-"+m(freeCost)+")"):("on "+m(tot.sell)+" list")],
   ];
   const gap=12, cwid=(CW-3*gap)/4, cy=82, chh=66;
   cards.forEach((c,i)=>{ const cx=M+i*(cwid+gap);
@@ -1902,9 +1922,9 @@ function dealPDF(){
     body,
     foot:[[ "Deal total"+(DEAL.extra?" · "+pct(DEAL.extra)+" deal disc":""),
       {content:String(tot.units),styles:{textColor:wh}}, {content:"",styles:{}}, {content:"",styles:{}},
-      {content:fmt(tot.netRev),styles:{textColor:wh}}, {content:fmt(tot.oxe),styles:{textColor:wh}},
-      {content:fmt(tot.gross)+"  "+pct(gP),styles:{textColor:[90,212,154]}}, {content:fmt(tot.corev),styles:{textColor:wh}},
-      {content:fmt(netAfter)+"  "+pct(nP),styles:{textColor:[90,212,154]}}, {content:"",styles:{}} ]],
+      {content:m(tot.netRev),styles:{textColor:wh}}, {content:m(tot.oxe),styles:{textColor:wh}},
+      {content:m(tot.gross)+"  "+pct(gP),styles:{textColor:[90,212,154]}}, {content:m(tot.corev),styles:{textColor:wh}},
+      {content:m(netAfter)+"  "+pct(nP),styles:{textColor:[90,212,154]}}, {content:"",styles:{}} ]],
     theme:"grid",
     styles:{font:"helvetica",fontSize:8,cellPadding:{top:7,bottom:7,left:6,right:6},textColor:[20,30,50],valign:"middle",lineColor:[238,241,246],lineWidth:0.5},
     headStyles:{fillColor:[14,22,38],textColor:[255,255,255],fontStyle:"bold",fontSize:7,halign:"right",lineColor:[14,22,38]},
@@ -1927,7 +1947,7 @@ function dealPDF(){
 
   let y=doc.lastAutoTable.finalY+16;
   if(freeUnits>0){
-    const txt=fmt(freeUnits)+" free unit"+(freeUnits===1?"":"s")+" given — revenue unchanged; cost deducted from profit: "+fmt(freeUnits)+" x "+fmt(avgOxe)+" avg OxeFit unit cost = -"+fmt(freeCost)+" AED. Net profit "+fmt(tot.net)+" -> "+fmt(netAfter)+" AED.";
+    const txt=fmt(freeUnits)+" free unit"+(freeUnits===1?"":"s")+" given — revenue unchanged; cost deducted from profit: "+fmt(freeUnits)+" x "+m(avgOxe)+" avg OxeFit unit cost = -"+m(freeCost)+" "+CUR+". Net profit "+m(tot.net)+" -> "+m(netAfter)+" "+CUR+".";
     const lines=doc.splitTextToSize(txt, CW-24); const bh=lines.length*12+16;
     doc.setFillColor(234,240,254); doc.setDrawColor(207,224,255); doc.setLineWidth(1); doc.roundedRect(M,y,CW,bh,8,8,"FD");
     doc.setFont("helvetica","bold"); doc.setFontSize(8.5); doc.setTextColor(14,22,38); doc.text(lines,M+12,y+16);
@@ -1951,6 +1971,8 @@ $("d_pdf").addEventListener("click", dealPDF);
 $("d_clear").addEventListener("click", ()=>{ DEAL.items=[]; DEAL.extra=0; DEAL.freeUnits=0; $("d_extra").value=0; $("d_free").value=0; renderDeal(); });
 $("d_extra").addEventListener("input", e=>{ DEAL.extra=(parseFloat(e.target.value)||0)/100; renderDeal(); });
 $("d_free").addEventListener("input", e=>{ DEAL.freeUnits=parseInt(e.target.value)||0; renderDeal(); });
+ROOT.querySelectorAll("#d_cur button").forEach(b=>b.addEventListener("click",()=>{ DEAL.cur=b.dataset.cur; renderDeal(); }));
+ROOT.querySelectorAll("#dg_cur button").forEach(b=>b.addEventListener("click",()=>{ DG.cur=b.dataset.cur; renderDealer(); dgChanged(); }));
 
 /* ---------- Dealer (OxePartner) costing ---------- */
 const DEALER_TIERS = [
@@ -1959,7 +1981,7 @@ const DEALER_TIERS = [
   ["Gold (25+ units)", 0.15],
   ["Premium (25+ units)", 0.20],
 ];
-let DG = { tier:"Premium (25+ units)", comm:0.02, isr:0.005, isrCap:500, b2b:0.01, ref:0.025, ops:0.05, contrib:0.04, demoDisc:0.25, disc:{} };
+let DG = { tier:"Premium (25+ units)", comm:0.02, isr:0.005, isrCap:500, b2b:0.01, ref:0.025, ops:0.05, contrib:0.04, demoDisc:0.25, disc:{}, cur:'AED' };
 function dealerMarginPct(){ const t=DEALER_TIERS.find(x=>x[0]===DG.tier); return t?t[1]:0.2; }
 
 function dealerCalc(r, commercial){
@@ -2000,6 +2022,8 @@ function bindDealerAssum(){
 function renderDealer(){
   if(!$("dgbody")) return;
   bindDealerAssum();
+  const CUR=DG.cur||'AED'; const m=n=>fmt(cvt(n,CUR));
+  setCcy('ccy-dealer',CUR); setCurToggle('dg_cur',CUR);
   let body="", all=[];
   DATA.forEach((g,gi)=>{
     const commercial = gi>0;
@@ -2013,16 +2037,16 @@ function renderDealer(){
       const thin=c.netPct<0.12;
       body+=`<tr data-dsku="${r.sku}">
         <td class="l"><div class="pname">${r.name}</div><div class="psku">${r.sku}</div></td>
-        <td class="derived">${fmt(c.sell)}</td>
-        <td><input class="cell-in dg-disc" type="number" value="${Math.round(c.disc)}"></td>
-        <td class="derived">${fmt(c.netRev)}</td>
-        <td class="derived">${fmt(c.oxe)}</td>
-        <td class="derived">${fmt(c.gpbc)} <span class="pct good">${pct(c.gpbcPct)}</span></td>
-        <td class="derived">${fmt(c.dMargin)}</td>
-        <td class="derived">${fmt(c.dComm)}</td>
-        <td class="derived">${fmt(c.corevGP)} <span class="pct good">${pct(c.corevGPpct)}</span></td>
-        <td class="derived">${fmt(c.corevCost)}</td>
-        <td class="derived net">${fmt(c.net)} <span class="pct ${thin?'thin':'good'}">${pct(c.netPct)}</span></td>
+        <td class="derived">${m(c.sell)}</td>
+        <td><input class="cell-in dg-disc" type="number" value="${Math.round(cvt(c.disc,CUR))}"></td>
+        <td class="derived">${m(c.netRev)}</td>
+        <td class="derived">${m(c.oxe)}</td>
+        <td class="derived">${m(c.gpbc)} <span class="pct good">${pct(c.gpbcPct)}</span></td>
+        <td class="derived">${m(c.dMargin)}</td>
+        <td class="derived">${m(c.dComm)}</td>
+        <td class="derived">${m(c.corevGP)} <span class="pct good">${pct(c.corevGPpct)}</span></td>
+        <td class="derived">${m(c.corevCost)}</td>
+        <td class="derived net">${m(c.net)} <span class="pct ${thin?'thin':'good'}">${pct(c.netPct)}</span></td>
         <td class="barcell"><div class="bar" title="OxeFit ${oxeW.toFixed(0)}% · Channel ${chW.toFixed(0)}% · CoreV ${cvW.toFixed(0)}% · Net ${netW.toFixed(0)}%">
           <span class="seg-oxe" style="width:${oxeW}%"></span><span class="seg-channel" style="width:${chW}%"></span><span class="seg-corev" style="width:${cvW}%"></span><span class="seg-net" style="width:${netW}%"></span>
         </div><div class="barpct">OxeFit ${oxeW.toFixed(0)}% · Channel ${chW.toFixed(0)}% · CoreV ${cvW.toFixed(0)}% · Net ${netW.toFixed(0)}%</div></td>
@@ -2045,12 +2069,13 @@ function renderDealer(){
     `<div class="kpi dgkpi-hero"><div class="lbl">Avg CoreV net margin</div><div class="val tnum">${heroVal}</div><div class="meta">net profit ÷ selling price · across dealer products</div></div>`;
 
   $("dgbody").querySelectorAll(".dg-disc").forEach(inp=>inp.addEventListener("change",e=>{
-    const sku=e.target.closest("tr").dataset.dsku; DG.disc[sku]=parseFloat(e.target.value)||0; renderDealer(); dgChanged();
+    const sku=e.target.closest("tr").dataset.dsku; DG.disc[sku]=toAed(parseFloat(e.target.value)||0, DG.cur||'AED'); renderDealer(); dgChanged();
   }));
   renderDealerPerf();
 }
 function renderDealerPerf(){
   if(!$("dgperf")) return;
+  const CUR=DG.cur||'AED'; const m=n=>fmt(cvt(n,CUR));
   const peakRow=findCatalog("MENA-XS1-PEAK-XFIT-12MO");
   const peakNet = peakRow ? dealerCalc(peakRow,false).netRev : 0;
   const bonuses=[
@@ -2060,7 +2085,7 @@ function renderDealerPerf(){
     ["Gold +30%",33,30000,"Hit 33 units (25 ×1.3)"],
   ];
   $("dgperf").innerHTML=bonuses.map(b=>{ const basis=b[1]*peakNet, p=basis?b[2]/basis:0;
-    return `<tr><td class="l">${b[0]}</td><td class="derived">${b[1]}</td><td class="derived">${fmt(b[2])}</td><td class="derived">${fmt(basis)}</td><td class="derived">${pct(p)}</td><td class="l" style="color:var(--muted)">${b[3]}</td></tr>`;
+    return `<tr><td class="l">${b[0]}</td><td class="derived">${b[1]}</td><td class="derived">${m(b[2])}</td><td class="derived">${m(basis)}</td><td class="derived">${pct(p)}</td><td class="l" style="color:var(--muted)">${b[3]}</td></tr>`;
   }).join("");
   const eligible = DG.tier!=="Premium (25+ units)";
   const el=$("dgPerfElig"); if(el){ el.className="perf-elig "+(eligible?"ok":"no"); el.textContent = eligible ? ("Eligible · "+DG.tier) : "Not eligible · Premium"; }
@@ -2076,11 +2101,11 @@ function renderDealerPerf(){
       const total=sell(pp)+sell(ol), cost=(pp.cost+ol.cost)*G.exch;
       const disc=total*(DG.demoDisc||0), fin=total-disc, profit=fin-cost, margin=fin?profit/fin:0;
       const cards=[
-        ["Bundle list price",fmt(total),"PEAK-PLUS Comm + OxeLEAD"],
-        ["Demo discount",pct(DG.demoDisc||0),"− "+fmt(disc)+" AED"],
-        ["Final price (excl VAT)",fmt(fin),"offer to dealer"],
-        ["Bundle cost",fmt(cost),"OxeFit hardware"],
-        ["Profit",fmt(profit),"after demo discount"],
+        ["Bundle list price ("+CUR+")",m(total),"PEAK-PLUS Comm + OxeLEAD"],
+        ["Demo discount",pct(DG.demoDisc||0),"− "+m(disc)+" "+CUR],
+        ["Final price (excl VAT)",m(fin),"offer to dealer"],
+        ["Bundle cost ("+CUR+")",m(cost),"OxeFit hardware"],
+        ["Profit ("+CUR+")",m(profit),"after demo discount"],
         ["Margin",pct(margin),"on final price"],
       ];
       demoEl.innerHTML=cards.map(c=>`<div class="kpi"><div class="lbl">${c[0]}</div><div class="val tnum">${c[1]}</div><div class="meta">${c[2]}</div></div>`).join("");
@@ -2102,6 +2127,7 @@ render();
 if(window.CoreVSync) window.CoreVSync.register('costing',
   ()=>({G,DATA,SVC,DEAL,DG}),
   env=>{ try{ if(env.G)G=env.G; if(Array.isArray(env.DATA))DATA=env.DATA; if(env.SVC&&Array.isArray(env.SVC.rows))SVC=env.SVC; if(env.DEAL&&Array.isArray(env.DEAL.items))DEAL=env.DEAL; if(env.DG&&typeof env.DG==='object'){ DG=Object.assign(DG,env.DG); if(!DG.disc)DG.disc={}; } bindGlobals(); render(); renderDeal(); renderDealer(); }catch(_){} });
+
 
 })();</script>
 <script>(function(){
